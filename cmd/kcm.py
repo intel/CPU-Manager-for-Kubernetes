@@ -4,7 +4,7 @@
 
 Usage:
   kcm (-h | --help)
-  kvm --version
+  kcm --version
   kcm (discover | describe | reconcile) [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
 
