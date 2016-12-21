@@ -8,4 +8,7 @@ setup(name='kcm',
       author_email='',
       license='',
       packages=['intel'],
+      install_requires=[
+          'docopt>=0.6, <1.0',
+      ],
       zip_safe=False)
