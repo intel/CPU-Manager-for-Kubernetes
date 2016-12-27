@@ -1,6 +1,6 @@
 from intel import config, util
-
 import os
+import tempfile
 
 
 data = os.path.join(util.kcm_root(), "tests", "data")
@@ -42,3 +42,21 @@ def test_pool_cpu_lists():
         assert len(clists) == 4
         assert len(clists["4,12"].tasks()) == 1
         assert 2000 in clists["4,12"].tasks()
+
+
+def test_write_config():
+    c = config.new(os.path.join(tempfile.mkdtemp(), "conf"))
+    with c.lock():
+        assert len(c.pools()) == 0
+        foo = c.add_pool("foo", False)
+        bar = c.add_pool("bar", True)
+        assert len(c.pools()) == 2
+        c0 = foo.add_cpu_list("0-3")
+        c1 = bar.add_cpu_list("4-7")
+        assert c0.cpus() == "0-3"
+        assert c1.cpus() == "4-7"
+        c0.add_task(5)
+        assert 5 in c0.tasks()
+        c0.add_task(6)
+        assert 5 in c0.tasks()
+        assert 6 in c0.tasks()
