@@ -6,7 +6,7 @@
 Usage:
   kcm (-h | --help)
   kcm --version
-  kcm (discover | describe | reconcile) [--conf-dir=<dir>]
+  kcm (init | describe | reconcile) [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
 
 Options:
@@ -15,16 +15,23 @@ Options:
   --conf-dir=<dir>  KCM configuration directory [default: /etc/kcm].
   --pool=<pool>     Pool name: either INFRA, CONTROLPLANE or DATAPLANE.
 """
-from intel import config
+from intel import config, util
 from docopt import docopt
 import json
 
 
 def main():
     args = docopt(__doc__, version="KCM 0.1.0")
+    if args["init"]:
+        init(args["--conf-dir"])
+        return
     if args["describe"]:
         describe(args["--conf-dir"])
         return
+
+
+def init(conf_dir):
+    util.check_hugepages()
 
 
 def describe(conf_dir):
