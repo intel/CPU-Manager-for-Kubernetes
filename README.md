@@ -1,5 +1,7 @@
 # kubernetes-comms-mvp
 
+[![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
+
 ## Usage
 **TODO**
 
