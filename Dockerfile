@@ -7,13 +7,12 @@ RUN apt-get update && \
 ADD . /kcm
 WORKDIR /kcm
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt && chmod +x /kcm/kcm.py
 
 RUN tox -e lint
 RUN tox -e unit
-# RUN tox -e integration
+RUN tox -e integration
 
-RUN chmod +x /kcm/kcm.py 
 RUN /kcm/kcm.py --help && echo ""
 
 ENTRYPOINT [ "/kcm/kcm.py" ]
