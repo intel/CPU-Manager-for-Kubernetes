@@ -13,7 +13,7 @@ Options:
   -h --help         Show this screen.
   --version         Show version.
   --conf-dir=<dir>  KCM configuration directory [default: /etc/kcm].
-  --pool=<pool>     Pool name: either INFRA, CONTROLPLANE or DATAPLANE.
+  --pool=<pool>     Pool name: either infra, controlplane or dataplane.
 """
 from intel import config, util
 from docopt import docopt
