@@ -110,13 +110,20 @@ class CPUList:
                     for pid in f.read().split(",")
                     if pid != ""]
 
+    def __write_tasks(self, tasks):
+        # Mode "w+" truncates the file prior to writing new content.
+        with open(os.path.join(self.path, "tasks"), "w+") as f:
+            f.write(",".join([str(t) for t in tasks]))
+
     # Writes the supplied pid to disk for this cpu list.
     def add_task(self, pid):
         tasks = self.tasks()
-        # Mode "w+" truncates the file prior to writing new content.
-        with open(os.path.join(self.path, "tasks"), "w+") as f:
-            tasks.append(pid)
-            f.write(",".join([str(t) for t in tasks]))
+        tasks.append(pid)
+        self.__write_tasks(tasks)
+
+    # Removes the supplied pid from disk for this cpu list.
+    def remove_task(self, pid):
+        self.__write_tasks([t for t in self.tasks() if t != pid])
 
     def as_dict(self):
         result = {}
