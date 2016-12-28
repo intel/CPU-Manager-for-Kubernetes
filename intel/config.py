@@ -41,6 +41,8 @@ class Config:
                 excl.write("1")
             else:
                 excl.write("0")
+            excl.flush()
+            os.fsync(excl)
         return self.pools()[name]
 
     def as_dict(self):
@@ -114,6 +116,8 @@ class CPUList:
         # Mode "w+" truncates the file prior to writing new content.
         with open(os.path.join(self.path, "tasks"), "w+") as f:
             f.write(",".join([str(t) for t in tasks]))
+            f.flush()
+            os.fsync(f)
 
     # Writes the supplied pid to disk for this cpu list.
     def add_task(self, pid):
