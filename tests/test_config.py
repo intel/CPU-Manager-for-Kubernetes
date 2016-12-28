@@ -60,3 +60,6 @@ def test_write_config():
         c0.add_task(6)
         assert 5 in c0.tasks()
         assert 6 in c0.tasks()
+        c0.remove_task(5)
+        assert 5 not in c0.tasks()
+        assert 6 in c0.tasks()
