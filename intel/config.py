@@ -3,6 +3,15 @@ import fcntl
 import os
 
 
+# Returns a new config at the supplied path.
+def new(path):
+    if os.path.isdir(path):
+        raise FileExistsError("Config directory {} exists".format(path))
+    os.makedirs(os.path.join(path, "pools"))
+    open(os.path.join(path, "lock"), "w+")
+    return Config(path)
+
+
 class Config:
     def __init__(self, path):
         self.path = os.path.normpath(path)
@@ -20,6 +29,19 @@ class Config:
                 p = Pool(pd)
                 pools[p.name()] = p
         return pools
+
+    # Writes a new pool to disk and returns the corresponding pool object.
+    def add_pool(self, name, exclusive):
+        if name in self.pools():
+            raise KeyError("Pool {} already exists".format(name))
+        os.makedirs(os.path.join(self.path, "pools", name))
+        ex_file = os.path.join(self.path, "pools", name, "exclusive")
+        with open(ex_file, "w+") as excl:
+            if exclusive:
+                excl.write("1")
+            else:
+                excl.write("0")
+        return self.pools()[name]
 
     def as_dict(self):
         result = {}
@@ -55,6 +77,15 @@ class Pool:
                 result[clist.cpus()] = clist
         return result
 
+    # Writes a new cpu list to disk and returns the corresponding
+    # CPUList object.
+    def add_cpu_list(self, cpus):
+        if cpus in self.cpu_lists():
+            raise KeyError("CPU list {} already exists".format(cpus))
+        os.makedirs(os.path.join(self.path, cpus))
+        open(os.path.join(self.path, cpus, "tasks"), "w+")
+        return self.cpu_lists()[cpus]
+
     def as_dict(self):
         result = {}
         result["exclusive"] = self.exclusive()
@@ -75,7 +106,17 @@ class CPUList:
 
     def tasks(self):
         with open(os.path.join(self.path, "tasks")) as f:
-            return [int(pid.strip()) for pid in f.read().split(",")]
+            return [int(pid.strip())
+                    for pid in f.read().split(",")
+                    if pid != ""]
+
+    # Writes the supplied pid to disk for this cpu list.
+    def add_task(self, pid):
+        tasks = self.tasks()
+        # Mode "w+" truncates the file prior to writing new content.
+        with open(os.path.join(self.path, "tasks"), "w+") as f:
+            tasks.append(pid)
+            f.write(",".join([str(t) for t in tasks]))
 
     def as_dict(self):
         result = {}

@@ -16,3 +16,4 @@ def check_hugepages():
             num_free = int(parts[1])
             if num_free == 0:
                 logging.warning("Warning: no hugepages are free")
+                return
