@@ -6,14 +6,17 @@
 Usage:
   kcm (-h | --help)
   kcm --version
-  kcm (init | describe | reconcile) [--conf-dir=<dir>]
+  kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  kcm (describe | reconcile) [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
 
 Options:
-  -h --help         Show this screen.
-  --version         Show version.
-  --conf-dir=<dir>  KCM configuration directory [default: /etc/kcm].
-  --pool=<pool>     Pool name: either infra, controlplane or dataplane.
+  -h --help             Show this screen.
+  --version             Show version.
+  --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
+  --num-dp-cores=<num>  Number of data plane cores [default: 4].
+  --num-cp-cores=<num>  Number of control plane cores [default: 1].
+  --pool=<pool>         Pool name: either infra, controlplane or dataplane.
 """
 from intel import config, util
 from docopt import docopt
@@ -21,12 +24,15 @@ import json
 import os
 import random
 import subprocess
+import logging
 
 
 def main():
     args = docopt(__doc__, version="KCM 0.1.0")
     if args["init"]:
-        init(args["--conf-dir"])
+        init(args["--conf-dir"],
+             args["--num-dp-cores"],
+             args["--num-cp-cores"])
         return
     if args["describe"]:
         describe(args["--conf-dir"])
@@ -37,8 +43,48 @@ def main():
         return
 
 
-def init(conf_dir):
+def init(conf_dir, num_dp_cores, num_cp_cores):
+    logging.basicConfig(level=logging.INFO)
     util.check_hugepages()
+    cpumap = util.discover_topo()
+    logging.info("Writing config to {}.".format(conf_dir))
+    logging.info("Requested data plane cores = {}.".format(num_dp_cores))
+    logging.info("Requested control plane cores = {}.".format(num_cp_cores))
+    c = config.new(conf_dir)
+    with c.lock():
+        logging.info("Adding dataplane pool.")
+        dp = c.add_pool("dataplane", True)
+        for i in range(int(num_dp_cores)):
+            if not cpumap:
+                raise KeyError("No more cpus left to assign for data plane")
+            k, v = cpumap.popitem()
+            logging.info("Adding {} cpus to the dataplane pool.".format(v))
+            dp.add_cpu_list(v)
+        logging.info("Adding controlplane pool.")
+        cp = c.add_pool("controlplane", False)
+        cpus = ""
+        for i in range(int(num_cp_cores)):
+            if not cpumap:
+                raise KeyError("No more cpus left to assign for control plane")
+            k, v = cpumap.popitem()
+            if cpus:
+                cpus = cpus + "," + v
+            else:
+                cpus = v
+        logging.info("Adding {} cpus to the controlplane pool.".format(cpus))
+        cp.add_cpu_list(cpus)
+        logging.info("Adding infra pool.")
+        infra = c.add_pool("infra", False)
+        cpus = ""
+        if not cpumap:
+            raise KeyError("No more cpus left to assign for infra")
+        for k, v in cpumap.items():
+            if cpus:
+                cpus = cpus + "," + v
+            else:
+                cpus = v
+        logging.info("Adding {} cpus to the infra pool.".format(cpus))
+        infra.add_cpu_list(cpus)
 
 
 def describe(conf_dir):
