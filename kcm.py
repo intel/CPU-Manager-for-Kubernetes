@@ -25,6 +25,7 @@ import os
 import random
 import subprocess
 import logging
+import psutil
 
 
 def main():
@@ -40,6 +41,9 @@ def main():
     if args["isolate"]:
         isolate(args["--conf-dir"], args["--pool"],
                 args["<command>"], args["<args>"])
+        return
+    if args["reconcile"]:
+        reconcile(args["--conf-dir"])
         return
 
 
@@ -127,6 +131,17 @@ def isolate(conf_dir, pool_name, command, args):
     finally:
         with c.lock():
             clist.remove_task(os.getpid())
+
+
+def reconcile(conf_dir):
+    # TODO: Run reconcile periodically in the background.
+    c = config.Config(conf_dir)
+    with c.lock():
+        for pool_name, pool in c.pools().items():
+            for cl in pool.cpu_lists().values():
+                for task in cl.tasks():
+                    if not psutil.pid_exists(task):
+                        cl.remove_task(task)
 
 
 if __name__ == "__main__":
