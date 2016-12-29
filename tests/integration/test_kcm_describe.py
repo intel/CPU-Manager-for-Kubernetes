@@ -1,17 +1,9 @@
 from . import integration
-from intel import util
-import os
-
-
-kcm = os.path.join(util.kcm_root(), "kcm.py")
-conf_dir = os.path.join(util.kcm_root(), "tests", "data", "config")
 
 
 def test_kcm_describe():
-    assert integration.stdout_matches(
-        kcm,
-        ["describe", "--conf-dir={}".format(os.path.join(conf_dir, "ok"))],
-        b"""{
+    args = ["describe", "--conf-dir={}".format(integration.conf_dir("ok"))]
+    assert integration.execute(integration.kcm(), args) == b"""{
   "path": "/kcm/tests/data/config/ok",
   "pools": {
     "controlplane": {
@@ -75,4 +67,4 @@ def test_kcm_describe():
     }
   }
 }
-""")
+"""
