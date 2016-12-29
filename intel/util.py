@@ -21,6 +21,12 @@ def check_hugepages():
                 return
 
 
+# Discover cpu topology (physical to logical core mapping).
+def discover_topo():
+    cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    return parse_topo(cmd_out.decode("UTF-8"))
+
+
 # Returns a map between physical and logical cpu cores using
 # `lscpu -p` output.
 # `lscpu -p` output has the following format:
@@ -30,10 +36,8 @@ def check_hugepages():
 # # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def discover_topo():
-    cmd_out = subprocess.check_output("lscpu -p", shell=True)
-    out = cmd_out.decode("UTF-8")
-    lines = out.split("\n")
+def parse_topo(topo_output):
+    lines = topo_output.split("\n")
     cpumap = collections.OrderedDict()
     for line in lines:
         if not line.startswith("#") and len(line) > 0:
@@ -42,5 +46,4 @@ def discover_topo():
                 cpumap[cpuinfo[1]] = cpumap[cpuinfo[1]] + "," + cpuinfo[0]
             else:
                 cpumap[cpuinfo[1]] = cpuinfo[0]
-
     return cpumap
