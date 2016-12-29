@@ -1,7 +1,7 @@
 from . import integration
 
 
-def test_kcm_describe():
+def test_kcm_describe_ok():
     args = ["describe", "--conf-dir={}".format(integration.conf_dir("ok"))]
     assert integration.execute(integration.kcm(), args) == b"""{
   "path": "/kcm/tests/data/config/ok",
@@ -64,6 +64,37 @@ def test_kcm_describe():
       },
       "exclusive": false,
       "name": "infra"
+    }
+  }
+}
+"""
+
+
+def test_kcm_describe_minimal():
+    args = ["describe",
+            "--conf-dir={}".format(integration.conf_dir("minimal"))]
+    assert integration.execute(integration.kcm(), args) == b"""{
+  "path": "/kcm/tests/data/config/minimal",
+  "pools": {
+    "exclusive": {
+      "cpuLists": {
+        "0": {
+          "cpus": "0",
+          "tasks": []
+        }
+      },
+      "exclusive": true,
+      "name": "exclusive"
+    },
+    "shared": {
+      "cpuLists": {
+        "0": {
+          "cpus": "0",
+          "tasks": []
+        }
+      },
+      "exclusive": false,
+      "name": "shared"
     }
   }
 }
