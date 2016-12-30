@@ -9,11 +9,13 @@ Usage:
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm (describe | reconcile) [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
+  kcm install --install-dir=<dir>
 
 Options:
   -h --help             Show this screen.
   --version             Show version.
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
+  --install-dir=<dir>   KCM install directory.
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
@@ -29,6 +31,7 @@ import psutil
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     args = docopt(__doc__, version="KCM 0.1.0")
     if args["init"]:
         init(args["--conf-dir"],
@@ -45,10 +48,12 @@ def main():
     if args["reconcile"]:
         reconcile(args["--conf-dir"])
         return
+    if args["install"]:
+        install(args["--install-dir"])
+        return
 
 
 def init(conf_dir, num_dp_cores, num_cp_cores):
-    logging.basicConfig(level=logging.INFO)
     util.check_hugepages()
     cpumap = util.discover_topo()
     logging.info("Writing config to {}.".format(conf_dir))
@@ -142,6 +147,19 @@ def reconcile(conf_dir):
                 for task in cl.tasks():
                     if not psutil.pid_exists(task):
                         cl.remove_task(task)
+
+
+def install(install_dir):
+    kcm_path = os.path.realpath(__file__)
+    # Using pyinstaller: http://www.pyinstaller.org
+    # to produce an x86-64 ELF executable named `kcm` in the
+    # supplied installation directory.
+    subprocess.check_call(
+        "pyinstaller --onefile --distpath={} {}".format(
+            install_dir,
+            kcm_path),
+        shell=True)
+    logging.info("Installed kcm to {}".format(install_dir))
 
 
 if __name__ == "__main__":
