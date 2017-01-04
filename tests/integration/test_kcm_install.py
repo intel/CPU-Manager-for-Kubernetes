@@ -16,3 +16,5 @@ def test_kcm_install():
             integration.execute(integration.kcm(), ["--help"]))
     assert (integration.execute(installed_kcm, ["--version"]) ==
             integration.execute(integration.kcm(), ["--version"]))
+
+    integration.execute("rm", [installed_kcm])
