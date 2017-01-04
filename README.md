@@ -11,7 +11,8 @@ Usage:
   kcm (-h | --help)
   kcm --version
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-  kcm (describe | reconcile) [--conf-dir=<dir>]
+  kcm describe [--conf-dir=<dir>]
+  kcm reconcile [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install --install-dir=<dir>
 
