@@ -2,6 +2,20 @@
 
 [![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
 
+## Installation
+
+A running docker daemon (tested with 1.12.1) (with permissions for the current user to issue docker commands) is required before running:
+
+```bash
+make
+```
+
+After this step completes successfully, `kcm` can be invoked through:
+
+```bash
+docker run -it kcm ...
+```
+
 ## Usage
 
 ```
