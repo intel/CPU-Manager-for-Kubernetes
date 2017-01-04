@@ -16,8 +16,9 @@ def max_lock_seconds():
 
 # Returns a new config at the supplied path.
 def new(path):
-    if os.path.isdir(path):
-        raise FileExistsError("Config directory {} exists".format(path))
+    if os.path.isdir(path) and len(os.listdir(path)) > 0:
+        raise FileExistsError(
+            "Config directory {} already initialized".format(path))
     os.makedirs(os.path.join(path, "pools"))
     open(os.path.join(path, "lock"), "w+")
     return Config(path)
