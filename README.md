@@ -16,6 +16,16 @@ After this step completes successfully, `kcm` can be invoked through:
 docker run -it kcm ...
 ```
 
+Before running any subsequent comments, the `kcm` file hierarchies has to be created.
+This is done through:
+
+```bash
+kcm init
+```
+
+Please note that the default setting requires at least 6 logical cores (4 for data plane, 1 for control plane and 1 for other tasks).
+To change this, use the `--num-dp-cores` and `--num-cp-cores` flags.
+
 ## Usage
 
 ```
