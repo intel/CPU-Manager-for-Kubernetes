@@ -1,12 +1,14 @@
 from . import integration
+from intel import init
 import os
 import pytest
 import tempfile
-import subprocess
 
 
+@pytest.mark.skipif(len(init.discover_topo()) < 6,
+                    reason="requires at least 6 physical cores to pass")
 def test_kcm_init():
     args = ["init",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
-    with pytest.raises(subprocess.CalledProcessError):
-        integration.execute(integration.kcm(), args)
+
+    integration.execute(integration.kcm(), args)
