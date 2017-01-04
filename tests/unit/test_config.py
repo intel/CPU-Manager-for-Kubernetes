@@ -1,13 +1,30 @@
-from intel import config, util
+from .. import helpers
+from intel import config
 import os
+import pytest
 import tempfile
+import time
 
 
-data = os.path.join(util.kcm_root(), "tests", "data")
+def test_config_max_lock_seconds(monkeypatch):
+    monkeypatch.setenv(config.ENV_LOCK_TIMEOUT, 1)
+    assert config.max_lock_seconds() == 1
+    monkeypatch.setenv(config.ENV_LOCK_TIMEOUT, 5)
+    assert config.max_lock_seconds() == 5
+    monkeypatch.delenv(config.ENV_LOCK_TIMEOUT)
+    assert config.max_lock_seconds() == 30
+
+
+def test_config_lock_timeout(monkeypatch):
+    max_wait = 2
+    monkeypatch.setenv(config.ENV_LOCK_TIMEOUT, 0.1)
+    with pytest.raises(KeyboardInterrupt):
+        with config.Config(helpers.conf_dir("ok")).lock():
+            time.sleep(max_wait)
 
 
 def test_config_pools():
-    c = config.Config(os.path.join(data, "config", "ok"))
+    c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
         assert len(pools) == 3
@@ -17,7 +34,7 @@ def test_config_pools():
 
 
 def test_pool_name():
-    c = config.Config(os.path.join(data, "config", "ok"))
+    c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
         assert pools["controlplane"].name() == "controlplane"
@@ -26,7 +43,7 @@ def test_pool_name():
 
 
 def test_pool_exclusive():
-    c = config.Config(os.path.join(data, "config", "ok"))
+    c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
         assert not pools["controlplane"].exclusive()
@@ -35,7 +52,7 @@ def test_pool_exclusive():
 
 
 def test_pool_cpu_lists():
-    c = config.Config(os.path.join(data, "config", "ok"))
+    c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
         clists = pools["dataplane"].cpu_lists()

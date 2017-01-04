@@ -1,8 +1,9 @@
+from .. import helpers
 from . import integration
 
 
 def test_kcm_describe_ok():
-    args = ["describe", "--conf-dir={}".format(integration.conf_dir("ok"))]
+    args = ["describe", "--conf-dir={}".format(helpers.conf_dir("ok"))]
     assert integration.execute(integration.kcm(), args) == b"""{
   "path": "/kcm/tests/data/config/ok",
   "pools": {
@@ -72,7 +73,7 @@ def test_kcm_describe_ok():
 
 def test_kcm_describe_minimal():
     args = ["describe",
-            "--conf-dir={}".format(integration.conf_dir("minimal"))]
+            "--conf-dir={}".format(helpers.conf_dir("minimal"))]
     assert integration.execute(integration.kcm(), args) == b"""{
   "path": "/kcm/tests/data/config/minimal",
   "pools": {

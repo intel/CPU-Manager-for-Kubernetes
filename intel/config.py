@@ -1,6 +1,17 @@
 import fcntl
-
+import logging
 import os
+import threading
+import _thread
+
+
+# KCM_LOCK_TIMEOUT is interpreted as seconds.
+ENV_LOCK_TIMEOUT = "KCM_LOCK_TIMEOUT"
+DEFAULT_LOCK_TIMEOUT = 30
+
+
+def max_lock_seconds():
+    return float(os.getenv(ENV_LOCK_TIMEOUT, DEFAULT_LOCK_TIMEOUT))
 
 
 # Returns a new config at the supplied path.
@@ -139,14 +150,46 @@ class CPUList:
 class Lock:
     def __init__(self, fd):
         self.fd = fd
+        self.timer = None
 
     # Context guard
     def __enter__(self):
-        # acquire file lock
-        fcntl.flock(self.fd, fcntl.LOCK_EX)
+        self.__acquire()
         return self
 
     # Context guard
     def __exit__(self, type, value, traceback):
+        self.__release()
+
+    def __acquire(self):
+        max_lock = max_lock_seconds()
+
+        def timed_out():
+            logging.error("Lock timed out after {} seconds".format(max_lock))
+            # NOTE(CD):
+            #
+            # Bail and rely on the operating system to close the open lock
+            # file descriptor. They are closed on our behalf according to
+            # the POSIX standard. See https://linux.die.net/man/2/exit
+            #
+            # We emulate Ctrl-C instead of raising SystemExit via sys.exit()
+            # since exceptions are per-thread. SystemExit causes the
+            # interpreter to exit if unhandled. This is the only
+            # reliable way to trigger an exception in the main thread
+            # to make this testable. Open to improvements.
+            #
+            # The interpreter exits with status 1.
+            #
+            # See https://goo.gl/RXsXEs
+            _thread.interrupt_main()
+
+        self.timer = threading.Timer(max_lock, timed_out)
+        self.timer.start()
+        # acquire file lock
+        fcntl.flock(self.fd, fcntl.LOCK_EX)
+
+    def __release(self):
+        self.timer.cancel()
+        self.timer = None
         fcntl.flock(self.fd, fcntl.LOCK_UN)
         os.close(self.fd)
