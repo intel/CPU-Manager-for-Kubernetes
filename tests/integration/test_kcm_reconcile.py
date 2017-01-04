@@ -1,3 +1,4 @@
+from .. import helpers
 from . import integration
 from intel import config
 import os
@@ -9,7 +10,7 @@ def test_kcm_reconcile():
     integration.execute(
         "cp",
         ["-r",
-         integration.conf_dir("ok"),
+         helpers.conf_dir("ok"),
          "{}".format(os.path.join(temp_dir, "reconcile"))]
     )
 

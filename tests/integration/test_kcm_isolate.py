@@ -1,3 +1,4 @@
+from .. import helpers
 from . import integration
 from intel import config
 import os
@@ -8,7 +9,7 @@ import tempfile
 
 def test_kcm_isolate_shared():
     args = ["isolate",
-            "--conf-dir={}".format(integration.conf_dir("minimal")),
+            "--conf-dir={}".format(helpers.conf_dir("minimal")),
             "--pool=shared",
             "echo",
             "--",
@@ -18,7 +19,7 @@ def test_kcm_isolate_shared():
 
 def test_kcm_isolate_exclusive():
     args = ["isolate",
-            "--conf-dir={}".format(integration.conf_dir("minimal")),
+            "--conf-dir={}".format(helpers.conf_dir("minimal")),
             "--pool=exclusive",
             "echo",
             "--",
@@ -32,7 +33,7 @@ def test_kcm_isolate_pid_bookkeeping():
     integration.execute(
         "cp",
         ["-r",
-         integration.conf_dir("minimal"),
+         helpers.conf_dir("minimal"),
          "{}".format(conf_dir)]
     )
     c = config.Config(conf_dir)
