@@ -2,6 +2,25 @@
 
 [![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
 
+## Overview
+
+This project provides basic core affinity for NFV-style workloads on top
+of vanilla Kubernetes v1.5+.
+
+This project ships a single multi-use command-line program to perform
+various functions for host configuration, managing groups of CPUs, and
+constraining workloads to specific CPUs.
+
+## Concepts
+
+| Term           | Meaning |
+| :------------- | :------ |
+| Pool           | A named group of CPU lists. A pool can be either _exclusive_ or _shared_. In an _exclusive_ pool, only one task may be allocated to each CPU list simultaneously. |
+| CPU list       | A group of logical CPUs, identified by ID as reported by the operating system. CPU lists conform to the Linux cpuset [CPU list format][cpu-list]. |
+| Task list      | A list of Linux process IDs. |
+| Isolation      | Steps required to set up a process environment so that it runs only on a desired subset of the available CPUs. |
+| Reconciliation | The process of resolving state between the KCM configuration directory and the Linux [procfs][procfs]. |
+
 ## Usage summary
 
 ```
@@ -37,8 +56,10 @@ _For detailed usage information about each subcommand, see
 - [Using the kcm command-line tool][doc-cli]
 - [The kcm configuration directory][doc-config]
 
+[cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-build]: docs/build.md
 [doc-cli]: docs/cli.md
 [doc-config]: docs/config.md
 [doc-operator]: docs/operator.md
 [doc-user]: docs/user.md
+[procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
