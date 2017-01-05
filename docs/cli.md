@@ -1,8 +1,6 @@
-# kubernetes-comms-mvp
+# Using the `kcm` command-line tool
 
-[![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
-
-## Usage summary
+## Usage
 
 ```
 kcm.
@@ -26,19 +24,17 @@ Options:
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
 ```
 
-_For detailed usage information about each subcommand, see
-[Using the kcm command-line tool][doc-cli]._
+### `kcm init`
+TODO
 
-## Further Reading
+### `kcm describe`
+TODO
 
-- [Building kcm][doc-build]
-- [Operator manual][doc-operator]
-- [User manual][doc-user]
-- [Using the kcm command-line tool][doc-cli]
-- [The kcm configuration directory][doc-config]
+### `kcm reconcile`
+TODO
 
-[doc-build]: docs/build.md
-[doc-cli]: docs/cli.md
-[doc-config]: docs/config.md
-[doc-operator]: docs/operator.md
-[doc-user]: docs/user.md
+### `kcm isolate`
+TODO
+
+### `kcm install`
+TODO
