@@ -1,10 +1,14 @@
 from .. import helpers
 from . import integration
 from intel import config
+from intel import proc
 import os
 import psutil
 import subprocess
 import tempfile
+
+
+proc_env = {proc.ENV_PROC_FS: "/proc"}
 
 
 def test_kcm_isolate_shared():
@@ -14,7 +18,7 @@ def test_kcm_isolate_shared():
             "echo",
             "--",
             "foo"]
-    assert integration.execute(integration.kcm(), args) == b"foo\n"
+    assert integration.execute(integration.kcm(), args, proc_env) == b"foo\n"
 
 
 def test_kcm_isolate_exclusive():
@@ -24,7 +28,7 @@ def test_kcm_isolate_exclusive():
             "echo",
             "--",
             "foo"]
-    assert integration.execute(integration.kcm(), args) == b"foo\n"
+    assert integration.execute(integration.kcm(), args, proc_env) == b"foo\n"
 
 
 def test_kcm_isolate_pid_bookkeeping():
@@ -34,7 +38,8 @@ def test_kcm_isolate_pid_bookkeeping():
         "cp",
         ["-r",
          helpers.conf_dir("minimal"),
-         "{}".format(conf_dir)]
+         "{}".format(conf_dir)],
+        proc_env
     )
     c = config.Config(conf_dir)
 

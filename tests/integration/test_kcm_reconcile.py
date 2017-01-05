@@ -1,8 +1,12 @@
 from .. import helpers
 from . import integration
 from intel import config
+from intel import proc
 import os
 import tempfile
+
+
+proc_env = {proc.ENV_PROC_FS: "/proc"}
 
 
 def test_kcm_reconcile():
@@ -25,7 +29,8 @@ def test_kcm_reconcile():
     integration.execute(
         integration.kcm(),
         ["reconcile", "--conf-dir={}"
-         .format(os.path.join(temp_dir, "reconcile"))]
+         .format(os.path.join(temp_dir, "reconcile"))],
+        proc_env
     )
 
     expected_output = """{
