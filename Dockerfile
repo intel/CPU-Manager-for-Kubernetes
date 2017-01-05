@@ -1,9 +1,5 @@
 FROM python:3.4.5-wheezy
 
-RUN apt-get update && \
-    apt-get install -y numactl && \
-    rm -rf /var/lib/apt/lists/*
-
 ADD . /kcm
 WORKDIR /kcm
 

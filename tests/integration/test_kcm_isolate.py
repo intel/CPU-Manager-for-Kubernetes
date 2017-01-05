@@ -48,9 +48,8 @@ def test_kcm_isolate_pid_bookkeeping():
             "isolate",
             "--conf-dir={}".format(conf_dir),
             "--pool=shared",
-            "echo",
-            "--",
             "sleep",
+            "--",
             "300"  # 5 minutes
         ])
     kcm = psutil.Process(p.pid)
