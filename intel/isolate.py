@@ -1,5 +1,4 @@
-from . import config
-import os
+from . import config, proc
 import random
 import subprocess
 
@@ -29,7 +28,7 @@ def isolate(conf_dir, pool_name, command, args):
             clist = random.choice(list(pool.cpu_lists().values()))
         if not clist:
             raise SystemError("No free cpu lists in pool {}".format(pool_name))
-        clist.add_task(os.getpid())
+        clist.add_task(proc.getpid())
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
         subprocess.check_call("numactl --physcpubind={} -- {} {}".format(
@@ -37,4 +36,4 @@ def isolate(conf_dir, pool_name, command, args):
             shell=True)
     finally:
         with c.lock():
-            clist.remove_task(os.getpid())
+            clist.remove_task(proc.getpid())
