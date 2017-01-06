@@ -1,4 +1,5 @@
 from . import integration
+from .. import helpers
 from intel import init
 import os
 import pytest
@@ -15,7 +16,7 @@ def test_kcm_init_insufficient_cores():
 
     # Expect to fail if system has insufficient number of cores.
     with pytest.raises(subprocess.CalledProcessError):
-        integration.execute(integration.kcm(), args)
+        helpers.execute(integration.kcm(), args)
 
 
 @pytest.mark.skipif(len(init.discover_topo()) < 6,
@@ -25,4 +26,4 @@ def test_kcm_init():
     args = ["init",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
-    integration.execute(integration.kcm(), args)
+    helpers.execute(integration.kcm(), args)

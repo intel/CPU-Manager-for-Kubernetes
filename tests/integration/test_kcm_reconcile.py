@@ -11,7 +11,7 @@ proc_env = {proc.ENV_PROC_FS: "/proc"}
 
 def test_kcm_reconcile():
     temp_dir = tempfile.mkdtemp()
-    integration.execute(
+    helpers.execute(
         "cp",
         ["-r",
          helpers.conf_dir("ok"),
@@ -26,7 +26,7 @@ def test_kcm_reconcile():
     cldp["6,14"].add_task(1789101112)
     clcp["3,11"].add_task(1234561231)
 
-    integration.execute(
+    helpers.execute(
         integration.kcm(),
         ["reconcile", "--conf-dir={}"
          .format(os.path.join(temp_dir, "reconcile"))],
@@ -84,7 +84,7 @@ def test_kcm_reconcile():
 }
 """
 
-    actual_output = integration.execute(
+    actual_output = helpers.execute(
         integration.kcm(),
         ["describe", "--conf-dir={}"
             .format(os.path.join(temp_dir, "reconcile"))]
@@ -92,7 +92,7 @@ def test_kcm_reconcile():
 
     assert actual_output == expected_output.encode("UTF-8")
 
-    integration.execute(
+    helpers.execute(
         "rm",
         ["-rf",
             "{}".format(os.path.join(temp_dir, "reconcile"))]
