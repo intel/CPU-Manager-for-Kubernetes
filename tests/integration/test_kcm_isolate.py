@@ -43,26 +43,24 @@ def test_kcm_isolate_pid_bookkeeping():
     )
     c = config.Config(conf_dir)
 
+    fifo = helpers.rand_str()
+    integration.execute("mkfifo", [fifo])
+
     p = subprocess.Popen([
             integration.kcm(),
             "isolate",
             "--conf-dir={}".format(conf_dir),
             "--pool=shared",
-            "echo",
-            "--",
-            "sleep",
-            "300"  # 5 minutes
+            "echo 1 > {} && cat {}".format(fifo, fifo)
         ])
     kcm = psutil.Process(p.pid)
-    # Wait for child (sleep) process to exist
-    while len(kcm.children()) == 0:
-        continue  # busy-waiting...
-    children = kcm.children()
-    assert len(children) == 1
-    sleep = children[0]
+    # Wait for subprocess to exist
+    integration.execute("cat {}".format(fifo))
     clist = c.pools()["shared"].cpu_lists()["0"]
     assert kcm.pid in clist.tasks()
-    sleep.kill()
+    # Signal subprocess to exit
+    integration.execute("echo 1 > {}".format(fifo))
     # Wait for kcm process to terminate
     kcm.wait()
     assert kcm.pid not in clist.tasks()
+    integration.execute("rm {}".format(fifo))

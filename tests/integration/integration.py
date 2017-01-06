@@ -11,7 +11,7 @@ def kcm():
 
 # Returns resulting stdout buffer from interpreting the supplied command with
 # a shell. Raises process errors if the command exits nonzero.
-def execute(cmd, args, env=None):
+def execute(cmd, args=[], env=None):
     cmd_str = "{} {}".format(cmd, " ".join(args))
 
     host_env = copy.deepcopy(os.environ)
