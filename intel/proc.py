@@ -7,7 +7,7 @@ ENV_PROC_FS = "KCM_PROC_FS"
 def procfs():
     proc_fs_path = os.getenv(ENV_PROC_FS)
     if proc_fs_path is None:
-        logging.error("environment variable %s is not set: cannot get host process information", ENV_PROC_FS)  # noqa: E501
+        logging.error("Environment variable %s is not set: cannot get host process information", ENV_PROC_FS)  # noqa: E501
         raise SystemExit(1)
 
     return proc_fs_path
@@ -22,6 +22,27 @@ def getpid():
         return pid
 
 
+def unfold_cpu_list(list):
+    cpu_list = []
+
+    if list == "":
+        return cpu_list
+
+    for cpu_range in list.split(','):
+        cpu_range_boundaries = cpu_range.split('-')
+        num_cpu_range_boundaries = len(cpu_range_boundaries)
+
+        if num_cpu_range_boundaries == 1:
+            cpu_list.append(int(cpu_range_boundaries[0]))
+
+        elif num_cpu_range_boundaries == 2:
+            start = int(cpu_range_boundaries[0])
+            end = int(cpu_range_boundaries[1])
+            cpu_list.extend(range(start, end + 1))
+
+    return cpu_list
+
+
 class Process:
     def __init__(self, pid):
         self.pid = int(pid)
@@ -31,3 +52,22 @@ class Process:
 
     def exists(self):
         return os.path.exists(self.task_dir())
+
+    def cpus_allowed(self):
+        with open(os.path.join(procfs(), str(self.pid), "status")) as status:
+            for line in status:
+                fields = line.split(":")
+                if len(fields) is not 2:
+                    continue
+
+                first = fields[0].strip()
+                second = fields[1].strip()
+
+                if first == "Cpus_allowed_list":
+                    return unfold_cpu_list(second)
+
+            raise ValueError(
+                "status file does not contain 'Cpus_allowed_list'")
+
+        raise IOError("could not open status file for process %d in procfs" %
+                      self.pid)

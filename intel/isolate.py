@@ -1,6 +1,8 @@
 from . import config, proc
 import random
 import subprocess
+import psutil
+import logging
 
 
 def isolate(conf_dir, pool_name, command, args):
@@ -31,9 +33,20 @@ def isolate(conf_dir, pool_name, command, args):
         clist.add_task(proc.getpid())
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
-        subprocess.check_call("numactl --physcpubind={} -- {} {}".format(
-            clist.cpus(), command, " ".join(args)),
-            shell=True)
+        # We use psutil here (instead of the kcm provided
+        # process abstraction) as we need to change the affinity of the current
+        # process. This, in turn, is done through a system call which does
+        # not allow us to reference host PIDs. In this case, it is OK to
+        # operate within the PID namespace as we are changing our own affinity
+        # and count on the child processes inheriting the affinity settings.
+        p = psutil.Process()
+        cpu_list = proc.unfold_cpu_list(clist.cpus())
+        p.cpu_affinity(cpu_list)
+
+        logging.debug("Setting affinity to %s", cpu_list)
+
+        subprocess.check_call("{} {}".format(command, " ".join(args)),
+                              shell=True)
     finally:
         with c.lock():
             clist.remove_task(proc.getpid())
