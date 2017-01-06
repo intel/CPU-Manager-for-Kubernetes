@@ -114,3 +114,9 @@ def test_kcm_reconcile_cpu_set_mismatch():
              .format(os.path.join(temp_dir, "reconcile"))],
             {proc.ENV_PROC_FS: "/kcm/tests/data/proc/cpuset_mismatch"}
         )
+
+    helpers.execute(
+        "rm",
+        ["-rf",
+            "{}".format(os.path.join(temp_dir, "reconcile"))]
+    )
