@@ -84,7 +84,7 @@ _None_
 **Example:**
 
 ```
-$ docker run -it --volume=/etc/kcm:/etc/kcm:ro kcm describe --conf-dir=/etc/kcm
+$ docker run -it --volume=/etc/kcm:/etc/kcm kcm describe --conf-dir=/etc/kcm
 {
   "path": "/etc/kcm",
   "pools": {
