@@ -236,7 +236,31 @@ $ docker run \
 -------------------------------------------------------------------------------
 
 ### `kcm install`
-TODO
+
+Builds a zero-dependency `kcm` executable in the installation directory.
+
+Use install to place `kcm` on the host filesystem. Subsequent containers
+can isolate themselves by mounting the install directory from the host and
+then calling [`kcm isolate`][kcm-isolate].
+
+**Args:**
+
+_None_
+
+**Flags:**
+
+- `--install-dir=<dir>` KCM install directory.
+
+**Example:**
+
+_**NOTE:** On CoreOS, /usr is readonly so here we use /opt/bin instead,
+which is both writable and on the path._
+
+```shell
+$ docker run -it \
+  --volume=/opt/bin:/opt/bin:rw \
+  kcm install --install-dir=/opt/bin
+```
 
 [doc-config]: config.md
 [kcm-isolate]: #kcm-isolate
