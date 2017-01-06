@@ -38,7 +38,7 @@ def isolate(conf_dir, pool_name, command, args):
         cpu_list = proc.unfold_cpu_list(clist.cpus())
         p.cpu_affinity(cpu_list)
 
-        logging.info("setting affinity to %s", cpu_list)
+        logging.debug("Setting affinity to %s", cpu_list)
 
         subprocess.check_call("{} {}".format(command, " ".join(args)),
                               shell=True)

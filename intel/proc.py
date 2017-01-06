@@ -7,7 +7,7 @@ ENV_PROC_FS = "KCM_PROC_FS"
 def procfs():
     proc_fs_path = os.getenv(ENV_PROC_FS)
     if proc_fs_path is None:
-        logging.error("environment variable %s is not set: cannot get host process information", ENV_PROC_FS)  # noqa: E501
+        logging.error("Environment variable %s is not set: cannot get host process information", ENV_PROC_FS)  # noqa: E501
         raise SystemExit(1)
 
     return proc_fs_path
@@ -62,4 +62,8 @@ class Process:
                 if first == "Cpus_allowed_list":
                     return unfold_cpu_list(second)
 
-        return []
+            raise ValueError(
+                "status file doesn not contain 'Cpus_allowed_list'")
+
+        raise IOError("could not open status file for process %d in procfs" %
+                      self.pid)
