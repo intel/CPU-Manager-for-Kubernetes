@@ -36,9 +36,9 @@ def isolate(conf_dir, pool_name, command, args):
         # We use psutil here (instead of the kcm provided
         # process abstraction) as we need to change the affinity of the current
         # process. This, in turn, is done through a system call which does
-        # not allow us to reference host PIDs. In this case, it is OK to operate
-        # within the PID namespace as we are changing our own affinity and count
-        # on the child processes inheriting the affinity settings.
+        # not allow us to reference host PIDs. In this case, it is OK to
+        # operate within the PID namespace as we are changing our own affinity
+        # and count on the child processes inheriting the affinity settings.
         p = psutil.Process()
         cpu_list = proc.unfold_cpu_list(clist.cpus())
         p.cpu_affinity(cpu_list)
