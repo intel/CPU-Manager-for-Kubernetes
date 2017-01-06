@@ -33,6 +33,8 @@ Options:
 
 ## Subcommands
 
+-------------------------------------------------------------------------------
+
 ### `kcm init`
 
 Initializes the kcm configuration directory customized for NFV workloads,
@@ -54,18 +56,18 @@ _None_
 - `--conf-dir=<dir>` Path to the KCM configuration directory. This
   directory must either not exist or be an empty directory.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
-  in the dataplane pool. [Default: 4]
+  in the dataplane pool.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
-  in the controlplane pool. [Default: 1]
+  in the controlplane pool.
 
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/kcm:/etc/kcm:rw kcm init \
-  --conf-dir=/etc/kcm \
-  --num-dp-cores=4 \
-  --num-cp-cores=1
+$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
+  kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
 ```
+
+-------------------------------------------------------------------------------
 
 ### `kcm describe`
 
@@ -149,15 +151,95 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:ro kcm describe --conf-dir=/etc/kcm
 }
 ```
 
+-------------------------------------------------------------------------------
+
 ### `kcm reconcile`
-TODO
+
+Reconcile removes invalid process IDs from the kcm configuration directory by
+checking them against [procfs]. This is to recover from the case where
+[`kcm isolate`][kcm-isolate] exits before it has a chance to remove its own
+PID from the `tasks` file. This could happen for a number of reasons, including
+receiving the KILL signal while its subprocess is executing.
+
+_**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
+to be set._
+
+**Args:**
+
+_None_
+
+**Flags:**
+
+- `--conf-dir=<dir>` Path to the KCM configuration directory.
+
+**Example:**
+
+```shell
+$ docker run \
+  -it \
+  -e "KCM_PROC_FS=/host/proc" \
+  -v /proc:/host/proc:ro \
+  -v /etc/kcm:/etc/kcm \
+  kcm reconcile --conf-dir=/etc/kcm
+```
+
+-------------------------------------------------------------------------------
 
 ### `kcm isolate`
-TODO
+
+Constrains a command to the CPUs corresponding to an available CPU list
+in a supplied pool.
+
+If the requested pool is exclusive, the command may fail if there are no
+unallocated CPU lists in the pool. An unallocated CPU list is one where the
+`tasks` file is empty; see [the `kcm` configuration format][doc-config] for
+details.)
+
+If the requested pool is non-exclusive, any CPU list in that pool may be
+chosen, regardless of current allocations.
+
+`kcm isolate` writes its own PID into the selected `tasks` file before
+executing the command in a sub-shell. When the subprocess exits, the program
+removes the PID from the `tasks` file before exiting. If the `kcm
+isolate` process exits abnormally (or receives the KILL signal) then the
+`tasks` file may not be cleaned up. The [`kcm reconcile`][kcm-reconcile]
+subcommand is designed to resolve this problem, and must be run
+frequently on any host where `kcm isolate` is used.
+
+Core affinity is achieved by first setting the CPU mask of the `kcm`
+process before executing the command.
+
+_**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
+to be set._
+
+**Args:**
+
+- `<command>` Command to isolate.
+- `<args> ...` Command arguments.
+
+**Flags:**
+
+- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--pool=<pool>` Pool name: either _infra_, _controlplane_ or _dataplane_.
+
+**Example:**
+
+```shell
+$ docker run \
+  -it \
+  -e "KCM_PROC_FS=/host/proc" \
+  -v /proc:/host/proc:ro \
+  -v /etc/kcm:/etc/kcm \
+  kcm isolate --pool=infra sleep -- inf
+```
+
+-------------------------------------------------------------------------------
 
 ### `kcm install`
 TODO
 
-[lscpu]: http://man7.org/linux/man-pages/man1/lscpu.1.html
 [doc-config]: config.md
+[kcm-isolate]: #kcm-isolate
+[kcm-reconcile]: #kcm-reconcile
+[lscpu]: http://man7.org/linux/man-pages/man1/lscpu.1.html
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
