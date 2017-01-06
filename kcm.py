@@ -7,6 +7,7 @@ Usage:
   kcm (-h | --help)
   kcm --version
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
@@ -21,7 +22,7 @@ Options:
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
 """
-from intel import describe, init, install, isolate, reconcile
+from intel import describe, discover, init, install, isolate, reconcile
 from docopt import docopt
 import logging
 
@@ -33,6 +34,9 @@ def main():
         init.init(args["--conf-dir"],
                   args["--num-dp-cores"],
                   args["--num-cp-cores"])
+        return
+    if args["discover"]:
+        discover.discover(args["--conf-dir"])
         return
     if args["describe"]:
         describe.describe(args["--conf-dir"])

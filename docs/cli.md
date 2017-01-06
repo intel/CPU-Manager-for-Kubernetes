@@ -1,7 +1,6 @@
 # Using the `kcm` command-line tool
 
 ## Usage
-
 ```
 kcm.
 
@@ -9,6 +8,7 @@ Usage:
   kcm (-h | --help)
   kcm --version
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
