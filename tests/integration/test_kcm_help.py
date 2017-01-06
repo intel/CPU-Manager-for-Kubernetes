@@ -1,13 +1,15 @@
+from .. import helpers
 from . import integration
 
 
 def test_kcm_help():
-    assert integration.execute(integration.kcm(), ["--help"]) == b"""kcm.
+    assert helpers.execute(integration.kcm(), ["--help"]) == b"""kcm.
 
 Usage:
   kcm (-h | --help)
   kcm --version
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]

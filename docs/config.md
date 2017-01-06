@@ -5,7 +5,7 @@ describes all configured "pools" and their options, the "CPU lists" for
 those pools, and the "tasks" currently assigned to each CPU list. The
 directory format is described below.
 
-## KCM Pool filesystem configuration format
+## KCM filesystem configuration format
 
 _Example:_
 

@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 
 ENV_PROC_FS = "KCM_PROC_FS"
@@ -9,7 +8,7 @@ def procfs():
     proc_fs_path = os.getenv(ENV_PROC_FS)
     if proc_fs_path is None:
         logging.error("environment variable %s is not set: cannot get host process information", ENV_PROC_FS)  # noqa: E501
-        sys.exit(1)
+        raise SystemExit(1)
 
     return proc_fs_path
 
