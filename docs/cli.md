@@ -30,6 +30,7 @@ Options:
 | :------------------- | :---------- |
 | `KCM_PROC_FS`        | Path to the [procfs] to consult for pid information. |
 | `KCM_LOCK_TIMEOUT`   | Maximum duration, in seconds, to hold the kcm configuration directory lock file. (Default: 30) |
+| `KCM_PROC_FS`        | `kcm isolate` and `kcm reconcile` requires access to the host's process information in `/proc`. For this, the `KCM_PROC_FS` environment variable is required. |
 
 ## Subcommands
 
