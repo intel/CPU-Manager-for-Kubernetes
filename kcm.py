@@ -28,7 +28,7 @@ import logging
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     args = docopt(__doc__, version="KCM 0.1.0")
     if args["init"]:
         init.init(args["--conf-dir"],

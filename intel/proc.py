@@ -24,6 +24,10 @@ def getpid():
 
 def unfold_cpu_list(list):
     cpu_list = []
+
+    if list == "":
+        return cpu_list
+
     for cpu_range in list.split(','):
         cpu_range_boundaries = cpu_range.split('-')
         num_cpu_range_boundaries = len(cpu_range_boundaries)
@@ -63,7 +67,7 @@ class Process:
                     return unfold_cpu_list(second)
 
             raise ValueError(
-                "status file doesn not contain 'Cpus_allowed_list'")
+                "status file does not contain 'Cpus_allowed_list'")
 
         raise IOError("could not open status file for process %d in procfs" %
                       self.pid)

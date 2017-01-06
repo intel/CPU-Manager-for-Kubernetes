@@ -4,9 +4,8 @@ from intel import config
 from intel import proc
 import os
 import tempfile
-
-
-proc_env = {proc.ENV_PROC_FS: "/kcm/tests/data/proc"}
+import pytest
+import subprocess
 
 
 def test_kcm_reconcile():
@@ -30,7 +29,7 @@ def test_kcm_reconcile():
         integration.kcm(),
         ["reconcile", "--conf-dir={}"
          .format(os.path.join(temp_dir, "reconcile"))],
-        proc_env
+        {proc.ENV_PROC_FS: "/kcm/tests/data/proc/ok"}
     )
 
     expected_output = """{
@@ -97,3 +96,21 @@ def test_kcm_reconcile():
         ["-rf",
             "{}".format(os.path.join(temp_dir, "reconcile"))]
     )
+
+
+def test_kcm_reconcile_cpu_set_mismatch():
+    temp_dir = tempfile.mkdtemp()
+    helpers.execute(
+        "cp",
+        ["-r",
+         helpers.conf_dir("cpuset_mismatch"),
+         "{}".format(os.path.join(temp_dir, "reconcile"))]
+    )
+
+    with pytest.raises(subprocess.CalledProcessError):
+        helpers.execute(
+            integration.kcm(),
+            ["reconcile", "--conf-dir={}"
+             .format(os.path.join(temp_dir, "reconcile"))],
+            {proc.ENV_PROC_FS: "/kcm/tests/data/proc/cpuset_mismatch"}
+        )
