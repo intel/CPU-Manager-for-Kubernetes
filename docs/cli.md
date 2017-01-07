@@ -175,11 +175,10 @@ _None_
 **Example:**
 
 ```shell
-$ docker run \
-  -it \
+$ docker run -it \
+  --volume=/etc/kcm:/etc/kcm \
+  --volume=/proc:/host/proc:ro \
   -e "KCM_PROC_FS=/host/proc" \
-  -v /proc:/host/proc:ro \
-  -v /etc/kcm:/etc/kcm \
   kcm reconcile --conf-dir=/etc/kcm
 ```
 
@@ -225,12 +224,12 @@ to be set._
 **Example:**
 
 ```shell
-$ docker run \
-  -it \
+$ docker run -it \
+  --volume=/opt/bin/kcm:/host/opt/bin/kcm \
+  --volume=/etc/kcm:/etc/kcm \
+  --volume=/proc:/host/proc:ro \
   -e "KCM_PROC_FS=/host/proc" \
-  -v /proc:/host/proc:ro \
-  -v /etc/kcm:/etc/kcm \
-  kcm isolate --pool=infra sleep -- inf
+  centos /host/opt/bin/kcm isolate --pool=infra sleep -- inf
 ```
 
 -------------------------------------------------------------------------------
