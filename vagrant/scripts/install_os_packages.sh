@@ -1,11 +1,13 @@
 #!/bin/bash
 
 echo "Refreshing state..."
-apt-get update
+toolbox yum makecache -q
 echo "Updating system..."
-apt-get upgrade -y -q
-apt-get dist-upgrade -y -q
+toolbox yum update -y -q
+toolbox yum install -y -q epel-release 
 echo "Installing software dependencies..."
-apt-get install -y \
-    python-dev \
+toolbox yum install -y \
+    python-devel \
     python-pip
+
+exit 0
