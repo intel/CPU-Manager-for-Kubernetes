@@ -1,13 +1,13 @@
 #!/bin/bash
 
+TOOLBOX_CMD="toolbox -q"
+
 echo "Refreshing state..."
-toolbox yum makecache -q
+$TOOLBOX_CMD dnf makecache -q
 echo "Updating system..."
-toolbox yum update -y -q
-toolbox yum install -y -q epel-release 
+$TOOLBOX_CMD dnf update -y -q
+$TOOLBOX_CMD dnf install -y -q epel-release 
 echo "Installing software dependencies..."
-toolbox yum install -y \
+$TOOLBOX_CMD dnf install -y \
     python-devel \
     python-pip
-
-exit 0
