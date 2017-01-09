@@ -14,12 +14,15 @@ Vagrant.configure(2) do |config|
   config.vm.box = "coreos-stable"
   config.vm.box_url = "https://storage.googleapis.com/stable.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
 
+  # Disable VirtualBox Guest Additions
+  config.vbguest.auto_update = false
+
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
     vb.name = "kcm"
 
-    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 2)       # NOTE: integration tests fail with less than 2
+    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 4)       # NOTE: integration tests fail with less than 2
     vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
 
     override.ssh.insert_key = true
