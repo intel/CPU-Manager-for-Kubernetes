@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: kcm-reconile
+  name: kcm-reconcile
+spec:
+  template:
+    metadata:
+      labels:
+        app: kcm-reconcile
+    spec:
+      containers:
+      - args:
+        - sleep $KCM_RECONCILE_SLEEP_TIME; /kcm/kcm.py reconcile --conf-dir=/etc/kcm
+        command:
+        - "/bin/bash"
+        - "-c"
+        env:
+        - name: KCM_RECONCILE_SLEEP_TIME
+          # Change this to modify the sleep interval between consecutive 
+          # kcm reconcile runs. The value is specified in seconds. 
+          value: '60'
+        - name: KCM_PROC_FS
+          value: "/host/proc"
+        image: kcm
+        imagePullPolicy: "Never"
+        name: kcm-reconcile
+        volumeMounts:
+        - mountPath: "/host/proc"
+          name: host-proc
+          readOnly: true
+        - mountPath: "/etc/kcm"
+          name: kcm-conf-dir
+      volumes:
+      - hostPath:
+          path: "/proc"
+        name: host-proc
+      - hostPath:
+          # Change this to modify the KCM config dir in the host file system.
+          path: "/etc/kcm"
+        name: kcm-conf-dir

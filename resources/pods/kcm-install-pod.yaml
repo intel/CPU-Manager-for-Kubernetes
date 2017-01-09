@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: kcm-install-pod
+  name: kcm-install-pod
+spec:
+  containers:
+  - args:
+    - "/kcm/kcm.py install --install-dir=/opt/bin"
+    command:
+    - "/bin/bash"
+    - "-c"
+    image: kcm
+    imagePullPolicy: "Never"
+    name: kcm-install-pod
+    volumeMounts:
+    - mountPath: "/opt/bin"
+      name: kcm-install-dir
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      # Change this to modify the KCM installation dir in the host file system.
+      path: "/opt/bin"
+    name: kcm-install-dir
