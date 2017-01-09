@@ -49,6 +49,7 @@ Vagrant.configure(2) do |config|
     aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
 
     aws.instance_package_timeout = 60000
+    aws.ami = "ami-6d1c2007"
     aws.instance_type = "m4.large"
     aws.keypair_name = "snapbot-private"
     override.ssh.username = data['ssh_username'] || "centos"
