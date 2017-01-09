@@ -10,6 +10,13 @@
     "spec": {
         "containers": [
             {
+                "args": [
+                    "/kcm/kcm.py discover --conf-dir=/etc/kcm"
+                ],
+                "command": [
+                    "/bin/bash",
+                    "-c"
+                ],
                 "env": [
                     {
                         "name": "NODE_NAME",
@@ -18,18 +25,26 @@
                                 "fieldPath": "spec.nodeName"
                             }
                         }
-                    },
-                    {
-                        "name": "KCM_CONF_DIR",
-			"value": "/etc/kcm"
                     }
                 ],
                 "image": "kcm",
                 "name": "kcm-discover-pod",
-		"command": ["/bin/bash", "-c"],
-		"args": ["/kcm/kcm.py discover --conf-dir=$KCM_CONF_DIR"]
+                "volumeMounts": [
+                    {
+                        "mountPath": "/etc/kcm",
+                        "name": "kcm-conf-dir"
+                    }
+                ]
             }
         ],
-        "restartPolicy": "Never"
+        "restartPolicy": "Never",
+        "volumes": [
+            {
+                "hostPath": {
+                    "path": "/etc/kcm"
+                },
+                "name": "kcm-conf-dir"
+            }
+        ]
     }
 }
