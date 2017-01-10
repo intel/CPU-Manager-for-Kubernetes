@@ -1,14 +1,13 @@
 from .. import helpers
 from . import integration
-from intel import config
-from intel import proc
+from intel import config, proc
 import os
 import tempfile
 import pytest
 import subprocess
 
 
-def test_kcm_reconcile():
+def test_kcm_reconcile(monkeypatch):
     temp_dir = tempfile.mkdtemp()
     helpers.execute(
         "cp",
@@ -25,12 +24,81 @@ def test_kcm_reconcile():
     cldp["6,14"].add_task(1789101112)
     clcp["3,11"].add_task(1234561231)
 
-    helpers.execute(
+    assert helpers.execute(
         integration.kcm(),
         ["reconcile", "--conf-dir={}"
          .format(os.path.join(temp_dir, "reconcile"))],
-        {proc.ENV_PROC_FS: "/kcm/tests/data/proc/ok"}
-    )
+        {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}) == b"""{
+  "mismatchedCpuMasks": [],
+  "reclaimedCpuLists": [
+    {
+      "cpus": "3,11",
+      "pid": 1000,
+      "pool": "controlplane"
+    },
+    {
+      "cpus": "3,11",
+      "pid": 1001,
+      "pool": "controlplane"
+    },
+    {
+      "cpus": "3,11",
+      "pid": 1002,
+      "pool": "controlplane"
+    },
+    {
+      "cpus": "3,11",
+      "pid": 1003,
+      "pool": "controlplane"
+    },
+    {
+      "cpus": "4,12",
+      "pid": 2000,
+      "pool": "dataplane"
+    },
+    {
+      "cpus": "5,13",
+      "pid": 2001,
+      "pool": "dataplane"
+    },
+    {
+      "cpus": "6,14",
+      "pid": 2002,
+      "pool": "dataplane"
+    },
+    {
+      "cpus": "7,15",
+      "pid": 2003,
+      "pool": "dataplane"
+    },
+    {
+      "cpus": "0-2,8-10",
+      "pid": 3000,
+      "pool": "infra"
+    },
+    {
+      "cpus": "0-2,8-10",
+      "pid": 3001,
+      "pool": "infra"
+    },
+    {
+      "cpus": "0-2,8-10",
+      "pid": 3002,
+      "pool": "infra"
+    },
+    {
+      "cpus": "3,11",
+      "pid": 1234561231,
+      "pool": "controlplane"
+    },
+    {
+      "cpus": "6,14",
+      "pid": 1789101112,
+      "pool": "dataplane"
+    }
+  ]
+}
+"""
 
     expected_output = """{
   "path": """ + "\"" + temp_dir + """/reconcile",
@@ -112,8 +180,7 @@ def test_kcm_reconcile_cpu_set_mismatch():
             integration.kcm(),
             ["reconcile", "--conf-dir={}"
              .format(os.path.join(temp_dir, "reconcile"))],
-            {proc.ENV_PROC_FS: "/kcm/tests/data/proc/cpuset_mismatch"}
-        )
+            {proc.ENV_PROC_FS: helpers.procfs_dir("cpuset_mismatch")})
 
     helpers.execute(
         "rm",
