@@ -12,6 +12,12 @@ def conf_dir(name):
     return os.path.join(util.kcm_root(), "tests", "data", "config", name)
 
 
+# Returns the absolute path to the test procfs directory with the supplied
+# name.
+def procfs_dir(name):
+    return os.path.join(util.kcm_root(), "tests", "data", "proc", name)
+
+
 def rand_str(length=8, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for c in range(length))
 
