@@ -13,9 +13,6 @@ def reconcile(conf_dir, publish=False):
         report = generate_report(conf)
         print(report.json())
         reclaim_cpu_lists(conf, report)
-        if len(report.mismatched_cpu_masks()) > 0:
-            logging.error("Exiting due to cpuset mismatch")
-            sys.exit(1)
 
     if publish and report is not None:
         k8sconfig.load_incluster_config()
