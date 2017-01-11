@@ -2,7 +2,6 @@ from . import config, proc, third_party
 from kubernetes import config as k8sconfig, client as k8sclient
 import json
 import logging
-import sys
 import os
 
 
