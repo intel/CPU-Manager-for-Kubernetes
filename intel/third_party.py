@@ -56,7 +56,7 @@ class ThirdPartyResource:
                 self.resource_type.type_url,
                 self.resource_type.type_version
             ]),
-            "kind": self.resource_type.type_name.title(),
+            "kind": self.resource_type.type_name.title().replace("-", ""),
             "metadata": {"name": name}
         }
 
