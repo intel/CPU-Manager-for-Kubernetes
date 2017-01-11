@@ -13,6 +13,7 @@ Usage:
   kcm reconcile [--conf-dir=<dir>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install --install-dir=<dir>
+  kcm node-report [--conf-dir=<dir>] [--publish]
 
 Options:
   -h --help             Show this screen.
@@ -22,6 +23,8 @@ Options:
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
+  --publish             Whether to publish reports to the Kubernetes
+                        API server.
 ```
 
 ## Global configuration
@@ -296,6 +299,33 @@ $ docker run -it \
   --volume=/opt/bin:/opt/bin:rw \
   kcm install --install-dir=/opt/bin
 ```
+
+-------------------------------------------------------------------------------
+
+### `kcm node-report`
+
+Outputs a JSON report on node-level KCM configuration problems.
+
+**Args:**
+
+_None_
+
+**Flags:**
+
+- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--publish` Whether to publish reports to the Kubernetes API server.
+
+**Example:**
+
+```shell
+$ docker run -it \
+  --volume=/etc/kcm:/etc/kcm \
+  --volume=/proc:/host/proc:ro \
+  -e "KCM_PROC_FS=/host/proc" \
+  kcm node-report --conf-dir=/etc/kcm
+```
+
+-------------------------------------------------------------------------------
 
 [doc-config]: config.md
 [kcm-isolate]: #kcm-isolate

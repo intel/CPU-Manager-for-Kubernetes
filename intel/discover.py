@@ -12,9 +12,9 @@ def discover(conf_dir):
     with c.lock():
         if "dataplane" not in c.pools():
             raise KeyError("Dataplane pool does not exist")
-        if len(c.pools()["dataplane"].cpu_lists()) == 0:
+        if len(c.pool("dataplane").cpu_lists()) == 0:
             raise KeyError("No CPU list in dataplane pool")
-        num_slots = len(c.pools()["dataplane"].cpu_lists())
+        num_slots = len(c.pool("dataplane").cpu_lists())
 
     try:
         patch_k8s_node(num_slots)

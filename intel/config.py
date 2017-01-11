@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import fcntl
 import logging
 import os
@@ -33,14 +34,17 @@ class Config:
         return Lock(fd)
 
     def pools(self):
-        pools = {}
+        pools = OrderedDict()
         pool_dir = os.path.join(self.path, "pools")
-        for f in os.listdir(pool_dir):
+        for f in sorted(os.listdir(pool_dir)):
             pd = os.path.join(pool_dir, f)
             if os.path.isdir(pd):
                 p = Pool(pd)
                 pools[p.name()] = p
         return pools
+
+    def pool(self, name):
+        return self.pools()[name]
 
     # Writes a new pool to disk and returns the corresponding pool object.
     def add_pool(self, name, exclusive):
@@ -55,7 +59,7 @@ class Config:
                 excl.write("0")
             excl.flush()
             os.fsync(excl)
-        return self.pools()[name]
+        return self.pool(name)
 
     def as_dict(self):
         result = {}
@@ -83,13 +87,16 @@ class Pool:
             return False
 
     def cpu_lists(self):
-        result = {}
-        for f in os.listdir(self.path):
+        result = OrderedDict()
+        for f in sorted(os.listdir(self.path)):
             d = os.path.join(self.path, f)
             if os.path.isdir(d):
                 clist = CPUList(d)
                 result[clist.cpus()] = clist
         return result
+
+    def cpu_list(self, name):
+        return self.cpu_lists()[name]
 
     # Writes a new cpu list to disk and returns the corresponding
     # CPUList object.
@@ -98,7 +105,7 @@ class Pool:
             raise KeyError("CPU list {} already exists".format(cpus))
         os.makedirs(os.path.join(self.path, cpus))
         open(os.path.join(self.path, cpus, "tasks"), "w+")
-        return self.cpu_lists()[cpus]
+        return self.cpu_list(cpus)
 
     def as_dict(self):
         result = {}
