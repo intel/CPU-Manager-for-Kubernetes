@@ -1,5 +1,6 @@
 import json
 from kubernetes.client.rest import ApiException as K8sApiException
+import datetime
 
 # Example usage:
 #
@@ -90,6 +91,8 @@ class ThirdPartyResource:
             "namespaces", self.namespace,
             self.resource_type.type_name + "s"
         ])
+
+        self.body["last_updated"] = datetime.datetime.now().isoformat()
 
         self.api.api_client.call_api(
             resource_path,
