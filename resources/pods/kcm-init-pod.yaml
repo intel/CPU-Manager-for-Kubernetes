@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: kcm-init-pod
+  name: kcm-init-pod
+spec:
+  containers:
+  - args:
+    - "/kcm/kcm.py init --conf-dir=/etc/kcm --num-dp-cores=$NUM_DP_CORES --num-cp-cores=$NUM_CP_CORES"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: NUM_DP_CORES
+      # Change this to modify the value passed to `--num-dp-cores` flag.
+      value: '4'
+    - name: NUM_CP_CORES
+      # Change this to modify the value passed to `--num-cp-cores` flag.
+      value: '1'
+    image: kcm
+    imagePullPolicy: "Never"
+    name: kcm-init-pod
+    volumeMounts:
+    - mountPath: "/etc/kcm"
+      name: kcm-conf-dir
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      # Change this to modify the KCM config dir in the host file system.
+      path: "/etc/kcm"
+    name: kcm-conf-dir
