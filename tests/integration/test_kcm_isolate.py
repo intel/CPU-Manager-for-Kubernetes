@@ -58,7 +58,7 @@ def test_kcm_isolate_pid_bookkeeping():
     kcm = psutil.Process(p.pid)
     # Wait for subprocess to exist
     helpers.execute("cat {}".format(fifo))
-    clist = c.pools()["shared"].cpu_lists()["0"]
+    clist = c.pool("shared").cpu_list("0")
     assert kcm.pid in clist.tasks()
     # Signal subprocess to exit
     helpers.execute("echo 1 > {}".format(fifo))
