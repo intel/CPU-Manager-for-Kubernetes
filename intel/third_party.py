@@ -94,6 +94,9 @@ class ThirdPartyResource:
 
         self.body["last_updated"] = datetime.datetime.now().isoformat()
 
+        print("resource_path: '%s'" % resource_path)
+        print("body: '%s'" % body)
+
         self.api.api_client.call_api(
             resource_path,
             'POST',
