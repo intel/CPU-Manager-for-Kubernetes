@@ -23,8 +23,8 @@ def reconcile(conf_dir, publish=False):
 
         reconcile_report_type = third_party.ThirdPartyResourceType(
             v1beta,
-            "kcm.intel.com",
-            "reconcile-report")
+            "report.kcm.intel.com",
+            "reconcile")
 
         node_name = os.getenv("NODE_NAME")
         reconcile_report = reconcile_report_type.create(node_name)
