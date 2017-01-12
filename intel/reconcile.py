@@ -10,6 +10,8 @@ def reconcile(conf_dir, seconds):
 
     if seconds is None:
         seconds = 0
+    else:
+        seconds = int(seconds)
 
     should_exit = (seconds <= 0)
 
