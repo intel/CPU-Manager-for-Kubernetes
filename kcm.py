@@ -7,8 +7,9 @@ Usage:
   kcm (-h | --help)
   kcm --version
   kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
-                   [--kcm-img=<img>] [--conf-dir=<dir>] [--install-dir=<dir>]
-                   [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
+                   [--install-dir=<dir>] [--num-dp-cores=<num>]
+                   [--num-cp-cores=<num>]
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
@@ -26,6 +27,8 @@ Options:
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
                         each host [default: init,reconcile,install,discover].
   --kcm-img=<img>       KCM Docker image [default: kcm].
+  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
+                        [default: Never].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
   --install-dir=<dir>   KCM install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
