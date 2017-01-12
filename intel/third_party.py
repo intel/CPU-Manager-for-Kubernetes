@@ -23,6 +23,11 @@ import datetime
 
 class ThirdPartyResourceType():
     def __init__(self, api, url, type_name, version="v1"):
+        assert(api is not None)
+        assert(url is not None)
+        assert(type_name is not None)
+        assert(version is not None)
+
         self.api = api
         self.type_url = url
         self.type_name = type_name
@@ -47,16 +52,22 @@ class ThirdPartyResourceType():
 
 class ThirdPartyResource:
     def __init__(self, api, resource_type, namespace, name):
+        assert(api is not None)
+        assert(resource_type is not None)
+        assert(name is not None)
+        assert(namespace is not None)
+
         self.api = api
         self.resource_type = resource_type
         self.name = name
         self.namespace = namespace
+
         self.body = {
             "apiVersion": "/".join([
                 self.resource_type.type_url,
                 self.resource_type.type_version
             ]),
-            "kind": self.resource_type.type_name.title().replace("-", ""),
+            "kind": self.resource_type.type_name.title(),
             "metadata": {"name": name}
         }
 
