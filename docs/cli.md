@@ -10,7 +10,7 @@ Usage:
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
-  kcm reconcile [--conf-dir=<dir>]
+  kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install --install-dir=<dir>
   kcm node-report [--conf-dir=<dir>] [--publish]
@@ -20,6 +20,8 @@ Options:
   --version             Show version.
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
   --install-dir=<dir>   KCM install directory.
+  --interval=<seconds>  Number of seconds to wait between rerunning.
+                        If set to 0, will only run once. [default: 0]
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
@@ -200,6 +202,45 @@ checking them against [procfs]. This is to recover from the case where
 PID from the `tasks` file. This could happen for a number of reasons, including
 receiving the KILL signal while its subprocess is executing.
 
+`--interval=<seconds>` will turn the reconciliation command into a long lived
+process which runs reconciliation every `<seconds>`. If run with `--interval=0`,
+reconcile is run once and exits.
+
+`--publish` will send the reconciliation report to the Kubernetes API server.
+This enables the operator to get reconciliation reports for all kubelets in one
+place through `kubectl`.
+
+For instance:
+
+```bash
+$ kubectl get reconcile
+NAME            KIND
+kcm-02-zzwt7w   Reconcile.v1.report.kcm.intel.com
+```
+
+```bash
+$ kubectl get reconcile kcm-02-zzwt7w -o json
+{
+    "apiVersion": "report.kcm.intel.com/v1",
+    "kind": "Reconcile",
+    "last_updated": "2017-01-12T21:09:15.030111",
+    "metadata": {
+        "creationTimestamp": "2017-01-12T21:09:15Z",
+        "name": "kcm-02-zzwt7w",
+        "namespace": "default",
+        "resourceVersion": "248317",
+        "selfLink":
+"/apis/report.kcm.intel.com/v1/namespaces/default/reconciles/kcm-02-zzwt7w",
+        "uid": "5f6e6ef6-d90b-11e6-a746-42010a800002"
+    },
+    "report": {
+        "mismatchedCpuMasks": [],
+        "reclaimedCpuLists": []
+    }
+}
+```
+
+
 _**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
 to be set._
 
@@ -210,6 +251,7 @@ _None_
 **Flags:**
 
 - `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--publish` Whether to publish reports to the Kubernetes API server
 
 **Example:**
 

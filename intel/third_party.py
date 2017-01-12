@@ -1,5 +1,6 @@
 import json
 from kubernetes.client.rest import ApiException as K8sApiException
+import datetime
 
 # Example usage:
 #
@@ -22,6 +23,11 @@ from kubernetes.client.rest import ApiException as K8sApiException
 
 class ThirdPartyResourceType():
     def __init__(self, api, url, type_name, version="v1"):
+        assert(api is not None)
+        assert(url is not None)
+        assert(type_name is not None)
+        assert(version is not None)
+
         self.api = api
         self.type_url = url
         self.type_name = type_name
@@ -46,10 +52,16 @@ class ThirdPartyResourceType():
 
 class ThirdPartyResource:
     def __init__(self, api, resource_type, namespace, name):
+        assert(api is not None)
+        assert(resource_type is not None)
+        assert(name is not None)
+        assert(namespace is not None)
+
         self.api = api
         self.resource_type = resource_type
         self.name = name
         self.namespace = namespace
+
         self.body = {
             "apiVersion": "/".join([
                 self.resource_type.type_url,
@@ -90,6 +102,8 @@ class ThirdPartyResource:
             "namespaces", self.namespace,
             self.resource_type.type_name + "s"
         ])
+
+        self.body["last_updated"] = datetime.datetime.now().isoformat()
 
         self.api.api_client.call_api(
             resource_path,

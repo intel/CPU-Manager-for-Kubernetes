@@ -1,12 +1,14 @@
-from . import config, proc
+from . import config, proc, third_party
+from kubernetes import config as k8sconfig, client as k8sclient
 import json
 import logging
-import sys
+import os
 import time
 
 
-def reconcile(conf_dir, seconds):
+def reconcile(conf_dir, seconds=0, publish=False):
     conf = config.Config(conf_dir)
+    report = None
 
     if seconds is None:
         seconds = 0
@@ -20,9 +22,20 @@ def reconcile(conf_dir, seconds):
             report = generate_report(conf)
             print(report.json())
             reclaim_cpu_lists(conf, report)
-            if len(report.mismatched_cpu_masks()) > 0:
-                logging.error("Exiting due to cpuset mismatch")
-                sys.exit(1)
+
+        if publish and report is not None:
+            k8sconfig.load_incluster_config()
+            v1beta = k8sclient.ExtensionsV1beta1Api()
+
+            reconcile_report_type = third_party.ThirdPartyResourceType(
+                v1beta,
+                "report.kcm.intel.com",
+                "reconcile")
+
+            node_name = os.getenv("NODE_NAME")
+            reconcile_report = reconcile_report_type.create(node_name)
+            reconcile_report.body["report"] = report
+            reconcile_report.save()
 
         if should_exit:
             break
