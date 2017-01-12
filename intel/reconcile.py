@@ -3,29 +3,46 @@ from kubernetes import config as k8sconfig, client as k8sclient
 import json
 import logging
 import os
+import time
 
 
-def reconcile(conf_dir, publish=False):
+def reconcile(conf_dir, seconds=0, publish=False):
     conf = config.Config(conf_dir)
     report = None
-    with conf.lock():
-        report = generate_report(conf)
-        print(report.json())
-        reclaim_cpu_lists(conf, report)
 
-    if publish and report is not None:
-        k8sconfig.load_incluster_config()
-        v1beta = k8sclient.ExtensionsV1beta1Api()
+    if seconds is None:
+        seconds = 0
+    else:
+        seconds = int(seconds)
 
-        reconcile_report_type = third_party.ThirdPartyResourceType(
-            v1beta,
-            "report.kcm.intel.com",
-            "reconcile")
+    should_exit = (seconds <= 0)
 
-        node_name = os.getenv("NODE_NAME")
-        reconcile_report = reconcile_report_type.create(node_name)
-        reconcile_report.body["report"] = report
-        reconcile_report.save()
+    while True:
+        with conf.lock():
+            report = generate_report(conf)
+            print(report.json())
+            reclaim_cpu_lists(conf, report)
+
+        if publish and report is not None:
+            k8sconfig.load_incluster_config()
+            v1beta = k8sclient.ExtensionsV1beta1Api()
+
+            reconcile_report_type = third_party.ThirdPartyResourceType(
+                v1beta,
+                "report.kcm.intel.com",
+                "reconcile")
+
+            node_name = os.getenv("NODE_NAME")
+            reconcile_report = reconcile_report_type.create(node_name)
+            reconcile_report.body["report"] = report
+            reconcile_report.save()
+
+        if should_exit:
+            break
+
+        logging.info(
+            "Waiting %d seconds until next reconciliation..." % seconds)
+        time.sleep(seconds)
 
 
 def reclaim_cpu_lists(conf, report):
