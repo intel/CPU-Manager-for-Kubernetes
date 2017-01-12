@@ -8,6 +8,9 @@ import time
 def reconcile(conf_dir, seconds):
     conf = config.Config(conf_dir)
 
+    if seconds is None:
+        seconds = 0
+
     should_exit = (seconds <= 0)
 
     while not should_exit:
