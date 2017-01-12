@@ -1,9 +1,10 @@
 from intel import util
+import copy
 import os
 import random
 import string
 import subprocess
-import copy
+from threading import Thread
 
 
 # Returns the absolute path to the test config directory with the supplied
@@ -32,3 +33,19 @@ def execute(cmd, args=[], env={}):
 
     stdout = subprocess.check_output(cmd_str, shell=True, env=host_env)
     return stdout
+
+
+def background(f):
+    return BackgroundContext(f)
+
+
+class BackgroundContext:
+    def __init__(self, f):
+        self.t = Thread(target=f)
+
+    def __enter__(self):
+        self.t.start()
+        return self.t
+
+    def __exit__(self, type, value, traceback):
+        pass
