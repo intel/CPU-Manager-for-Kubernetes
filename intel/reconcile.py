@@ -15,7 +15,7 @@ def reconcile(conf_dir, seconds):
 
     should_exit = (seconds <= 0)
 
-    while not should_exit:
+    while True:
         with conf.lock():
             report = generate_report(conf)
             print(report.json())
@@ -24,10 +24,12 @@ def reconcile(conf_dir, seconds):
                 logging.error("Exiting due to cpuset mismatch")
                 sys.exit(1)
 
-        if seconds > 0:
-            logging.info(
-                "Waiting %d seconds until next reconciliation..." % seconds)
-            time.sleep(seconds)
+        if should_exit:
+            break
+
+        logging.info(
+            "Waiting %d seconds until next reconciliation..." % seconds)
+        time.sleep(seconds)
 
 
 def reclaim_cpu_lists(conf, report):
