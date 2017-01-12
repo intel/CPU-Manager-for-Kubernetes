@@ -1,14 +1,12 @@
 from . import config, proc
-import random
-import subprocess
-import psutil
 import logging
+import random
+import psutil
+import signal
+import subprocess
 
 
 def isolate(conf_dir, pool_name, command, args):
-    # TODO: handle signals properly, e.g. to release exclusive cpu lists.
-    # It's common for container managers to send SIG_TERM shortly before
-    # sending SIG_KILL.
     c = config.Config(conf_dir)
     with c.lock():
         pools = c.pools()
@@ -45,8 +43,21 @@ def isolate(conf_dir, pool_name, command, args):
 
         logging.debug("Setting affinity to %s", cpu_list)
 
-        subprocess.check_call("{} {}".format(command, " ".join(args)),
-                              shell=True)
+        child = subprocess.Popen("{} {}".format(command,
+                                 " ".join(args)),
+                                 shell=True)
+
+        # Register a signal handler for TERM so that we can attempt to leave
+        # things in a consistent state. As a good POSIX citizen, we propagate
+        # the TERM signal to the child so that it also has a chance to clean
+        # up if it needs to. For reference on POSIX systems:
+        # - `subprocess.Popen.terminate()` sends TERM
+        # - `subprocess.Popen.kill()` sends KILL
+        signal.signal(signal.SIGTERM, child.terminate)
+
+        # Block waiting for the child process to exit.
+        child.wait()
+
     finally:
         with c.lock():
             clist.remove_task(proc.getpid())
