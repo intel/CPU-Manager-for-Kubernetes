@@ -2,17 +2,27 @@ from . import config, proc
 import json
 import logging
 import sys
+import time
 
 
-def reconcile(conf_dir):
+def reconcile(conf_dir, seconds):
     conf = config.Config(conf_dir)
-    with conf.lock():
-        report = generate_report(conf)
-        print(report.json())
-        reclaim_cpu_lists(conf, report)
-        if len(report.mismatched_cpu_masks()) > 0:
-            logging.error("Exiting due to cpuset mismatch")
-            sys.exit(1)
+
+    should_exit = (seconds <= 0)
+
+    while not should_exit:
+        with conf.lock():
+            report = generate_report(conf)
+            print(report.json())
+            reclaim_cpu_lists(conf, report)
+            if len(report.mismatched_cpu_masks()) > 0:
+                logging.error("Exiting due to cpuset mismatch")
+                sys.exit(1)
+
+        if seconds > 0:
+            logging.info(
+                "Waiting %d seconds until next reconciliation..." % seconds)
+            time.sleep(seconds)
 
 
 def reclaim_cpu_lists(conf, report):
