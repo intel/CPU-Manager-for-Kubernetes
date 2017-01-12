@@ -28,7 +28,7 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
         raise RuntimeError("Image pull policy should be one of {}"
                            .format(valid_img_pol_list))
 
-    # Check if num_dp_cores and num_cp_cores are integers.
+    # Check if num_dp_cores and num_cp_cores are positive integers.
     if not num_dp_cores.isdigit():
         raise RuntimeError("num_dp_cores cores should be a positive integer.")
     if not num_cp_cores.isdigit():
@@ -36,8 +36,8 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
 
     # Run the pods based on the kcm_cmd_list and the provided options.
     for cmd in kcm_cmd_list:
-        run_pods(cmd, kcm_img, conf_dir, install_dir, num_dp_cores,
-                 num_cp_cores, kcm_node_list)
+        run_pods(cmd, kcm_img, kcm_img_pol, conf_dir, install_dir,
+                 num_dp_cores, num_cp_cores, kcm_node_list)
 
 
 # run_pods() runs the pods based on the kcm_cmd_name using run_cmd_pods.
@@ -96,9 +96,9 @@ def run_cmd_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
         elif kcm_cmd_name == "install":
             pod_template["spec"]["containers"][0]["args"][0] = \
                     "/kcm/kcm.py install"
-        elif kcm_cmd_name == "discover":
+        elif kcm_cmd_name == "reconcile":
             pod_template["spec"]["containers"][0]["args"][0] = \
-                    "sleep 60;/kcm/kcm.py reconcile"
+                    "/kcm/kcm.py reconcile --interval=60"
 
         try:
             create_pod_resp = create_k8s_pod(pod_template)

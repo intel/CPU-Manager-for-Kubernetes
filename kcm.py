@@ -15,7 +15,7 @@ Usage:
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-  kcm install --install-dir=<dir>
+  kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish]
 
 Options:
@@ -52,8 +52,8 @@ def main():
     if args["cluster-init"]:
         clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
                                  args["--kcm-cmd-list"], args["--kcm-img"],
-                                 args["--conf-dir"], args["--install-dir"],
-                                 args["--num-dp-cores"],
+                                 args["--kcm-img-pol"], args["--conf-dir"],
+                                 args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"])
         return
     if args["init"]:

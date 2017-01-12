@@ -10,19 +10,7 @@ Kubernetes >= v1.5.0
 ## Setting up the cluster
 
 This section describes the setup required to use the `KCM` software. The steps described below should be followed in 
-the same order. 
-
-Notes: 
-- The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
-binary is installed on the host file system at `/opt/bin/kcm`.
-- In all the pod templates used in this section, the name of container image used is `kcm`. It is expected that the 
-`kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
-container image is hosted remotely (e.g., in https://hub.docker.com/). If the `image` field is modified to use a 
-remotely hosted container image, the following should be removed from each of the pod template:
-
-```yml
-imagePullPolicy: "Never"
-```
+the same order.
 
 ## Concepts
 
@@ -34,7 +22,53 @@ imagePullPolicy: "Never"
 | Volume         | A volume is a directory (on host file system). In Kubernetes, a volume has the same lifetime as the Pod that uses it. Many types of volumes are supported in Kubernetes. | 
 | `hostPath`       | `hostPath` is a volume type in Kubernetes. It mounts a file or directory from the host file system into the Pod. | 
 
-### Run `kcm init`
+Notes: 
+- The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
+binary is installed on the host under `/opt/bin`.
+- In all the pod templates used in this section, the name of container image used is `kcm`. It is expected that the 
+`kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
+container image is hosted remotely (e.g., in https://hub.docker.com/). If the `image` field is modified to use a 
+remotely hosted container image, the following should be removed from each of the pod template:
+
+```yml
+imagePullPolicy: "Never"
+```
+
+### Prepare `KCM` nodes by running `kcm cluster-init`. 
+`KCM` nodes can be prepared by using [`kcm cluster-init`][kcm-cluster-init] subcommand. The subcommand is expected to 
+be run as a pod. The [kcm-cluster-init-pod template][cluster-init-template] can be used to run `kcm cluster-init` on a 
+Kubernetes cluster. When run on a Kubernetes cluster, the Pod spawns several other Pods in order to prepare the nodes.
+
+The only value that requires change in the [kcm-cluster-init-pod template][kcm-cluster-init] is the `args` field, 
+which can be modified to pass different options. 
+
+Following are some example modifications to the `args` field: 
+```yml
+  - args:
+      # Change this value to pass different options to cluster-init. 
+      - "/kcm/kcm.py cluster-init --host-list=node1,node2,node3"
+```
+The above command prepares nodes "node1", "node2" and "node3" for the `KCM` software using default options. 
+
+```yml
+  - args:
+      # Change this value to pass different options to cluster-init. 
+      - "/kcm/kcm.py cluster-init --all-hosts"
+```
+The above command prepares all the nodes in the Kubernetes cluster for the `KCM` software using default options. 
+
+```yml
+  - args:
+      # Change this value to pass different options to cluster-init. 
+      - "/kcm/kcm.py cluster-init --host-list=node1,node2,node3 --kcm-cmd-list=init,discover"
+```
+The above command prepares nodes "node1", "node2" and "node3" but only runs the `kcm init` and `kcm discover` 
+subcommands on each of those nodes. 
+
+For more details on the options provided by `kcm cluster-init`, see this [description][kcm-cluster-init]. 
+
+### Prepare `KCM` nodes by running each `KCM` subcommand as a Pod. 
+#### Run `kcm init`
 The `KCM` nodes in the kubernetes cluster should be initialized in order to be used with the KCM software using 
 [`kcm-init`][kcm-init]. To initialize the `KCM` nodes, the [kcm-init-pod template][init-template] can be used. 
 
@@ -64,7 +98,7 @@ Values that might require modification in the [kcm-init-pod template][init-templ
       value: '1'
 ```
 
-### Advertising `KCM` Opaque Integer Resource (OIR) slots
+#### Advertising `KCM` Opaque Integer Resource (OIR) slots
 All the `KCM` nodes in the Kubernetes cluster should be patched with `KCM` [OIR][oir-docs] slots using 
 [`kcm discover`][kcm-discover]. The OIR slots are advertised as the dataplane pools need to be allocated exclusively.
 The number of slots advertised should be equal to the number of cpu lists under the __dataplane__ pool, as determined 
@@ -86,7 +120,7 @@ below:
     name: kcm-conf-dir
 ```
 
-### Run `kcm reconcile`
+#### Run `kcm reconcile`
 In order to reconcile from an outdated `KCM` configuration state, each `KCM` node should run 
 [`kcm reconcile`][kcm-reconcile] periodically. `kcm reconcile` can be run periodically using the 
 [kcm-reconcile-daemonset template][reconcile-template].
@@ -115,7 +149,7 @@ snippets below:
     name: kcm-conf-dir
 ```
 
-### Run `kcm install`
+#### Run `kcm install`
 [`kcm install`][kcm-install] is used to create a zero-dependency binary of the `KCM` software and place it on the host 
 filesystem. Subsequent containers can isolate themselves by mounting the install directory from the host and then 
 calling `kcm isolate`. To run it on all the `KCM` nodes, the [kcm-install-pod template][install-template] 
@@ -181,9 +215,11 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 [kcm-reconcile]: cli.md#kcm-reconcile
 [kcm-install]: cli.md#kcm-install
 [kcm-isolate]: cli.md#kcm-isolate
+[kcm-cluster-init]: cli.md#kcm-cluster-init
 [init-template]: ../resources/pods/kcm-init-pod.yaml
 [discover-template]: ../resources/pods/kcm-discover-pod.yaml
 [reconcile-template]: ../resources/pods/kcm-reconcile-daemonset.yaml
 [install-template]: ../resources/pods/kcm-install-pod.yaml
 [isolate-template]: ../resources/pods/kcm-isolate-pod.yaml
+[cluster-init-template]: ../resources/pods/kcm-cluster-init-pod.yaml
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature

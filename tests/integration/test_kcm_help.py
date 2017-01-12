@@ -17,7 +17,7 @@ Usage:
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-  kcm install --install-dir=<dir>
+  kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish]
 
 Options:
@@ -32,13 +32,9 @@ Options:
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: Never].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-<<<<<<< HEAD
-  --install-dir=<dir>   KCM install directory.
+  --install-dir=<dir>   KCM install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
                         If set to 0, will only run once. [default: 0]
-=======
-  --install-dir=<dir>   KCM install directory [default: /opt/bin].
->>>>>>> Added kcm cluster-init.
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
