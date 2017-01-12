@@ -3,8 +3,6 @@ from . import integration
 from intel import config, proc
 import os
 import tempfile
-import pytest
-import subprocess
 
 
 def test_kcm_reconcile(monkeypatch):
@@ -158,29 +156,6 @@ def test_kcm_reconcile(monkeypatch):
         )
 
     assert actual_output == expected_output.encode("UTF-8")
-
-    helpers.execute(
-        "rm",
-        ["-rf",
-            "{}".format(os.path.join(temp_dir, "reconcile"))]
-    )
-
-
-def test_kcm_reconcile_cpu_set_mismatch():
-    temp_dir = tempfile.mkdtemp()
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("cpuset_mismatch"),
-         "{}".format(os.path.join(temp_dir, "reconcile"))]
-    )
-
-    with pytest.raises(subprocess.CalledProcessError):
-        helpers.execute(
-            integration.kcm(),
-            ["reconcile", "--conf-dir={}"
-             .format(os.path.join(temp_dir, "reconcile"))],
-            {proc.ENV_PROC_FS: helpers.procfs_dir("cpuset_mismatch")})
 
     helpers.execute(
         "rm",

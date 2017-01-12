@@ -18,11 +18,15 @@ spec:
         - "-c"
         env:
         - name: KCM_RECONCILE_SLEEP_TIME
-          # Change this to modify the sleep interval between consecutive 
-          # kcm reconcile runs. The value is specified in seconds. 
+          # Change this to modify the sleep interval between consecutive
+          # kcm reconcile runs. The value is specified in seconds.
           value: '60'
         - name: KCM_PROC_FS
           value: "/host/proc"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         image: kcm
         imagePullPolicy: "Never"
         name: kcm-reconcile
