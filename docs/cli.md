@@ -419,8 +419,35 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
   "report": {
     "checks": {
       "configDirectory": {
-        "errors": [],
-        "ok": true
+        "errors": [
+          "CPU list overlap detected in exclusive:0 and shared:0 (in both: [0])"
+        ],
+        "ok": false
+      }
+    },
+    "description": {
+      "path": "/etc/kcm",
+      "pools": {
+        "exclusive": {
+          "cpuLists": {
+            "0": {
+              "cpus": "0",
+              "tasks": []
+            }
+          },
+          "exclusive": true,
+          "name": "exclusive"
+        },
+        "shared": {
+          "cpuLists": {
+            "0": {
+              "cpus": "0",
+              "tasks": []
+            }
+          },
+          "exclusive": false,
+          "name": "shared"
+        }
       }
     }
   }
