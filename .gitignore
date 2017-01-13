@@ -3,3 +3,5 @@
 *.egg-info/
 **/__pycache__/*
 *.pyc
+tags
+vagrant/.vagrant/

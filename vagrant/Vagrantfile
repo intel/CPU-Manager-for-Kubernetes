@@ -1,0 +1,59 @@
+Vagrant.configure(2) do |config|
+  aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
+  config.vm.synced_folder "..", "/kcm", :mount_options => ["umask=0022,dmask=0022,fmask=0022"], type: "rsync"
+
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
+  config.ssh.keys_only = false
+  config.ssh.insert_key = false
+  config.vm.box_check_update = false
+  # Disable VirtualBox Guest Additions
+  config.vbguest.auto_update = false
+
+  # Network configuration
+  config.vm.network "private_network", ip: "10.141.141.10"
+
+  config.vm.box = "centos/7"
+  config.vm.provider "virtualbox" do |vb, override|
+    vb.gui = false
+    vb.name = "kcm"
+
+    vb.cpus = (ENV['VBOX_CPUS'] != '' && ENV['VBOX_CPUS'] || 4)       # NOTE: integration tests fail with less than 2
+    vb.memory = (ENV['VBOX_MEM'] != '' && ENV['VBOX_MEM'] || 4096)    # NOTE: integration tests tend to crash with less (gcc)
+
+    override.ssh.insert_key = true
+    override.ssh.keys_only = true
+  end
+
+  config.vm.provider :aws do |aws, override|
+    require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
+    if File.exists?(aws_data_file)
+      data = YAML.load_file(aws_data_file)
+    else
+      data = {}
+    end
+    override.nfs.functional = false
+    aws.access_key_id = data['access_key_id']
+    aws.secret_access_key = data['secret_access_key']
+    aws.block_device_mapping = [{'DeviceName' => '/dev/sda1',
+                                 'Ebs.Iops' => 1000,
+                                 'Ebs.VolumeSize' => 40,
+                                 'Ebs.VolumeType' => 'io1',
+                                 'Ebs.DeleteOnTermination' => true }]
+
+    override.vm.box = "aws"
+    # requiretty cannot be set in sudoers for vagrant to work
+    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+
+    aws.instance_package_timeout = 60000
+    aws.ami = "ami-6d1c2007"
+    aws.instance_type = "m4.large"
+    aws.keypair_name = "snapbot-private"
+    override.ssh.username = data['ssh_username'] || "centos"
+  end
+config.vm.provision "shell", path: "scripts/install_os_packages.sh"
+config.vm.provision "shell", path: "scripts/install_python_deps.sh"
+end
