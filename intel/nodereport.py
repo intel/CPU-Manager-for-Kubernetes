@@ -1,16 +1,27 @@
-from . import config, proc
+from . import config, proc, third_party
 import itertools
 import json
+from kubernetes import config as k8sconfig, client as k8sclient
 import logging
+import os
 
 
 def nodereport(conf_dir, publish):
     report = generate_report(conf_dir)
 
-    if publish:
+    if publish and report is not None:
         logging.debug("Publishing node report to Kubernetes API server")
-        # TODO: publish report
-        pass
+        k8sconfig.load_incluster_config()
+        v1beta = k8sclient.ExtensionsV1beta1Api()
+
+        node_report_type = third_party.ThirdPartyResourceType(
+            v1beta,
+            "kcm.intel.com",
+            "NodeReport")
+
+        node_report = node_report_type.create(os.getenv("NODE_NAME"))
+        node_report.body["report"] = report
+        node_report.save()
 
     print(report.json())
 

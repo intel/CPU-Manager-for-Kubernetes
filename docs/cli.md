@@ -220,35 +220,35 @@ reconcile is run once and exits.
 
 `--publish` will send the reconciliation report to the Kubernetes API server.
 This enables the operator to get reconciliation reports for all kubelets in one
-place through `kubectl`.
+place through `kubectl`. This option should only be used when the KCM
+container is run as a Kubernetes Pod.
 
 For instance:
 
 ```bash
-$ kubectl get reconcile
+$ kubectl get ReconcileReport
 NAME            KIND
-kcm-02-zzwt7w   Reconcile.v1.report.kcm.intel.com
+kcm-02-zzwt7w   ReconcileReport.v1.kcm.intel.com
 ```
 
 ```bash
-$ kubectl get reconcile kcm-02-zzwt7w -o json
+$ kubectl get ReconcileReport kcm-02-zzwt7w -o json
 {
-    "apiVersion": "report.kcm.intel.com/v1",
-    "kind": "Reconcile",
-    "last_updated": "2017-01-12T21:09:15.030111",
-    "metadata": {
-        "creationTimestamp": "2017-01-12T21:09:15Z",
-        "name": "kcm-02-zzwt7w",
-        "namespace": "default",
-        "resourceVersion": "248317",
-        "selfLink":
-"/apis/report.kcm.intel.com/v1/namespaces/default/reconciles/kcm-02-zzwt7w",
-        "uid": "5f6e6ef6-d90b-11e6-a746-42010a800002"
-    },
-    "report": {
-        "mismatchedCpuMasks": [],
-        "reclaimedCpuLists": []
-    }
+  "apiVersion": "kcm.intel.com/v1",
+  "kind": "ReconcileReport",
+  "last_updated": "2017-01-12T23:55:08.735918",
+  "metadata": {
+    "creationTimestamp": "2017-01-12T23:55:08Z",
+    "name": "kcm-02-zzwt7w",
+    "namespace": "default",
+    "resourceVersion": "263029",
+    "selfLink": "/apis/kcm.intel.com/v1/namespaces/default/reconcilereports/kcm-02-zzwt7w",
+    "uid": "8c4d6173-d922-11e6-a746-42010a800002"
+  },
+  "report": {
+    "mismatchedCpuMasks": [],
+    "reclaimedCpuLists": []
+  }
 }
 ```
 
@@ -360,6 +360,11 @@ $ docker run -it \
 
 Outputs a JSON report on node-level KCM configuration problems.
 
+`--publish` will send the node report to the Kubernetes API server.
+This enables the operator to get node reports for all kubelets in one
+place through `kubectl`. This option should only be used when the KCM
+container is run as a Kubernetes Pod.
+
 **Args:**
 
 _None_
@@ -371,12 +376,47 @@ _None_
 
 **Example:**
 
+_Generate a node report:_
+
 ```shell
 $ docker run -it \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e "KCM_PROC_FS=/host/proc" \
   kcm node-report --conf-dir=/etc/kcm
+```
+
+_Get node reports from the API server using Kubectl:_
+
+```bash
+$ kubectl get NodeReport
+NAME            KIND
+kcm-02-zzwt7w   NodeReport.v1.kcm.intel.com
+```
+
+```bash
+$ kubectl get NodeReport kcm-02-zzwt7w -o json
+{
+  "apiVersion": "kcm.intel.com/v1",
+  "kind": "NodeReport",
+  "last_updated": "2017-01-12T23:55:08.735918",
+  "metadata": {
+    "creationTimestamp": "2017-01-12T23:55:08Z",
+    "name": "kcm-02-zzwt7w",
+    "namespace": "default",
+    "resourceVersion": "263029",
+    "selfLink": "/apis/kcm.intel.com/v1/namespaces/default/nodereports/kcm-02-zzwt7w",
+    "uid": "8c4d6173-d922-11e6-a746-42010a800002"
+  },
+  "report": {
+    "checks": {
+      "configDirectory": {
+        "errors": [],
+        "ok": true
+      }
+    }
+  }
+}
 ```
 
 -------------------------------------------------------------------------------
