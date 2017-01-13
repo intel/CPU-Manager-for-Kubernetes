@@ -16,7 +16,7 @@ Usage:
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish]
+  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
 
 Options:
   -h --help             Show this screen.
@@ -72,16 +72,17 @@ def main():
                         args["<command>"], args["<args>"])
         return
     if args["reconcile"]:
-        reconcile.reconcile(
-            args["--conf-dir"],
-            args["--interval"],
-            args["--publish"])
+        reconcile.reconcile(args["--conf-dir"],
+                            args["--interval"],
+                            args["--publish"])
         return
     if args["install"]:
         install.install(args["--install-dir"])
         return
     if args["node-report"]:
-        nodereport.nodereport(args["--conf-dir"], args["--publish"])
+        nodereport.nodereport(args["--conf-dir"],
+                              args["--interval"],
+                              args["--publish"])
         return
 
 

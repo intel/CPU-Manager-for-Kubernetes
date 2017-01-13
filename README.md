@@ -39,7 +39,7 @@ Usage:
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish]
+  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
 
 Options:
   -h --help             Show this screen.

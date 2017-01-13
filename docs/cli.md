@@ -17,7 +17,7 @@ Usage:
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
   kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish]
+  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
 
 Options:
   -h --help             Show this screen.
@@ -89,20 +89,20 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 ### `kcm discover`
 
 Advertises the appropriate number of `KCM` [Opaque Integer Resource (OIR)][oir-docs]
-slots on the Kubernetes node. The number of slots advertised is equal to the 
-number of cpu lists under the __dataplane__ pool, as determined by examining 
-the `KCM` configuration directory. For more information about the config 
+slots on the Kubernetes node. The number of slots advertised is equal to the
+number of cpu lists under the __dataplane__ pool, as determined by examining
+the `KCM` configuration directory. For more information about the config
 format on disk, refer to [the `kcm` configuration directory][doc-config].
 
-Notes: 
-- `kcm discover` is expected to be run as a Kubernetes Pod as it uses 
-[`incluster config`][link-incluster] provided by the 
-[Kubernetes python client][k8s-python-client] to get the required Kubernetes 
-cluster configuration. The [instructions][discover-op-manual] provided in the 
+Notes:
+- `kcm discover` is expected to be run as a Kubernetes Pod as it uses
+[`incluster config`][link-incluster] provided by the
+[Kubernetes python client][k8s-python-client] to get the required Kubernetes
+cluster configuration. The [instructions][discover-op-manual] provided in the
 operator's manual can be used to run the discover Pod.
 - The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm'
-OIR. 
-- The `KCM` configuration directory should exist and contain the dataplane 
+OIR.
+- The `KCM` configuration directory should exist and contain the dataplane
 pool to run `kcm discover`.
 
 **Args:**
@@ -264,6 +264,8 @@ _None_
 
 - `--conf-dir=<dir>` Path to the KCM configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server
+- `--interval=<seconds>` Number of seconds to wait between rerunning. If set
+  to 0, will only run once.
 
 **Example:**
 
@@ -272,7 +274,7 @@ $ docker run -it \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e "KCM_PROC_FS=/host/proc" \
-  kcm reconcile --conf-dir=/etc/kcm
+  kcm reconcile --interval=60 --conf-dir=/etc/kcm
 ```
 
 -------------------------------------------------------------------------------
@@ -365,6 +367,10 @@ This enables the operator to get node reports for all kubelets in one
 place through `kubectl`. This option should only be used when the KCM
 container is run as a Kubernetes Pod.
 
+`--interval=<seconds>` will turn the node-report command into a long lived
+process which runs node-report every `<seconds>`. If run with `--interval=0`,
+node-report is run once and exits.
+
 **Args:**
 
 _None_
@@ -373,6 +379,8 @@ _None_
 
 - `--conf-dir=<dir>` Path to the KCM configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server.
+- `--interval=<seconds>` Number of seconds to wait between rerunning. If set
+  to 0, will only run once.
 
 **Example:**
 
@@ -383,7 +391,7 @@ $ docker run -it \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e "KCM_PROC_FS=/host/proc" \
-  kcm node-report --conf-dir=/etc/kcm
+  kcm node-report --conf-dir=/etc/kcm --interval=60
 ```
 
 _Get node reports from the API server using Kubectl:_
@@ -423,20 +431,20 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
 
 ### `kcm cluster-init`
 
-Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM` 
-subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as 
-Kubernetes Pods.  
+Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM`
+subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as
+Kubernetes Pods.
 
-Notes: 
-- `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses 
-[`incluster config`][link-incluster] provided by the 
-[Kubernetes python client][k8s-python-client] to get the required Kubernetes 
-cluster configuration. The [instructions][cluster-init-op-manual] provided 
+Notes:
+- `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses
+[`incluster config`][link-incluster] provided by the
+[Kubernetes python client][k8s-python-client] to get the required Kubernetes
+cluster configuration. The [instructions][cluster-init-op-manual] provided
 in the operator's manual can be used to run the discover Pod.
-- The KCM subcommands, as specified by the value passed for `--kcm-cmd-list` 
-are expected to be one of `init`, `discover`, `install`, `reconcile`. 
-If `init` subcommand is specified, it expected to be the first command 
-in `--kcm-cmd-list`. 
+- The KCM subcommands, as specified by the value passed for `--kcm-cmd-list`
+are expected to be one of `init`, `discover`, `install`, `reconcile`.
+If `init` subcommand is specified, it expected to be the first command
+in `--kcm-cmd-list`.
 - `--kcm-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
 
 **Args:**
@@ -444,14 +452,14 @@ in `--kcm-cmd-list`.
 _None_
 
 **Flags:**
-- `--host-list=<list>` Comma seperated list of Kubernetes nodes to prepare 
-  for KCM software. Either this flag or `--all-hosts` flag must be used. 
-- `--all-hosts` Prepare all Kubernetes nodes for the KCM software. Either 
+- `--host-list=<list>` Comma seperated list of Kubernetes nodes to prepare
+  for KCM software. Either this flag or `--all-hosts` flag must be used.
+- `--all-hosts` Prepare all Kubernetes nodes for the KCM software. Either
   this flag or `--host-list=<list>` flag must be used.
-- `--kcm-cmd-list=<list>` Comma seperated list of KCM sub-commands to run on 
+- `--kcm-cmd-list=<list>` Comma seperated list of KCM sub-commands to run on
   each host [default: init,reconcile,install,discover].
 - `--kcm-img=<img>` KCM Docker image [default: kcm].
-- `--kcm-img-pol=<pol>`   Image pull policy for the KCM Docker image 
+- `--kcm-img-pol=<pol>`   Image pull policy for the KCM Docker image
   [default: Never].
 - `--conf-dir=<dir>` Path to the KCM configuration directory. This
   directory must either not exist or be an empty directory.
@@ -476,6 +484,6 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 [lscpu]: http://man7.org/linux/man-pages/man1/lscpu.1.html
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
 [link-incluster]: https://github.com/kubernetes-incubator/client-python/blob/master/kubernetes/config/incluster_config.py#L85
-[k8s-python-client]: https://github.com/kubernetes-incubator/client-python 
+[k8s-python-client]: https://github.com/kubernetes-incubator/client-python
 [discover-op-manual]: operator.md#advertising-kcm-opaque-integer-resource-oir-slots
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
