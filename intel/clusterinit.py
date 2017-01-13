@@ -14,7 +14,7 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
 
     # Check if all the flag values passed are valid.
     # Check if kcm_cmd_list is valid.
-    valid_cmd_list = ["init", "discover", "install", "reconcile"]
+    valid_cmd_list = ["init", "discover", "install", "reconcile", "nodereport"]
     for kcm_cmd in kcm_cmd_list:
         if kcm_cmd not in valid_cmd_list:
             raise RuntimeError("KCM command should be one of {}"
@@ -52,7 +52,7 @@ def run_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
     pod_phase_name = ""
     if kcm_cmd_name in ["init", "discover", "install"]:
         pod_phase_name = "Succeeded"
-    elif kcm_cmd_name == "reconcile":
+    elif kcm_cmd_name in ["reconcile", "nodereport"]:
         pod_phase_name = "Running"
 
     logging.info("Waiting for kcm {} pods to enter {} state."
@@ -98,7 +98,10 @@ def run_cmd_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
                     "/kcm/kcm.py install"
         elif kcm_cmd_name == "reconcile":
             pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py reconcile --interval=60"
+                    "/kcm/kcm.py reconcile --interval=60 --publish"
+        elif kcm_cmd_name == "nodereport":
+            pod_template["spec"]["containers"][0]["args"][0] = \
+                    "/kcm/kcm.py node-report --interval=60 --publish"
 
         try:
             create_pod_resp = create_k8s_pod(pod_template)

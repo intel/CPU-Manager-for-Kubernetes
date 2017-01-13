@@ -25,7 +25,8 @@ Options:
                         for KCM software.
   --all-hosts           Prepare all Kubernetes nodes for the KCM software.
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
-                        each host [default: init,reconcile,install,discover].
+                        each host
+                        [default: init,reconcile,install,discover,nodereport].
   --kcm-img=<img>       KCM Docker image [default: kcm].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: Never].
@@ -44,10 +45,12 @@ from intel import (
     isolate, nodereport, reconcile)
 from docopt import docopt
 import logging
+import os
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    setup_logging()
+
     args = docopt(__doc__, version="KCM 0.1.0")
     if args["cluster-init"]:
         clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
@@ -84,6 +87,11 @@ def main():
                               args["--interval"],
                               args["--publish"])
         return
+
+
+def setup_logging():
+    level = os.getenv("KCM_LOG_LEVEL", logging.INFO)
+    logging.basicConfig(level=level)
 
 
 if __name__ == "__main__":

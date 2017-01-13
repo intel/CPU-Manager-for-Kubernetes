@@ -27,12 +27,12 @@ def nodereport(conf_dir, seconds, publish):
             node_report_type = third_party.ThirdPartyResourceType(
                 v1beta,
                 "kcm.intel.com",
-                "NodeReport")
+                "Nodereport")
 
             # third_party throws an exception if the environment variable
             # is not set.
             node_report = node_report_type.create(os.getenv("NODE_NAME"))
-            node_report.body["report"] = report
+            node_report.body["report"] = report.as_dict()
             node_report.save()
 
         if should_exit:

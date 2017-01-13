@@ -9,8 +9,9 @@ def test_clusterinit_invalid_cmd_list_failure1():
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
                                  "kcm", "Never", "/etc/kcm", "/opt/bin",
                                  "4", "2")
-    expected_err_msg = ('KCM command should be one of '
-                        '[\'init\', \'discover\', \'install\', \'reconcile\']')
+    expected_err_msg = ("KCM command should be one of "
+                        "['init', 'discover', 'install', 'reconcile', "
+                        "'nodereport']")
     assert err.value.args[0] == expected_err_msg
 
 
@@ -19,8 +20,9 @@ def test_clusterinit_invalid_cmd_list_failure2():
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
                                  "kcm", "Never", "/etc/kcm", "/opt/bin",
                                  "4", "2")
-    expected_err_msg = ('KCM command should be one of '
-                        '[\'init\', \'discover\', \'install\', \'reconcile\']')
+    expected_err_msg = ("KCM command should be one of "
+                        "['init', 'discover', 'install', 'reconcile', "
+                        "'nodereport']")
     assert err.value.args[0] == expected_err_msg
 
 
@@ -29,8 +31,9 @@ def test_clusterinit_invalid_cmd_list_failure3():
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
                                  "kcm", "Never", "/etc/kcm", "/opt/bin",
                                  "4", "2")
-    expected_err_msg = ('KCM command should be one of '
-                        '[\'init\', \'discover\', \'install\', \'reconcile\']')
+    expected_err_msg = ("KCM command should be one of "
+                        "['init', 'discover', 'install', 'reconcile', "
+                        "'nodereport']")
     assert err.value.args[0] == expected_err_msg
 
 

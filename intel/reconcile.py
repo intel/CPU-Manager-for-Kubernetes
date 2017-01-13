@@ -24,6 +24,8 @@ def reconcile(conf_dir, seconds, publish):
             reclaim_cpu_lists(conf, report)
 
         if publish and report is not None:
+            logging.debug("Publishing reconcile report to "
+                          "Kubernetes API server")
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
