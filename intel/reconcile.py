@@ -6,7 +6,7 @@ import os
 import time
 
 
-def reconcile(conf_dir, seconds=0, publish=False):
+def reconcile(conf_dir, seconds, publish):
     conf = config.Config(conf_dir)
     report = None
 

@@ -4,26 +4,43 @@ import json
 from kubernetes import config as k8sconfig, client as k8sclient
 import logging
 import os
+import time
 
 
-def nodereport(conf_dir, publish):
-    report = generate_report(conf_dir)
+def nodereport(conf_dir, seconds, publish):
+    if seconds is None:
+        seconds = 0
+    else:
+        seconds = int(seconds)
+    should_exit = (seconds <= 0)
 
-    if publish and report is not None:
-        logging.debug("Publishing node report to Kubernetes API server")
-        k8sconfig.load_incluster_config()
-        v1beta = k8sclient.ExtensionsV1beta1Api()
+    while True:
+        report = generate_report(conf_dir)
 
-        node_report_type = third_party.ThirdPartyResourceType(
-            v1beta,
-            "kcm.intel.com",
-            "NodeReport")
+        print(report.json())
 
-        node_report = node_report_type.create(os.getenv("NODE_NAME"))
-        node_report.body["report"] = report
-        node_report.save()
+        if publish and report is not None:
+            logging.debug("Publishing node report to Kubernetes API server")
+            k8sconfig.load_incluster_config()
+            v1beta = k8sclient.ExtensionsV1beta1Api()
 
-    print(report.json())
+            node_report_type = third_party.ThirdPartyResourceType(
+                v1beta,
+                "kcm.intel.com",
+                "NodeReport")
+
+            # third_party throws an exception if the environment variable
+            # is not set.
+            node_report = node_report_type.create(os.getenv("NODE_NAME"))
+            node_report.body["report"] = report
+            node_report.save()
+
+        if should_exit:
+            break
+
+        logging.info(
+                "Waiting {} seconds until next node report...".format(seconds))
+        time.sleep(seconds)
 
 
 def generate_report(conf_dir):
