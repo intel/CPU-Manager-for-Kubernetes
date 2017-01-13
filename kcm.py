@@ -6,19 +6,31 @@
 Usage:
   kcm (-h | --help)
   kcm --version
+  kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
+                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
+                   [--install-dir=<dir>] [--num-dp-cores=<num>]
+                   [--num-cp-cores=<num>]
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-  kcm install --install-dir=<dir>
+  kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish]
 
 Options:
   -h --help             Show this screen.
   --version             Show version.
+  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
+                        for KCM software.
+  --all-hosts           Prepare all Kubernetes nodes for the KCM software.
+  --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
+                        each host [default: init,reconcile,install,discover].
+  --kcm-img=<img>       KCM Docker image [default: kcm].
+  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
+                        [default: Never].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-  --install-dir=<dir>   KCM install directory.
+  --install-dir=<dir>   KCM install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
                         If set to 0, will only run once. [default: 0]
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
@@ -28,7 +40,7 @@ Options:
                         API server.
 """
 from intel import (
-    describe, discover, init, install,
+    clusterinit, describe, discover, init, install,
     isolate, nodereport, reconcile)
 from docopt import docopt
 import logging
@@ -37,6 +49,13 @@ import logging
 def main():
     logging.basicConfig(level=logging.INFO)
     args = docopt(__doc__, version="KCM 0.1.0")
+    if args["cluster-init"]:
+        clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
+                                 args["--kcm-cmd-list"], args["--kcm-img"],
+                                 args["--kcm-img-pol"], args["--conf-dir"],
+                                 args["--install-dir"], args["--num-dp-cores"],
+                                 args["--num-cp-cores"])
+        return
     if args["init"]:
         init.init(args["--conf-dir"],
                   args["--num-dp-cores"],

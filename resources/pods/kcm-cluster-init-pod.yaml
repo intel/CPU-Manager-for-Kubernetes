@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: kcm-cluster-init-pod
+  name: kcm-cluster-init-pod
+spec:
+  containers:
+  - args:
+      # Change this value to pass different options to cluster-init. 
+      - "/kcm/kcm.py cluster-init --host-list=node1,node2,node3"
+    command:
+    - "/bin/bash"
+    - "-c"
+    image: kcm
+    imagePullPolicy: "Never"
+    name: kcm-cluster-init-pod
+  restartPolicy: Never

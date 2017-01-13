@@ -7,19 +7,31 @@ kcm.
 Usage:
   kcm (-h | --help)
   kcm --version
+  kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
+                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
+                   [--install-dir=<dir>] [--num-dp-cores=<num>]
+                   [--num-cp-cores=<num>]
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-  kcm install --install-dir=<dir>
+  kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish]
 
 Options:
   -h --help             Show this screen.
   --version             Show version.
+  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
+                        for KCM software.
+  --all-hosts           Prepare all Kubernetes nodes for the KCM software.
+  --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
+                        each host [default: init,reconcile,install,discover].
+  --kcm-img=<img>       KCM Docker image [default: kcm].
+  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
+                        [default: Never].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-  --install-dir=<dir>   KCM install directory.
+  --install-dir=<dir>   KCM install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
                         If set to 0, will only run once. [default: 0]
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
@@ -368,6 +380,55 @@ $ docker run -it \
 ```
 
 -------------------------------------------------------------------------------
+
+### `kcm cluster-init`
+
+Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM` 
+subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as 
+Kubernetes Pods.  
+
+Notes: 
+- `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses 
+[`incluster config`][link-incluster] provided by the 
+[Kubernetes python client][k8s-python-client] to get the required Kubernetes 
+cluster configuration. The [instructions][cluster-init-op-manual] provided 
+in the operator's manual can be used to run the discover Pod.
+- The KCM subcommands, as specified by the value passed for `--kcm-cmd-list` 
+are expected to be one of `init`, `discover`, `install`, `reconcile`. 
+If `init` subcommand is specified, it expected to be the first command 
+in `--kcm-cmd-list`. 
+- `--kcm-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
+
+**Args:**
+
+_None_
+
+**Flags:**
+- `--host-list=<list>` Comma seperated list of Kubernetes nodes to prepare 
+  for KCM software. Either this flag or `--all-hosts` flag must be used. 
+- `--all-hosts` Prepare all Kubernetes nodes for the KCM software. Either 
+  this flag or `--host-list=<list>` flag must be used.
+- `--kcm-cmd-list=<list>` Comma seperated list of KCM sub-commands to run on 
+  each host [default: init,reconcile,install,discover].
+- `--kcm-img=<img>` KCM Docker image [default: kcm].
+- `--kcm-img-pol=<pol>`   Image pull policy for the KCM Docker image 
+  [default: Never].
+- `--conf-dir=<dir>` Path to the KCM configuration directory. This
+  directory must either not exist or be an empty directory.
+- `--num-dp-cores=<num>` Number of (physical) processor cores to include
+  in the dataplane pool.
+- `--num-dp-cores=<num>` Number of (physical) processor cores to include
+  in the controlplane pool.
+
+**Example:**
+
+```shell
+$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
+  kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
+```
+
+-------------------------------------------------------------------------------
+
 
 [doc-config]: config.md
 [kcm-isolate]: #kcm-isolate
