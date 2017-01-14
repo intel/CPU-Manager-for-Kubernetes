@@ -24,7 +24,7 @@ def test_discover_no_dp():
 
     with patch('intel.discover.patch_k8s_node', MagicMock()):
         with pytest.raises(KeyError) as err:
-            discover.discover(conf_dir)
+            discover.add_node_oir(conf_dir)
         expected_msg = "Dataplane pool does not exist"
         assert err.value.args[0] == expected_msg
 
@@ -48,6 +48,6 @@ def test_discover_no_cldp():
 
     with patch('intel.discover.patch_k8s_node', MagicMock()):
         with pytest.raises(KeyError) as err:
-            discover.discover(conf_dir)
+            discover.add_node_oir(conf_dir)
         expected_msg = "No CPU list in dataplane pool"
         assert err.value.args[0] == expected_msg
