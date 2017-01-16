@@ -463,7 +463,8 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
 
 Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM`
 subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as
-Kubernetes Pods.
+Kubernetes Pods. By default, it runs all the subcommands and uses all the 
+default options. 
 
 Notes:
 - `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses
@@ -472,7 +473,7 @@ Notes:
 cluster configuration. The [instructions][cluster-init-op-manual] provided
 in the operator's manual can be used to run the discover Pod.
 - The KCM subcommands, as specified by the value passed for `--kcm-cmd-list`
-are expected to be one of `init`, `discover`, `install`, `reconcile`.
+are expected to be one of `init`, `discover`, `install`, `reconcile`, `nodereport`.
 If `init` subcommand is specified, it expected to be the first command
 in `--kcm-cmd-list`.
 - `--kcm-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
@@ -516,4 +517,5 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 [link-incluster]: https://github.com/kubernetes-incubator/client-python/blob/master/kubernetes/config/incluster_config.py#L85
 [k8s-python-client]: https://github.com/kubernetes-incubator/client-python
 [discover-op-manual]: operator.md#advertising-kcm-opaque-integer-resource-oir-slots
+[cluster-init-op-manual]: operator.md#prepare-kcm-nodes-by-running-kcm-cluster-init
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature

@@ -1,7 +1,8 @@
-import logging
-import sys
+import json
 from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
+import logging
+import sys
 
 
 def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
@@ -34,29 +35,50 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
     if not num_cp_cores.isdigit():
         raise RuntimeError("num_cp_cores cores should be a positive integer.")
 
-    # Run the pods based on the kcm_cmd_list and the provided options.
-    for cmd in kcm_cmd_list:
-        run_pods(cmd, kcm_img, kcm_img_pol, conf_dir, install_dir,
-                 num_dp_cores, num_cp_cores, kcm_node_list)
+    # Split the kcm_cmd_list based on whether the cmd should be run as
+    # one-shot job or long-running daemons.
+    cmd_init_list = ["init", "discover", "install"]
+    kcm_cmd_init_list = [cmd for cmd in kcm_cmd_list if cmd in cmd_init_list]
+    kcm_cmd_list = [cmd for cmd in kcm_cmd_list if cmd not in cmd_init_list]
+
+    # Run the pods based on the kcm_cmd_init_list and kcm_cmd_list with
+    # provided options.
+    if kcm_cmd_init_list:
+        run_pods(None, kcm_cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
+    if kcm_cmd_list:
+        run_pods(kcm_cmd_list, None, kcm_img, kcm_img_pol, conf_dir,
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
 
 
-# run_pods() runs the pods based on the kcm_cmd_name using run_cmd_pods.
-# It waits for the pods to go into a pod phase based on pod_phase_name.
-def run_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
-             num_dp_cores, num_cp_cores, kcm_node_list):
-    logging.info("Creating kcm {} pods ...".format(kcm_cmd_name))
-    run_cmd_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
-                 kcm_node_list, num_dp_cores, num_cp_cores)
+# run_pods() runs the pods based on the cmd_list and cmd_init_list
+# using run_cmd_pods. It waits for the pods to go into a pod phase based
+# on pod_phase_name.
+# Note: Only one of cmd_list or cmd_init_list should be specified.
+def run_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
+             install_dir, num_dp_cores, num_cp_cores, kcm_node_list):
+    if cmd_list:
+        logging.info("Creating kcm pod for {} commands ...".format(cmd_list))
+    elif cmd_init_list:
+        logging.info("Creating kcm pod for {} commands ..."
+                     .format(cmd_init_list))
 
-    pod_name_prefix = "kcm-{}-pod-".format(kcm_cmd_name)
+    run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
+
+    pod_name_prefix = ""
     pod_phase_name = ""
-    if kcm_cmd_name in ["init", "discover", "install"]:
+    if cmd_init_list:
+        pod_name_prefix = "kcm-{}-pod-".format("-".join(cmd_init_list))
         pod_phase_name = "Succeeded"
-    elif kcm_cmd_name in ["reconcile", "nodereport"]:
+        logging.info("Waiting for kcm pod running {} cmds to enter {} state."
+                     .format(cmd_init_list, pod_phase_name))
+    elif cmd_list:
+        pod_name_prefix = "kcm-{}-pod-".format("-".join(cmd_list))
         pod_phase_name = "Running"
+        logging.info("Waiting for kcm pod running {} cmds to enter {} state."
+                     .format(cmd_list, pod_phase_name))
 
-    logging.info("Waiting for kcm {} pods to enter {} state."
-                 .format(kcm_cmd_name, pod_phase_name))
     for node in kcm_node_list:
         pod_name = "{}{}".format(pod_name_prefix, node)
         try:
@@ -69,47 +91,63 @@ def run_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
 
 # run_cmd_pods() makes the appropriate changes to pod templates and runs the
 # pod on each node provided by kcm_node_list.
-def run_cmd_pods(kcm_cmd_name, kcm_img, kcm_img_pol, conf_dir, install_dir,
-                 kcm_node_list, num_dp_cores, num_cp_cores):
-    pod_template = get_pod_template()
-    for node in kcm_node_list:
-        pod_name = "kcm-{}-pod-{}".format(kcm_cmd_name, node)
-        pod_template["metadata"]["name"] = pod_name
-        pod_template["spec"]["nodeName"] = node
-        pod_template["spec"]["containers"][0]["image"] = kcm_img
-        pod_template["spec"]["containers"][0]["imagePullPolicy"] = kcm_img_pol
+def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list):
+    pod = get_pod_template()
+    if cmd_list:
+        update_pod(pod, "Always", conf_dir, install_dir)
+        for cmd in cmd_list:
+            args = ""
+            if cmd == "reconcile":
+                args = "/kcm/kcm.py reconcile --interval=5 --publish"
+            elif cmd == "nodereport":
+                args = "/kcm/kcm.py node-report --interval=5 --publish"
 
-        if kcm_cmd_name == "install":
-            pod_template["spec"]["volumes"][2]["hostPath"]["path"] = \
-                    install_dir
-        else:
-            pod_template["spec"]["volumes"][1]["hostPath"]["path"] = \
-                    conf_dir
+            update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args)
+    elif cmd_init_list:
+        update_pod(pod, "Never", conf_dir, install_dir)
+        for cmd in cmd_init_list:
+            args = ""
+            if cmd == "init":
+                args = ("/kcm/kcm.py init --num-dp-cores={} "
+                        "--num-cp-cores={}").format(num_dp_cores, num_cp_cores)
+                # If init is the only cmd in cmd_init_list, it should be run
+                # as regular container as spec.containers is a required field.
+                # Otherwise, it should be run as init-container.
+                if len(cmd_init_list) == 1:
+                    update_pod_with_container(pod, cmd, kcm_img,
+                                              kcm_img_pol, args)
+                else:
+                    update_pod_with_init_container(pod, cmd, kcm_img,
+                                                   kcm_img_pol, args)
+            else:
+                if cmd == "discover":
+                    args = "/kcm/kcm.py discover"
+                elif cmd == "install":
+                    args = "/kcm/kcm.py install"
+                update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args)
 
-        if kcm_cmd_name == "init":
-            pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py init --num-dp-cores={} --num-cp-cores={}"\
-                    .format(num_dp_cores, num_cp_cores)
-        elif kcm_cmd_name == "discover":
-            pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py discover"
-        elif kcm_cmd_name == "install":
-            pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py install"
-        elif kcm_cmd_name == "reconcile":
-            pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py reconcile --interval=60 --publish"
-        elif kcm_cmd_name == "nodereport":
-            pod_template["spec"]["containers"][0]["args"][0] = \
-                    "/kcm/kcm.py node-report --interval=60 --publish"
+    for node_name in kcm_node_list:
+        if cmd_list:
+            update_pod_with_node_details(pod, node_name, cmd_list)
+        elif cmd_init_list:
+            update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
-            create_pod_resp = create_k8s_pod(pod_template)
-            logging.debug("Response while creating {} pods: {}"
-                          .format(kcm_cmd_name, create_pod_resp))
+            cr_pod_resp = create_k8s_pod(pod)
+            if cmd_list:
+                logging.debug("Response while creating pod for {} command(s): "
+                              "{}".format(cmd_list, cr_pod_resp))
+            elif cmd_init_list:
+                logging.debug("Response while creating pod for {} command(s): "
+                              "{}".format(cmd_init_list, cr_pod_resp))
         except K8sApiException as err:
-            logging.error("Exception when creating {} pod: {}"
-                          .format(kcm_cmd_name, err))
+            if cmd_list:
+                logging.error("Exception when creating pod for {} command(s): "
+                              "{}".format(cmd_list, err))
+            elif cmd_init_list:
+                logging.error("Exception when creating pod for {} command(s): "
+                              "{}".format(cmd_init_list, err))
             logging.error("Aborting cluster-init ...")
             sys.exit(1)
 
@@ -156,6 +194,58 @@ def wait_for_pod_phase(pod_name, phase_name):
                                        .format(pod_name))
 
 
+# update_pod() updates the pod template with the provided options.
+def update_pod(pod, restart_pol, conf_dir, install_dir):
+    pod["spec"]["restartPolicy"] = restart_pol
+    pod["spec"]["volumes"][1]["hostPath"]["path"] = conf_dir
+    pod["spec"]["volumes"][2]["hostPath"]["path"] = install_dir
+
+
+def update_pod_with_node_details(pod, node_name, cmd_list):
+    pod["spec"]["nodeName"] = node_name
+    pod_name = "kcm-{}-pod-{}".format("-".join(cmd_list), node_name)
+    pod["metadata"]["name"] = pod_name
+
+
+# update_pod_with_container() updates the pod template with a container using
+# the provided options.
+def update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args):
+    container_template = get_container_template()
+    container_template["image"] = kcm_img
+    container_template["imagePullPolicy"] = kcm_img_pol
+    container_template["args"][0] = args
+    # Each container name should be distinct within a Pod.
+    container_template["name"] = cmd
+    pod["spec"]["containers"].append(container_template)
+
+
+# update_pod_with_init_container() updates the pod template with a init
+# container using the provided options.
+def update_pod_with_init_container(pod, cmd, kcm_img, kcm_img_pol, args):
+    container_template = get_container_template()
+    container_template["image"] = kcm_img
+    container_template["imagePullPolicy"] = kcm_img_pol
+    container_template["args"][0] = args
+    # Each container name should be distinct within a Pod.
+    container_template["name"] = cmd
+    # Note(balajismaniam): Downward API for spec.nodeName doesn't seem to
+    # work with init-containers. Removing it as a work-around. Needs further
+    # investigation.
+    container_template["env"].pop()
+
+    pod_init_containers_list = []
+    init_containers_key = "pod.beta.kubernetes.io/init-containers"
+
+    if init_containers_key in pod["metadata"]["annotations"]:
+        init_containers = \
+                pod["metadata"]["annotations"][init_containers_key]
+        pod_init_containers_list = json.loads(init_containers)
+
+    pod_init_containers_list.append(container_template)
+    pod["metadata"]["annotations"][init_containers_key] = \
+        json.dumps(pod_init_containers_list)
+
+
 # get_k8s_node_list() returns the node list in the current Kubernetes cluster.
 def get_k8s_node_list():
     k8sconfig.load_incluster_config()
@@ -183,49 +273,13 @@ def get_pod_template():
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
-                "name": "PODNAME"
+                "name": "PODNAME",
+                "annotations": {
+                }
             },
             "spec": {
                 "nodeName": "NODENAME",
                 "containers": [
-                    {
-                        "args": [
-                            "ARGS"
-                        ],
-                        "command": ["/bin/bash", "-c"],
-                        "env": [
-                            {
-                                "name": "KCM_PROC_FS",
-                                "value": "/host/proc"
-                            },
-                            {
-                                "name": "NODE_NAME",
-                                "valueFrom": {
-                                    "fieldRef": {
-                                        "fieldPath": "spec.nodeName"
-                                    }
-                                }
-                            }
-                        ],
-                        "image": "IMAGENAME",
-                        "name": "kcm-reconcile-container",
-                        "volumeMounts": [
-                            {
-                                "mountPath": "/host/proc",
-                                "name": "host-proc",
-                                "readOnly": True
-                            },
-                            {
-                                "mountPath": "/etc/kcm",
-                                "name": "kcm-conf-dir"
-                            },
-                            {
-                                "mountPath": "/opt/bin",
-                                "name": "kcm-install-dir"
-                            }
-                        ],
-                        "imagePullPolicy": "Never"
-                    }
                 ],
                 "restartPolicy": "Never",
                 "volumes": [
@@ -251,3 +305,45 @@ def get_pod_template():
             }
         }
     return pod_template
+
+
+def get_container_template():
+    container_template = {
+            "args": [
+                "ARGS"
+            ],
+            "command": ["/bin/bash", "-c"],
+            "env": [
+                {
+                    "name": "KCM_PROC_FS",
+                    "value": "/host/proc"
+                },
+                {
+                    "name": "NODE_NAME",
+                    "valueFrom": {
+                        "fieldRef": {
+                            "fieldPath": "spec.nodeName"
+                        }
+                    }
+                }
+            ],
+            "image": "IMAGENAME",
+            "name": "NAME",
+            "volumeMounts": [
+                {
+                    "mountPath": "/host/proc",
+                    "name": "host-proc",
+                    "readOnly": True
+                },
+                {
+                    "mountPath": "/etc/kcm",
+                    "name": "kcm-conf-dir"
+                },
+                {
+                    "mountPath": "/opt/bin",
+                    "name": "kcm-install-dir"
+                }
+            ],
+            "imagePullPolicy": "Never"
+    }
+    return container_template
