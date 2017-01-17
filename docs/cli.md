@@ -92,10 +92,11 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 ### `kcm discover`
 
 Advertises the appropriate number of `KCM` [Opaque Integer Resource (OIR)][oir-docs]
-slots on the Kubernetes node. The number of slots advertised is equal to the
-number of cpu lists under the __dataplane__ pool, as determined by examining
-the `KCM` configuration directory. For more information about the config
-format on disk, refer to [the `kcm` configuration directory][doc-config].
+slots, node label and node taint to the Kubernetes node. The number of 
+OIR slots advertised is equal to the number of cpu lists under the 
+__dataplane__ pool, as determined by examining the `KCM` configuration directory. 
+For more information about the config format on disk, refer to 
+the [`kcm` configuration directory][doc-config].
 
 Notes:
 - `kcm discover` is expected to be run as a Kubernetes Pod as it uses
@@ -103,9 +104,11 @@ Notes:
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
 cluster configuration. The [instructions][discover-op-manual] provided in the
 operator's manual can be used to run the discover Pod.
-- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm'
-OIR.
-- The `KCM` configuration directory should exist and contain the dataplane
+- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm`
+OIR. 
+- The node will be labeled with `"kcm.intel.com/kcm-node": "true"` label. 
+- The node will be tainted with `kcm=true:NoSchedule` taint.
+- The `KCM` configuration directory should exist and contain the dataplane 
 pool to run `kcm discover`.
 
 **Args:**

@@ -5,6 +5,7 @@ from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 import logging
 import os
+import sys
 
 
 # discover reads the KCM configuration file, patches kubernetes nodes with
@@ -12,10 +13,13 @@ import os
 # the appropriate KCM node labels and taints.
 def discover(conf_dir):
     # Patch the node with the appropriate KCM OIR.
+    logging.debug("Patching the node with the appropriate KCM OIR.")
     add_node_oir(conf_dir)
     # Add appropriate KCM label to the node.
+    logging.debug("Adding appropriate KCM label to the node.")
     add_node_label()
     # Add appropriate KCM taint to the node.
+    logging.debug("Adding appropriate KCM taint to the node.")
     add_node_taint()
 
 
@@ -40,8 +44,10 @@ def add_node_oir(conf_dir):
     try:
         patch_k8s_node_status(patch_body)
     except K8sApiException as err:
-        logging.warning("Exception when patching the node with OIR: {}"
-                        .format(err))
+        logging.error("Exception when patching node with OIR: {}"
+                      .format(err))
+        logging.error("Aborting discover ...")
+        sys.exit(1)
 
 
 def add_node_label():
@@ -55,7 +61,9 @@ def add_node_label():
     try:
         patch_k8s_node(patch_body)
     except K8sApiException as err:
-        logging.warning("Exception when labeling the node: {}".format(err))
+        logging.error("Exception when labeling the node: {}".format(err))
+        logging.error("Aborting discover ...")
+        sys.exit(1)
 
 
 def add_node_taint():
@@ -63,11 +71,13 @@ def add_node_taint():
     try:
         node_resp = get_k8s_node(node_name)
     except K8sApiException as err:
-        logging.warning("Exception when getting the node obj: {}".format(err))
+        logging.error("Exception when getting the node obj: {}".format(err))
+        logging.error("Aborting discover ...")
+        sys.exit(1)
 
     node_taints_list = []
     node_taint_key = "scheduler.alpha.kubernetes.io/taints"
-    if node_resp["metadata"]["annotations"][node_taint_key]:
+    if node_taint_key in node_resp["metadata"]["annotations"]:
         node_taints = node_resp["metadata"]["annotations"][node_taint_key]
         node_taints_list = ast.literal_eval(node_taints)
 
@@ -88,7 +98,9 @@ def add_node_taint():
     try:
         patch_k8s_node(patch_body)
     except K8sApiException as err:
-        logging.warning("Exception when tainiting the node: {}".format(err))
+        logging.error("Exception when tainting the node: {}".format(err))
+        logging.error("Aborting discover ...")
+        sys.exit(1)
 
 
 # patch_k8s_node_status patches the kubernetes node with KCM OIR with
@@ -113,11 +125,7 @@ def patch_k8s_node(patch_body):
 
 # get_k8s_node() retuns the node spec associated with node_name.
 def get_k8s_node(node_name):
-    try:
-        node_list_resp = get_k8s_node_list()
-    except K8sApiException as err:
-        logging.warning("Exception when patching the node: {}".format(err))
-
+    node_list_resp = get_k8s_node_list()
     for node in node_list_resp["items"]:
         if node["metadata"]["name"] == node_name:
             return node
