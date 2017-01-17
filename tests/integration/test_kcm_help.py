@@ -27,7 +27,8 @@ Options:
                         for KCM software.
   --all-hosts           Prepare all Kubernetes nodes for the KCM software.
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
-                        each host [default: init,reconcile,install,discover].
+                        each host
+                        [default: init,reconcile,install,discover,nodereport].
   --kcm-img=<img>       KCM Docker image [default: kcm].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: Never].

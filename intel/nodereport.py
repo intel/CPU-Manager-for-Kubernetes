@@ -27,12 +27,12 @@ def nodereport(conf_dir, seconds, publish):
             node_report_type = third_party.ThirdPartyResourceType(
                 v1beta,
                 "kcm.intel.com",
-                "NodeReport")
+                "Nodereport")
 
             # third_party throws an exception if the environment variable
             # is not set.
             node_report = node_report_type.create(os.getenv("NODE_NAME"))
-            node_report.body["report"] = report
+            node_report.body["report"] = report.as_dict()
             node_report.save()
 
         if should_exit:
@@ -45,9 +45,17 @@ def nodereport(conf_dir, seconds, publish):
 
 def generate_report(conf_dir):
     report = NodeReport()
+    check_describe(report, conf_dir)
     check_kcm_config(report, conf_dir)
     # TODO: check_procfs(report)
     return report
+
+
+def check_describe(report, conf_dir):
+    try:
+        report.add_description(config.Config(conf_dir).as_dict())
+    except Exception:
+        pass
 
 
 def check_kcm_config(report, conf_dir):
@@ -93,7 +101,11 @@ def check_kcm_config(report, conf_dir):
 
 class NodeReport():
     def __init__(self):
+        self.description = None
         self.checks = []
+
+    def add_description(self, description):
+        self.description = description
 
     def add_check(self, name):
         check = Check(name)
@@ -102,6 +114,7 @@ class NodeReport():
 
     def as_dict(self):
         return {
+            "description": self.description,
             "checks": {c.name: c.as_dict() for c in self.checks}
         }
 

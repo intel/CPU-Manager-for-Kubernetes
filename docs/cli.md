@@ -1,6 +1,7 @@
 # Using the `kcm` command-line tool
 
 ## Usage
+
 ```
 kcm.
 
@@ -26,7 +27,8 @@ Options:
                         for KCM software.
   --all-hosts           Prepare all Kubernetes nodes for the KCM software.
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
-                        each host [default: init,reconcile,install,discover].
+                        each host
+                        [default: init,reconcile,install,discover,nodereport].
   --kcm-img=<img>       KCM Docker image [default: kcm].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: Never].
@@ -47,6 +49,7 @@ Options:
 | :------------------- | :---------- |
 | `KCM_LOCK_TIMEOUT`   | Maximum duration, in seconds, to hold the kcm configuration directory lock file. (Default: 30) |
 | `KCM_PROC_FS`        | Path to the [procfs] to consult for pid information. `kcm isolate` and `kcm reconcile` require access to the host's process information in `/proc`. |
+| `KCM_LOG_LEVEL`      | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
 
 ## Subcommands
 
@@ -419,8 +422,35 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
   "report": {
     "checks": {
       "configDirectory": {
-        "errors": [],
-        "ok": true
+        "errors": [
+          "CPU list overlap detected in exclusive:0 and shared:0 (in both: [0])"
+        ],
+        "ok": false
+      }
+    },
+    "description": {
+      "path": "/etc/kcm",
+      "pools": {
+        "exclusive": {
+          "cpuLists": {
+            "0": {
+              "cpus": "0",
+              "tasks": []
+            }
+          },
+          "exclusive": true,
+          "name": "exclusive"
+        },
+        "shared": {
+          "cpuLists": {
+            "0": {
+              "cpus": "0",
+              "tasks": []
+            }
+          },
+          "exclusive": false,
+          "name": "shared"
+        }
       }
     }
   }
