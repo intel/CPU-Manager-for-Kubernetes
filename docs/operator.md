@@ -62,14 +62,10 @@ Notes:
 - The subcommands described below should be run in the same order. 
 - The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
 binary is installed on the host under `/opt/bin`.
-- In all the pod templates used in this section, the name of container image used is `kcm`. It is expected that the 
+- In all the pod templates used in this section, the name of container image used is `kcm:v0.1.0`. It is expected that the 
 `kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
-container image is hosted remotely (e.g., in https://hub.docker.com/). If the `image` field is modified to use a 
-remotely hosted container image, the following should be removed from each of the pod template:
+container image is hosted remotely (e.g., in https://hub.docker.com/).
 
-```yml
-imagePullPolicy: "Never"
-```
 #### Run `kcm init`
 The `KCM` nodes in the kubernetes cluster should be initialized in order to be used with the KCM software using 
 [`kcm-init`][kcm-init]. To initialize the `KCM` nodes, the [kcm-init-pod template][init-template] can be used. 

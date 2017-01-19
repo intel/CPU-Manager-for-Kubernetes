@@ -11,8 +11,7 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: kcm
-    imagePullPolicy: "Never"
+    image: kcm:v0.1.0
     name: kcm-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"
