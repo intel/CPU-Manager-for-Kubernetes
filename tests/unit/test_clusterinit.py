@@ -97,19 +97,26 @@ class FakeHTTPResponse:
         return {"fakekey": "fakeval"}
 
 
+def get_expected_log_error(err_msg):
+    exp_log_err = err_msg + """: (500)
+Reason: fake reason
+HTTP response headers: {'fakekey': 'fakeval'}
+HTTP response body: fake body
+"""
+    return exp_log_err
+
+
 def test_clusterinit_run_cmd_pods_init_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.clusterinit.create_k8s_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods("init", "fake_img", "Never", "fake-conf-dir",
-                                 "fake-install-dir", "2", "2", ["fakenode"])
-        exp_log_err = """Exception when creating init pod: (500)
-Reason: fake reason
-HTTP response headers: {'fakekey': 'fakeval'}
-HTTP response body: fake body
-"""
+            clusterinit.run_pods(None, ["init"], "fake_img",
+                                 "Never", "fake-conf-dir", "fake-install-dir",
+                                 "2", "2", ["fakenode"])
+        exp_err = "Exception when creating pod for ['init'] command(s)"
+        exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
 
@@ -120,14 +127,11 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
     with patch('intel.clusterinit.create_k8s_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods("discover", "fake_img", "Never",
+            clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
                                  "2", ["fakenode"])
-        exp_log_err = """Exception when creating discover pod: (500)
-Reason: fake reason
-HTTP response headers: {'fakekey': 'fakeval'}
-HTTP response body: fake body
-"""
+        exp_err = "Exception when creating pod for ['discover'] command(s)"
+        exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
 
@@ -138,14 +142,11 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
     with patch('intel.clusterinit.create_k8s_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods("install", "fake_img", "Never",
+            clusterinit.run_pods(None, ["install"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
                                  "2", ["fakenode"])
-        exp_log_err = """Exception when creating install pod: (500)
-Reason: fake reason
-HTTP response headers: {'fakekey': 'fakeval'}
-HTTP response body: fake body
-"""
+        exp_err = "Exception when creating pod for ['install'] command(s)"
+        exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
 
@@ -156,14 +157,26 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     with patch('intel.clusterinit.create_k8s_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods("reconcile", "fake_img", "Never",
+            clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
                                  "2", ["fakenode"])
-        exp_log_err = """Exception when creating reconcile pod: (500)
-Reason: fake reason
-HTTP response headers: {'fakekey': 'fakeval'}
-HTTP response body: fake body
-"""
+        exp_err = "Exception when creating pod for ['reconcile'] command(s)"
+        exp_log_err = get_expected_log_error(exp_err)
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[1][2] == exp_log_err
+
+
+def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with patch('intel.clusterinit.create_k8s_pod',
+               MagicMock(side_effect=fake_api_exception)):
+        with pytest.raises(SystemExit):
+            clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
+                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "2", ["fakenode"])
+        exp_err = "Exception when creating pod for ['nodereport'] command(s)"
+        exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
 

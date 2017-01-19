@@ -9,8 +9,8 @@ Kubernetes >= v1.5.0
 
 ## Setting up the cluster
 
-This section describes the setup required to use the `KCM` software. The steps described below should be followed in 
-the same order.
+This section describes the setup required to use the `KCM` software. The recommended way to prepare Kubernetes nodes 
+for the `KCM` software is to run `kcm cluster-init` as a Pod as described in these [instructions][cluster-init-op-manual]. 
 
 ## Concepts
 
@@ -22,17 +22,11 @@ the same order.
 | Volume         | A volume is a directory (on host file system). In Kubernetes, a volume has the same lifetime as the Pod that uses it. Many types of volumes are supported in Kubernetes. | 
 | `hostPath`       | `hostPath` is a volume type in Kubernetes. It mounts a file or directory from the host file system into the Pod. | 
 
-Notes: 
-- The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
-binary is installed on the host under `/opt/bin`.
-- In all the pod templates used in this section, the name of container image used is `kcm:v0.1.0`. It is expected that the 
-`kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
-container image is hosted remotely (e.g., in https://hub.docker.com/).
-
 ### Prepare `KCM` nodes by running `kcm cluster-init`. 
 `KCM` nodes can be prepared by using [`kcm cluster-init`][kcm-cluster-init] subcommand. The subcommand is expected to 
 be run as a pod. The [kcm-cluster-init-pod template][cluster-init-template] can be used to run `kcm cluster-init` on a 
-Kubernetes cluster. When run on a Kubernetes cluster, the Pod spawns several other Pods in order to prepare the nodes.
+Kubernetes cluster. When run on a Kubernetes cluster, the Pod spawns two Pods per node at most in order to prepare 
+each node.
 
 The only value that requires change in the [kcm-cluster-init-pod template][kcm-cluster-init] is the `args` field, 
 which can be modified to pass different options. 
@@ -60,9 +54,18 @@ The above command prepares all the nodes in the Kubernetes cluster for the `KCM`
 The above command prepares nodes "node1", "node2" and "node3" but only runs the `kcm init` and `kcm discover` 
 subcommands on each of those nodes. 
 
-For more details on the options provided by `kcm cluster-init`, see this [description][kcm-cluster-init]. 
+For more details on the options provided by `kcm cluster-init`, see this [description][kcm-cluster-init].
 
 ### Prepare `KCM` nodes by running each `KCM` subcommand as a Pod. 
+
+Notes:
+- The subcommands described below should be run in the same order. 
+- The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
+binary is installed on the host under `/opt/bin`.
+- In all the pod templates used in this section, the name of container image used is `kcm:v0.1.0`. It is expected that the 
+`kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
+container image is hosted remotely (e.g., in https://hub.docker.com/).
+
 #### Run `kcm init`
 The `KCM` nodes in the kubernetes cluster should be initialized in order to be used with the KCM software using 
 [`kcm-init`][kcm-init]. To initialize the `KCM` nodes, the [kcm-init-pod template][init-template] can be used. 
@@ -218,3 +221,4 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 [isolate-template]: ../resources/pods/kcm-isolate-pod.yaml
 [cluster-init-template]: ../resources/pods/kcm-cluster-init-pod.yaml
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
+[cluster-init-op-manual]: #prepare-kcm-nodes-by-running-kcm-cluster-init

@@ -92,10 +92,11 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 ### `kcm discover`
 
 Advertises the appropriate number of `KCM` [Opaque Integer Resource (OIR)][oir-docs]
-slots on the Kubernetes node. The number of slots advertised is equal to the
-number of cpu lists under the __dataplane__ pool, as determined by examining
-the `KCM` configuration directory. For more information about the config
-format on disk, refer to [the `kcm` configuration directory][doc-config].
+slots, node label and node taint to the Kubernetes node. The number of 
+OIR slots advertised is equal to the number of cpu lists under the 
+__dataplane__ pool, as determined by examining the `KCM` configuration directory. 
+For more information about the config format on disk, refer to 
+the [`kcm` configuration directory][doc-config].
 
 Notes:
 - `kcm discover` is expected to be run as a Kubernetes Pod as it uses
@@ -103,9 +104,11 @@ Notes:
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
 cluster configuration. The [instructions][discover-op-manual] provided in the
 operator's manual can be used to run the discover Pod.
-- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm'
-OIR.
-- The `KCM` configuration directory should exist and contain the dataplane
+- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm`
+OIR. 
+- The node will be labeled with `"kcm.intel.com/kcm-node": "true"` label. 
+- The node will be tainted with `kcm=true:NoSchedule` taint.
+- The `KCM` configuration directory should exist and contain the dataplane 
 pool to run `kcm discover`.
 
 **Args:**
@@ -463,7 +466,8 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
 
 Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM`
 subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as
-Kubernetes Pods.
+Kubernetes Pods. By default, it runs all the subcommands and uses all the 
+default options. 
 
 Notes:
 - `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses
@@ -472,7 +476,7 @@ Notes:
 cluster configuration. The [instructions][cluster-init-op-manual] provided
 in the operator's manual can be used to run the discover Pod.
 - The KCM subcommands, as specified by the value passed for `--kcm-cmd-list`
-are expected to be one of `init`, `discover`, `install`, `reconcile`.
+are expected to be one of `init`, `discover`, `install`, `reconcile`, `nodereport`.
 If `init` subcommand is specified, it expected to be the first command
 in `--kcm-cmd-list`.
 - `--kcm-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
@@ -516,4 +520,5 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 [link-incluster]: https://github.com/kubernetes-incubator/client-python/blob/master/kubernetes/config/incluster_config.py#L85
 [k8s-python-client]: https://github.com/kubernetes-incubator/client-python
 [discover-op-manual]: operator.md#advertising-kcm-opaque-integer-resource-oir-slots
+[cluster-init-op-manual]: operator.md#prepare-kcm-nodes-by-running-kcm-cluster-init
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
