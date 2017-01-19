@@ -3,3 +3,13 @@
 *.egg-info/
 **/__pycache__/*
 *.pyc
+terraform/workdir/.kargo/
+terraform/workdir/cluster.yml
+terraform/workdir/mvp_inventory/ansible_inventory
+terraform/workdir/kubectl
+**/.terraform
+**/ssh_keys
+terraform/vagrant_env/inventory
+**/terraform.tfstate*
+**/terraform_hosts
+*.retry
