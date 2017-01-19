@@ -5,3 +5,4 @@ pyinstaller>=3.2, <4.0
 kubernetes==1.0.0a4 
 requests>=2.12, <3.0
 pytest-catchlog>=1.2, <1.4
+pytest-cov>=2.4.0
