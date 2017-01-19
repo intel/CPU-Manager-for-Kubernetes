@@ -2,7 +2,7 @@
 
 all: docker
 
-sha=$(shell git rev-parse --short HEAD)
+sha=$(shell git describe --tags --dirty --always)
 
 docker:
 	docker build --no-cache -t kcm:$(sha) .
