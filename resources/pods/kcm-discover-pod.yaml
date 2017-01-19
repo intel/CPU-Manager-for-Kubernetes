@@ -16,8 +16,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: kcm
-    imagePullPolicy: "Never"
+    image: kcm:v0.1.0
     name: kcm-discover-pod
     volumeMounts:
     - mountPath: "/etc/kcm"
