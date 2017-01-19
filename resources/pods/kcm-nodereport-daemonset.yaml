@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - args:
-        - /kcm/kcm.py node-report --conf-dir=/etc/kcm --interval=$KCM_NODE_REPORT_SLEEP_TIME --publish
+        - /kcm/kcm.py isolate --pool=infra /kcm/kcm.py -- node-report --interval=$KCM_NODE_REPORT_SLEEP_TIME --publish
         command:
         - "/bin/bash"
         - "-c"

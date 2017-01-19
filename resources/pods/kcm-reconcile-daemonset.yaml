@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - args:
-        - /kcm/kcm.py reconcile --conf-dir=/etc/kcm --interval=$KCM_RECONCILE_SLEEP_TIME --publish
+        - /kcm/kcm.py isolate --pool=infra /kcm/kcm.py reconcile --interval=$KCM_RECONCILE_SLEEP_TIME --publish
         command:
         - "/bin/bash"
         - "-c"
