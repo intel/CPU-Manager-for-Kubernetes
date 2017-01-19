@@ -71,21 +71,41 @@ Sale of Goods (1980) is specifically excluded and will not apply to the
 Software.
 -->
 
-# `kcm` operator manual
+# KCM operator manual
+
+## Table of Contents
+* [System requirements](#system-requirements)
+* [Setting up the cluster](#setting-up-the-cluster)
+* [Running the `kcm isolate` Hello World Pod](#running-the-kcm-isolate-hello-world-pod)
+* [Validating the environment](#validating-the-environment)
+* [Troubleshooting and recovery](#troubleshooting-and-recovery)
 
 _Related:_
 
 - [Using the kcm command-line tool][doc-cli]
 
-## System requirements
+## System requirements.
 Kubernetes >= v1.5.0
 
-## Setting up the cluster
+## Setting up the cluster.
 
-This section describes the setup required to use the `KCM` software. The recommended way to prepare Kubernetes nodes 
-for the `KCM` software is to run `kcm cluster-init` as a Pod as described in these [instructions][cluster-init-op-manual]. 
+This section describes the setup required to use the `KCM` software.
 
-## Concepts
+Notes: 
+- The recommended way to prepare Kubernetes nodes for the `KCM` software is to run `kcm cluster-init` as a Pod as 
+described in [cluster setup instructions using `kcm cluster-init`][cluster-init-op-manual]. 
+- The [cluster setup instructions using manually created Pods][indvidual-pods-op-manual] should only be used if and 
+only if running `kcm cluster-init` fails for some reason.
+
+### TL;DR
+Prepare the nodes by running `kcm cluster-init` using these [instructions][cluster-init-op-manual].
+
+### Cluster setup table of contents.
+* [Concepts](#concepts)
+* [Preparing nodes by running `kcm cluster-init` (recommended)][cluster-init-op-manual]
+* [Preparing nodes by running each `KCM` subcommand as a Pod (use only if required)][indvidual-pods-op-manual]
+
+### Concepts
 
 | Term           | Meaning |
 | :------------- | :------ |
@@ -132,6 +152,8 @@ For more details on the options provided by `kcm cluster-init`, see this [descri
 ### Prepare `KCM` nodes by running each `KCM` subcommand as a Pod. 
 
 Notes:
+- The instructions provided in this section should only be used if and only if running `kcm cluster-init` fails 
+for some reason.
 - The subcommands described below should be run in the same order. 
 - The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
 binary is installed on the host under `/opt/bin`.
@@ -274,10 +296,118 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 [`Setting up the cluster`][cluster-setup] section. 
 
 ## Validating the environment
-**TODO:** describe how to run e2e / smoke tests against an existing cluster.
+Following is an example to validate the environment in one node. 
+- Pick a node to test. For illustration, we will use `<node-name>` as the name of the node. 
+- Check if node has appropriate label.
+```sh 
+kubectl get node <node-name> -o json | jq .metadata.labels
+```
+Example output:
+```sh
+kubectl get node kcm-02-zzwt7w -o json | jq .metadata.labels
+{
+    "beta.kubernetes.io/arch": "amd64",
+    "beta.kubernetes.io/os": "linux",
+    "kcm.intel.com/kcm-node": "true",
+    "kubernetes.io/hostname": "kcm-02-zzwt7w"
+}
+```
+- Check if node has appropriate taint.
+```sh
+kubectl get node <node-name> -o json | jq .metadata.annotations
+```
+Example output:
+```sh
+kubectl get node kcm-02-zzwt7w -o json | jq .metadata.annotations
+{
+      "scheduler.alpha.kubernetes.io/taints": "[{\"value\": \"true\", \"key\": \"kcm\", \"effect\": \"NoSchedule\"}]",
+      "volumes.kubernetes.io/controller-managed-attach-detach": "true"
+}
+```
+- Check if node has the appropriate OIR. 
+```sh
+kubectl get node <node-name> -o json | jq .status.capacity
+```
+Example output:
+```sh
+kubectl get node kcm-02-zzwt7w -o json | jq .status.capacity
+{
+    "alpha.kubernetes.io/nvidia-gpu": "0",
+    "cpu": "16",
+    "memory": "14778328Ki",
+    "pod.alpha.kubernetes.io/opaque-int-resource-kcm": "4",
+    "pods": "110"
+}
+```
+- Login to the node and check if `KCM` configuration directory and binary exisits. Assuming default options were 
+used for `kcm cluster-init`, you would do the following:
+```sh
+ls /etc/kcm/
+ls /opt/bin/
+```
+- Replace the `nodeName` in the Pod manifest below to the chosen node name and save it to a file. 
+```yml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: kcm-isolate-pod
+  name: kcm-isolate-pod
+spec:
+  # Change this to the <node-name> you want to test.  
+  nodeName: NODENAME
+  containers:
+  - args:
+    - "/opt/bin/kcm isolate --conf-dir=/etc/kcm --pool=infra sleep -- 10000"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: KCM_PROC_FS
+      value: "/host/proc"
+    image: kcm
+    imagePullPolicy: "Never"
+    name: kcm-isolate-infra
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: kcm-install-dir
+    - mountPath: "/etc/kcm"
+      name: kcm-conf-dir
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      # Change this to modify the KCM installation dir in the host file system.
+      path: "/opt/bin"
+    name: kcm-install-dir
+  - hostPath:
+      path: "/proc"
+    name: host-proc
+  - hostPath:
+      # Change this to modify the KCM config dir in the host file system.
+      path: "/etc/kcm"
+    name: kcm-conf-dir
+```
+- Run `kubectl create -f <file-name>`, where `<file-name>` is name of the Pod manifest file with `nodeName` field 
+substituted as mentioned in the previous step.
+- Check if any process is isolated in the `infra` pool using `NodeReport` for that node. 
+`kubectl get NodeReport <node-name> -o json | jq .report.description.pools.infra`
 
 ## Troubleshooting and recovery
-**TODO**
+If running `kcm cluster-init` using the [kcm-cluster-init-pod template][cluster-init-template] ends up in an error, 
+the recommended way to start troubleshooting is to look at the logs using `kubectl logs -f`. 
+
+For example, assuming you ran the [kcm-cluster-init-pod template][cluster-init-template] with default options, it 
+should create two pods on each node named `kcm-init-install-discover-pod-<node-name>` and 
+`kcm-reconcile-nodereport-<node-name>`, where `<node-name>` should be replaced with the name of the node. 
+
+If you want to look at the logs from the container which ran the `discover` subcommand in the pod, you can use 
+`kubectl logs -f kcm-init-install-discover-pod-<node-name> discover`
+
+If you want to look at the logs from the container which ran the `reconcile` subcommand in the pod, you can use 
+`kubectl logs -f kcm-reconcile-nodereport-pod-<node-name> reconcile`
 
 [cluster-setup]: #setting-up-the-cluster
 [doc-cli]: cli.md
@@ -295,3 +425,4 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 [cluster-init-template]: ../resources/pods/kcm-cluster-init-pod.yaml
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
 [cluster-init-op-manual]: #prepare-kcm-nodes-by-running-kcm-cluster-init
+[indvidual-pods-op-manual]: #prepare-kcm-nodes-by-running-each-kcm-subcommand-as-a-pod
