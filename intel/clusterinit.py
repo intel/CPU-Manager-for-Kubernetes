@@ -99,9 +99,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
         for cmd in cmd_list:
             args = ""
             if cmd == "reconcile":
-                args = "/kcm/kcm.py reconcile --interval=5 --publish"
+                args = "/kcm/kcm.py isolate --pool=infra /kcm/kcm.py -- reconcile --interval=5 --publish"  # noqa: E501
             elif cmd == "nodereport":
-                args = "/kcm/kcm.py node-report --interval=5 --publish"
+                args = "/kcm/kcm.py isolate --pool=infra /kcm/kcm.py -- node-report --interval=5 --publish"  # noqa: E501
 
             update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args)
     elif cmd_init_list:
