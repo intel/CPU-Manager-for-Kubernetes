@@ -75,13 +75,13 @@
 
 all: docker
 
-sha=$(shell git describe --tags --dirty --always)
+version=v0.1.1
 
 docker:
-	docker build --no-cache -t kcm:$(sha) .
+	docker build --no-cache -t kcm:$(version) .
 	@echo ""
 	@echo "To run the docker image, run command:"
-	@echo "docker run -it kcm:$(sha) ..."
+	@echo "docker run -it kcm:$(version) ..."
 
 # Output neatly formatted HTML docs to `docs/html`.
 #
