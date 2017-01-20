@@ -100,7 +100,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: kcm:v0.1.0
+        image: kcm:v0.1.1
         name: kcm-reconcile
         volumeMounts:
         - mountPath: "/host/proc"
