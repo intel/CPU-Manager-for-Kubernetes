@@ -99,10 +99,8 @@ docs:
 	grip docs/cli.md --export docs/html/docs/cli.html --title="Using the kcm command-line tool"
 	grip docs/config.md --export docs/html/docs/config.html --title="The kcm configuration directory"
 	grip docs/operator.md --export docs/html/docs/operator.html --title="kcm operator manual"
-	grip docs/user.md --export docs/html/docs/user.html --title="kcm user manual"
 	sed -i"" "s/\.md/\.html/g" docs/html/index.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/build.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/cli.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/config.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/operator.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/user.html
