@@ -77,6 +77,7 @@ from intel import config
 from intel import proc
 import os
 import psutil
+import pytest
 import subprocess
 import tempfile
 
@@ -104,6 +105,19 @@ def test_kcm_isolate_exclusive():
             "foo"]
 
     assert helpers.execute(integration.kcm(), args, proc_env) == b"foo\n"
+
+
+def test_kcm_isolate_saturated():
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("saturated")),
+            "--pool=dataplane",
+            "echo",
+            "--",
+            "foo"]
+
+    with pytest.raises(subprocess.CalledProcessError) as exinfo:
+        assert helpers.execute(integration.kcm(), args, proc_env)
+    # assert b"No free cpu lists in pool dataplane" in exinfo.value.output
 
 
 def test_kcm_isolate_pid_bookkeeping():
