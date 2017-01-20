@@ -144,7 +144,6 @@ _For detailed usage information about each subcommand, see
 
 - [Building kcm][doc-build]
 - [Operator manual][doc-operator]
-- [User manual][doc-user]
 - [Using the kcm command-line tool][doc-cli]
 - [The kcm configuration directory][doc-config]
 
@@ -153,5 +152,4 @@ _For detailed usage information about each subcommand, see
 [doc-cli]: docs/cli.md
 [doc-config]: docs/config.md
 [doc-operator]: docs/operator.md
-[doc-user]: docs/user.md
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
