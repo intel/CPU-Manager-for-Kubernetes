@@ -94,6 +94,7 @@ docker:
 docs:
 	pip install grip
 	mkdir -p docs/html/docs
+	cp -R docs/images docs/html/docs/
 	grip README.md --export docs/html/index.html --title="KCM"
 	grip docs/build.md --export docs/html/docs/build.html --title="Building kcm"
 	grip docs/cli.md --export docs/html/docs/cli.html --title="Using the kcm command-line tool"
