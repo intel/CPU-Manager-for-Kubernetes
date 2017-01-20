@@ -87,6 +87,8 @@ def isolate(conf_dir, pool_name, command, args):
             raise KeyError("Requested pool {} does not exist"
                            .format(pool_name))
         pool = pools[pool_name]
+
+        clist = None
         if pool.exclusive():
             for cl in pool.cpu_lists().values():
                 if len(cl.tasks()) == 0:
@@ -99,9 +101,12 @@ def isolate(conf_dir, pool_name, command, args):
             # If that ceases to hold in the future, we could explore population
             # or load-based spreading. Keeping it simple for now.
             clist = random.choice(list(pool.cpu_lists().values()))
+
         if not clist:
             raise SystemError("No free cpu lists in pool {}".format(pool_name))
+
         clist.add_task(proc.getpid())
+
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
         # We use psutil here (instead of the kcm provided
