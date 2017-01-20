@@ -76,6 +76,8 @@ kind: Pod
 metadata:
   labels:
     app: kcm-isolate-pod
+  annotations:
+    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"kcm", "value":"true"}]'
   name: kcm-isolate-pod
 spec:
   containers:
