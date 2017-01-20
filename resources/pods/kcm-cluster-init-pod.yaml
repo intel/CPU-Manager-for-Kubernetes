@@ -76,6 +76,8 @@ kind: Pod
 metadata:
   labels:
     app: kcm-cluster-init-pod
+  annotations:
+    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"kcm", "value":"true"}]'
   name: kcm-cluster-init-pod
 spec:
   containers:
