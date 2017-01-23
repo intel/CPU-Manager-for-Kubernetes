@@ -77,12 +77,34 @@ import logging
 import subprocess
 
 
+class Socket:
+    def __init__(self, socket_id):
+        self.socket_id = socket_id
+        self.cores = []
+
+
+class Core:
+    def __init__(self):
+        self.isolated = False
+        self.cpus = []
+        self.pool = None
+
+
+class CPU:
+    def __init__(self):
+        pass
+
+
 def init(conf_dir, num_dp_cores, num_cp_cores):
     check_hugepages()
     cpumap = discover_topo()
+
+    logging.info("cpumap: %s" % str(cpumap))
+
     logging.info("Writing config to {}.".format(conf_dir))
     logging.info("Requested data plane cores = {}.".format(num_dp_cores))
     logging.info("Requested control plane cores = {}.".format(num_cp_cores))
+
     c = config.new(conf_dir)
     with c.lock():
         logging.info("Adding dataplane pool.")
@@ -90,32 +112,39 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         for i in range(int(num_dp_cores)):
             if not cpumap:
                 raise KeyError("No more cpus left to assign for data plane")
+
             k, v = cpumap.popitem()
             logging.info("Adding {} cpus to the dataplane pool.".format(v))
             dp.add_cpu_list(v)
+
         logging.info("Adding controlplane pool.")
         cp = c.add_pool("controlplane", False)
         cpus = ""
         for i in range(int(num_cp_cores)):
             if not cpumap:
                 raise KeyError("No more cpus left to assign for control plane")
+
             k, v = cpumap.popitem()
             if cpus:
                 cpus = cpus + "," + v
             else:
                 cpus = v
+
         logging.info("Adding {} cpus to the controlplane pool.".format(cpus))
         cp.add_cpu_list(cpus)
         logging.info("Adding infra pool.")
         infra = c.add_pool("infra", False)
         cpus = ""
+
         if not cpumap:
             raise KeyError("No more cpus left to assign for infra")
+
         for k, v in cpumap.items():
             if cpus:
                 cpus = cpus + "," + v
             else:
                 cpus = v
+
         logging.info("Adding {} cpus to the infra pool.".format(cpus))
         infra.add_cpu_list(cpus)
 
