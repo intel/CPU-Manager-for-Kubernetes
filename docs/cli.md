@@ -572,7 +572,7 @@ _None_
   directory must either not exist or be an empty directory.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
   in the dataplane pool.
-- `--num-dp-cores=<num>` Number of (physical) processor cores to include
+- `--num-cp-cores=<num>` Number of (physical) processor cores to include
   in the controlplane pool.
 
 **Example:**

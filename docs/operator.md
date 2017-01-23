@@ -397,7 +397,7 @@ substituted as mentioned in the previous step.
 
 ## Troubleshooting and recovery
 If running `kcm cluster-init` using the [kcm-cluster-init-pod template][cluster-init-template] ends up in an error, 
-the recommended way to start troubleshooting is to look at the logs using `kubectl logs -f`. 
+the recommended way to start troubleshooting is to look at the logs using `kubectl logs POD_NAME [CONTAINER_NAME] -f`. 
 
 For example, assuming you ran the [kcm-cluster-init-pod template][cluster-init-template] with default options, it 
 should create two pods on each node named `kcm-init-install-discover-pod-<node-name>` and 
