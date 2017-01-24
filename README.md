@@ -147,6 +147,7 @@ _For detailed usage information about each subcommand, see
 - [User manual][doc-user]
 - [Using the kcm command-line tool][doc-cli]
 - [The kcm configuration directory][doc-config]
+- [End to end tests][doc-e2e]
 
 [cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-build]: docs/build.md
@@ -155,3 +156,4 @@ _For detailed usage information about each subcommand, see
 [doc-operator]: docs/operator.md
 [doc-user]: docs/user.md
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
+[doc-e2e]: docs/end-to-end-tests.md
