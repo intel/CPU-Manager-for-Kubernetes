@@ -28,29 +28,28 @@ directories and files are as follows:
     cp terraform /usr/local/bin
     ```
 1. [terraform-provider-vagrant](https://github.com/intelsdi-x/terraform-provider-vagrant)
-    * Clone git repository
+    * Clone git repository (tag: v0.1.0) 
     * Build and install
     ```sh
     cd $GOPATH/src/github.com/intelsdi-x
-    git clone git@github.com:intelsdi-x/terraform-provider-vagrant
+    git clone -b v0.1.0 git@github.com:intelsdi-x/terraform-provider-vagrant
     cd terraform-provider-vagrant
     make build
     make install
     ```
-    ***NOTE:**  `make install` copies output binary into */usr/local/bin* directory, make sure it's in PATH envionment variable*
+    * ***NOTE 1:**  `make install` copies output binary into */usr/local/bin* directory, make sure it's in PATH envionment variable*
     * MacOS X users should also fulfill theirs `~/.terraformrc`:
-    ```json
+    ```sh
     providers {
       vagrant = "/usr/local/bin/terraform-provider-vagrant"
     }
     ```
 
-1. [Ansible](https://www.ansible.com/) (currently 2.2.0.0 version is tested)
+1. [Ansible](https://www.ansible.com/) (currently 2.2.0.0 version is tested, **dont use any other**)
     ```sh
     sudo pip2 install ansible==2.2.0.0
-    ```
+    ```script
     * ***NOTE 1:** Make sure, that Ansible is using Python 2.7. A lot of Ansible scripts are prepared exlusivly for Python 2.7*
-    * ***NOTE 2:** Kargo isn't supporting Ansible 2.2.1.0 and newer*
     * ***NOTE 3:** You may need to increase number of file handles. For GNU\Linux use ulitmit. MacOS X users should run `sudo launchctl limit maxfiles unlimited`*
 
 1. [gnu-sed](https://www.gnu.org/software/sed/manual/sed.html) (MacOS X only)
@@ -58,7 +57,8 @@ directories and files are as follows:
     brew install gnu-sed
     ```
 
-### Deploying and purging local Kubernetes cluster
+### Local Kubernetes cluster
+#### Deployment and purge
 
 ```sh
 cd ./terraform
@@ -68,5 +68,32 @@ cd ./terraform
 ./setup_env.sh purge
 ```
 
-### Deploying and purging AWS Kubernetes cluster
+
+#### Connecting to cluster
+
+After provisioning is completed, file located in *./terraform/workdir/mvp_inventory/ansible_inventory* contains details
+about provisoned VM's: 
+ - `ansible_ssh_host`  VM's IP, for local VM's its 127.0.0.1
+ - `ansible_ssh_port`  SSH port
+ - `ansible_ssh_user`  VM's user name
+ - `ansible_ssh_private_key_file` - path to private key used do establish ssh connection
+
+In order to establish SSH connection to VM, use command below:
+``` sh
+ssh -o StrictHostKeyChecking=no -p <ansible_ssh_port> -i <ansible_ssh_private_key_file> <ansible_ssh_user>@<ansible_ssh_host>
+```
+
+Alternatively, you can go to vagrant base directory of `ansible_ssh_private_key_file` (i.e. */tmp/vagrant_vbox_resXXXXXXXX*)
+and inside there execute `vagrant ssh`.
+
+* ***NOTE 1:** 
+Kubectl is installed only on Kubernetes master node (usually named: *k8s-m1*) with all proper credentials.
+In future releases, we will fetch all credentials and kubectl binary so user can interact with cluster remotely.
+
+
+### AWS Kubernetes cluster
+
+#### Deployment and purge
+
+
 TBD
