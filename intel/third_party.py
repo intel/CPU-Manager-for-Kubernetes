@@ -74,6 +74,8 @@
 import json
 from kubernetes.client.rest import ApiException as K8sApiException
 import datetime
+import logging
+import time
 
 # Example usage:
 #
@@ -118,6 +120,42 @@ class ThirdPartyResourceType():
         except K8sApiException as e:
             if json.loads(e.body)["reason"] != "AlreadyExists":
                 raise e
+
+        # Wait until resource type is ready.
+        while not self.exists():
+            logging.info(
+                "waiting 1 second until third party resource is ready")
+            time.sleep(1)
+
+    def exists(self, namespace="default"):
+        header_params = {
+            'Content-Type': "application/json",
+            'Accept': "application/json"
+        }
+
+        auth_settings = ['BearerToken']
+
+        resource_path = "/".join([
+            "/apis",
+            self.type_url,
+            self.type_version,
+            "namespaces", namespace,
+            self.type_name + "s"
+        ])
+
+        try:
+            self.api.api_client.call_api(
+                resource_path,
+                'GET',
+                header_params,
+                auth_settings=auth_settings)
+
+        except K8sApiException as e:
+            if json.loads(e.body)["reason"] == "NotFound":
+                return False
+            raise e
+
+        return True
 
     def create(self, name, namespace="default"):
         self.save()
