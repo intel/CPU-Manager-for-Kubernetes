@@ -1,0 +1,39 @@
+---
+
+- name: deploy docker registry for kcm
+  hosts: etcd[0]
+  gather_facts: False
+  become: True
+  vars:
+   - docker_registry_ip: "{{ hostvars[ansible_play_hosts[0]]['ip'] }}"
+  roles:
+   - { role: docker_registry, docker_reg_addr: "{{docker_registry_ip}}" }
+
+
+- name: configure docker registry for kcm
+  hosts: k8s-cluster,etcd
+  gather_facts: False
+  become: True
+  vars:
+   - docker_registry_ip: "{{ hostvars[groups['etcd'][0]]['ip'] }}"
+   - docker_registry_name: "registry.dev.e2e"
+  roles:
+   - { role: tweak_hosts, tweak_host_ip: "{{docker_registry_ip}}", tweak_host_name: "{{docker_registry_name}}" }
+   - { role: tweak_docker_insecure_reg, tweak_registry_name: "{{docker_registry_name}}" }
+
+
+- name: get kubectl
+  hosts: localhost
+  gather_facts: False
+  become: True
+  roles:
+   - {role: get_kubectl}
+
+
+#TODO Below funcionality will be removed when kargo supports it
+- name: get kubernetes cluster credentials
+  hosts: kube-master[0]
+  gather_facts: False
+  become: True
+  roles:
+   - {role: prepare_k8s_credentials}

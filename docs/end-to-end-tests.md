@@ -63,9 +63,9 @@ directories and files are as follows:
 ```sh
 cd ./terraform
 # to deploy local cluster 
-./setup_env.sh deploy
+./setup_env.sh vagrant deploy
 # to purge local cluster
-./setup_env.sh purge
+./setup_env.sh vagrant purge
 ```
 
 
@@ -92,8 +92,30 @@ In future releases, we will fetch all credentials and kubectl binary so user can
 
 
 ### AWS Kubernetes cluster
-
 #### Deployment and purge
+AWS requires `ssh-agent` as a private key provider. Corresponding public key should be available on AWS:
+```sh
+eval $(ssh-agent -s) // Merge current shell and ssh-agent session.
+ssh-add *<path_to_key>* // Adds private key to the `ssh-agent`.
+```
 
+Following environmental variables are required:
+  * `AWS_SECRET_ACCESS_KEY` - contains AWS secret access key.
+  * `AWS_ACCESS_KEY_ID` - contains AWS access ID.
+  * `TF_VAR_agent_seed` - contains non-colliding third subnet octet.
 
-TBD
+*Note: For following information about AWS access ID and secret access key read [this](http://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys)*
+
+```sh
+cd ./terraform
+# to deploy aws cluster
+./setup_env.sh aws deploy
+# to purge aws cluster
+./setup_env.sh aws purge
+```
+#### Connecting to cluster
+To get details about connectivity into provisioned cluster, run following commands:
+```sh
+cd ./terraform/aws_env
+terraform output
+```

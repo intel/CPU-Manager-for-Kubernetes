@@ -1,0 +1,24 @@
+---
+
+
+- fail:
+    msg: "variable {{ item }} is not set! "
+  when: "{{ item }} is not defined or {{ item }}== ''"
+  with_items:
+    - tweak_host_name
+    - tweak_host_ip
+
+
+- name: "check if {{tweak_host_name}} is in /etc/hosts"
+  shell: cat /etc/hosts | grep "{{ tweak_host_ip | regex_escape }} .*{{ tweak_host_name | regex_escape }}.*$"
+  register: is_present
+  failed_when: false
+
+
+- name: Insert entry in /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    state: present
+    line: "{{tweak_host_ip}} {{tweak_host_name}}"
+  when: is_present.rc
+

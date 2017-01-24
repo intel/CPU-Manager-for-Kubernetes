@@ -1,0 +1,4 @@
+docker_reg_config_dir: "/etc/docker/registry"
+docker_reg_storage_dir: "/tmp/registry_storage"
+docker_reg_port: 80
+docker_reg_container_name: "registry"
