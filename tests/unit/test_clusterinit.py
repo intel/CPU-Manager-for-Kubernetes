@@ -70,11 +70,13 @@
 # any objections. The United Nations Convention on Contracts for the
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
-
+import json
 import pytest
+
 from intel import clusterinit
 from unittest.mock import patch, MagicMock
 from kubernetes.client.rest import ApiException as K8sApiException
+from kubernetes import client as k8sclient
 
 
 def test_clusterinit_invalid_cmd_list_failure1():
@@ -182,7 +184,7 @@ HTTP response body: fake body
 def test_clusterinit_run_cmd_pods_init_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.clusterinit.create_k8s_pod',
+    with patch('intel.k8s.create_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["init"], "fake_img",
@@ -197,7 +199,7 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
 def test_clusterinit_run_cmd_pods_discover_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.clusterinit.create_k8s_pod',
+    with patch('intel.k8s.create_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
@@ -212,7 +214,7 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
 def test_clusterinit_run_cmd_pods_install_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.clusterinit.create_k8s_pod',
+    with patch('intel.k8s.create_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["install"], "fake_img", "Never",
@@ -227,7 +229,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.clusterinit.create_k8s_pod',
+    with patch('intel.k8s.create_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
@@ -242,7 +244,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.clusterinit.create_k8s_pod',
+    with patch('intel.k8s.create_pod',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
@@ -257,11 +259,11 @@ def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
 def test_clusterinit_wait_for_pod_phase_error():
     fake_pod_list_resp = {}
     fake_pod_list_resp["items"] = [
-            {"metadata": {"name": "fakepod1"}, "status": {"phase": "Failed"}},
-            {"metadata": {"name": "fakepod2"}, "status": {"phase": "Running"}},
-            {"metadata": {"name": "fakepod3"}, "status": {"phase": "Failed"}}
-        ]
-    with patch('intel.clusterinit.get_k8s_pod_list',
+        {"metadata": {"name": "fakepod1"}, "status": {"phase": "Failed"}},
+        {"metadata": {"name": "fakepod2"}, "status": {"phase": "Running"}},
+        {"metadata": {"name": "fakepod3"}, "status": {"phase": "Failed"}}
+    ]
+    with patch('intel.k8s.get_pod_list',
                MagicMock(return_value=fake_pod_list_resp)):
         with pytest.raises(RuntimeError) as err:
             clusterinit.wait_for_pod_phase("fakepod1", "Running")
@@ -274,20 +276,41 @@ def test_clusterinit_wait_for_pod_phase_error():
         assert err.value.args[0] == expected_err_msg
 
 
-def test_clusterinit_node_list_all():
-    fake_node_list_resp = {}
-    fake_node_list_resp["items"] = [
-                {"metadata": {"name": "fakenode1"}},
-                {"metadata": {"name": "fakenode2"}},
-                {"metadata": {"name": "fakenode3"}}
-        ]
-    with patch('intel.clusterinit.get_k8s_node_list',
-               MagicMock(return_value=fake_node_list_resp)):
-        node_list = clusterinit.get_kcm_node_list(None, True)
-        assert node_list == ["fakenode1", "fakenode2", "fakenode3"]
-
-
 def test_clusterinit_node_list_host_list():
     fake_node_list = "fakenode1, fakenode2, fakenode3"
     node_list = clusterinit.get_kcm_node_list(fake_node_list, False)
     assert node_list == ["fakenode1", "fakenode2", "fakenode3"]
+
+
+def test_clusterinit_update_pod_with_init_container():
+    pod_passed = k8sclient.V1Pod(
+        metadata=k8sclient.V1ObjectMeta(annotations={}),
+        spec=k8sclient.V1PodSpec(),
+        status=k8sclient.V1PodStatus()).to_dict()
+    cmd = "cmd"
+    kcm_img = "kcm_img"
+    kcm_img_pol = "policy"
+    args = "argument"
+    clusterinit.update_pod_with_init_container(pod_passed, cmd, kcm_img,
+                                               kcm_img_pol,
+                                               args)
+    pods = json.loads(pod_passed["metadata"]["annotations"][
+                          "pod.beta.kubernetes.io/init-containers"])
+    assert len(pods) == 1
+    assert pods[0]["name"] == cmd
+    assert pods[0]["image"] == kcm_img
+    assert pods[0]["imagePullPolicy"] == kcm_img_pol
+    assert args in pods[0]["args"]
+
+    second_cmd = "cmd2"
+    second_img = kcm_img
+    second_img_pol = "Always"
+    second_args = ["arg1", "arg2"]
+    clusterinit.update_pod_with_init_container(pod_passed, second_cmd,
+                                               second_img,
+                                               second_img_pol,
+                                               second_args)
+
+    pods = json.loads(pod_passed["metadata"]["annotations"][
+                          "pod.beta.kubernetes.io/init-containers"])
+    assert len(pods) == 2

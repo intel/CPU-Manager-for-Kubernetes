@@ -72,10 +72,12 @@
 # apply to the Software.
 
 import json
-from kubernetes import config as k8sconfig, client as k8sclient
-from kubernetes.client.rest import ApiException as K8sApiException
 import logging
 import sys
+
+from kubernetes.client.rest import ApiException as K8sApiException
+
+from intel import k8s
 
 
 def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
@@ -166,7 +168,7 @@ def run_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
 # pod on each node provided by kcm_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, kcm_node_list):
-    pod = get_pod_template()
+    pod = k8s.get_pod_template()
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir)
         for cmd in cmd_list:
@@ -198,7 +200,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
                     args = "/kcm/kcm.py discover"
                 elif cmd == "install":
                     args = "/kcm/kcm.py install"
-                update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args)
+                update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol,
+                                          args)
 
     for node_name in kcm_node_list:
         if cmd_list:
@@ -207,7 +210,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
-            cr_pod_resp = create_k8s_pod(pod)
+            cr_pod_resp = k8s.create_pod(None, pod)
             if cmd_list:
                 logging.debug("Response while creating pod for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
@@ -233,7 +236,7 @@ def get_kcm_node_list(host_list, all_hosts):
         kcm_node_list = [host.strip() for host in host_list.split(',')]
     if all_hosts:
         try:
-            node_list_resp = get_k8s_node_list()
+            node_list_resp = k8s.get_node_list(None)
             for node in node_list_resp["items"]:
                 kcm_node_list.append(node["metadata"]["name"])
         except K8sApiException as err:
@@ -250,7 +253,7 @@ def wait_for_pod_phase(pod_name, phase_name):
     wait = True
     while wait:
         try:
-            pod_list_resp = get_k8s_pod_list()
+            pod_list_resp = k8s.get_pod_list(None)
         except K8sApiException as err:
             logging.error("Exception while waiting for Pod [{}] status: {}"
                           .format(pod_name, err))
@@ -283,7 +286,7 @@ def update_pod_with_node_details(pod, node_name, cmd_list):
 # update_pod_with_container() updates the pod template with a container using
 # the provided options.
 def update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args):
-    container_template = get_container_template()
+    container_template = k8s.get_container_template()
     container_template["image"] = kcm_img
     container_template["imagePullPolicy"] = kcm_img_pol
     container_template["args"][0] = args
@@ -295,7 +298,7 @@ def update_pod_with_container(pod, cmd, kcm_img, kcm_img_pol, args):
 # update_pod_with_init_container() updates the pod template with a init
 # container using the provided options.
 def update_pod_with_init_container(pod, cmd, kcm_img, kcm_img_pol, args):
-    container_template = get_container_template()
+    container_template = k8s.get_container_template()
     container_template["image"] = kcm_img
     container_template["imagePullPolicy"] = kcm_img_pol
     container_template["args"][0] = args
@@ -311,112 +314,9 @@ def update_pod_with_init_container(pod, cmd, kcm_img, kcm_img_pol, args):
 
     if init_containers_key in pod["metadata"]["annotations"]:
         init_containers = \
-                pod["metadata"]["annotations"][init_containers_key]
+            pod["metadata"]["annotations"][init_containers_key]
         pod_init_containers_list = json.loads(init_containers)
 
     pod_init_containers_list.append(container_template)
     pod["metadata"]["annotations"][init_containers_key] = \
         json.dumps(pod_init_containers_list)
-
-
-# get_k8s_node_list() returns the node list in the current Kubernetes cluster.
-def get_k8s_node_list():
-    k8sconfig.load_incluster_config()
-    k8s_api = k8sclient.CoreV1Api()
-    return k8s_api.list_node().to_dict()
-
-
-# get_k8s_pod_list() returns the pod list in the current Kubernetes cluster.
-def get_k8s_pod_list():
-    k8sconfig.load_incluster_config()
-    k8s_api = k8sclient.CoreV1Api()
-    return k8s_api.list_pod_for_all_namespaces().to_dict()
-
-
-# create_k8s_pod() sends a request to the Kubernetes API server to create a
-# pod based on podspec.
-def create_k8s_pod(podspec):
-    k8sconfig.load_incluster_config()
-    k8s_api = k8sclient.CoreV1Api()
-    return k8s_api.create_namespaced_pod("default", podspec)
-
-
-def get_pod_template():
-    pod_template = {
-            "apiVersion": "v1",
-            "kind": "Pod",
-            "metadata": {
-                "name": "PODNAME",
-                "annotations": {
-                }
-            },
-            "spec": {
-                "nodeName": "NODENAME",
-                "containers": [
-                ],
-                "restartPolicy": "Never",
-                "volumes": [
-                    {
-                        "hostPath": {
-                            "path": "/proc"
-                        },
-                        "name": "host-proc"
-                    },
-                    {
-                        "hostPath": {
-                            "path": "/etc/kcm"
-                        },
-                        "name": "kcm-conf-dir"
-                    },
-                    {
-                        "hostPath": {
-                            "path": "/opt/bin"
-                        },
-                        "name": "kcm-install-dir"
-                    }
-                ]
-            }
-        }
-    return pod_template
-
-
-def get_container_template():
-    container_template = {
-            "args": [
-                "ARGS"
-            ],
-            "command": ["/bin/bash", "-c"],
-            "env": [
-                {
-                    "name": "KCM_PROC_FS",
-                    "value": "/host/proc"
-                },
-                {
-                    "name": "NODE_NAME",
-                    "valueFrom": {
-                        "fieldRef": {
-                            "fieldPath": "spec.nodeName"
-                        }
-                    }
-                }
-            ],
-            "image": "IMAGENAME",
-            "name": "NAME",
-            "volumeMounts": [
-                {
-                    "mountPath": "/host/proc",
-                    "name": "host-proc",
-                    "readOnly": True
-                },
-                {
-                    "mountPath": "/etc/kcm",
-                    "name": "kcm-conf-dir"
-                },
-                {
-                    "mountPath": "/opt/bin",
-                    "name": "kcm-install-dir"
-                }
-            ],
-            "imagePullPolicy": "Never"
-    }
-    return container_template
