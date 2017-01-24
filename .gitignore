@@ -6,6 +6,7 @@
 terraform/workdir/.kargo/
 terraform/workdir/cluster.yml
 terraform/workdir/mvp_inventory/ansible_inventory
+terraform/workdir/mvp_inventory/group_vars/all.yml.old
 terraform/workdir/kubectl
 **/.terraform
 **/ssh_keys
