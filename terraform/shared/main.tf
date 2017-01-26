@@ -10,7 +10,7 @@ resource "null_resource" "masters" {
   count = "${length(var.k8s_masters)}"
 
   provisioner "local-exec" {
-    command =  "echo \"${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
+    command =  "echo \"$${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
                                     element(var.k8s_masters, count.index),
                                     var.k8s_ips[element(var.k8s_masters, count.index)],
                                     var.k8s_ports[element(var.k8s_masters, count.index)],
@@ -36,7 +36,7 @@ resource "null_resource" "etcd" {
   count = "${length(var.k8s_etcd)}"
 
   provisioner "local-exec" {
-    command =  "echo \"${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
+    command =  "echo \"$${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
                                     element(var.k8s_etcd, count.index),
                                     var.k8s_ips[element(var.k8s_etcd, count.index)],
                                     var.k8s_ports[element(var.k8s_etcd, count.index)],
@@ -61,7 +61,7 @@ resource "null_resource" "minions" {
   count = "${length(var.k8s_minions)}"
   depends_on = ["null_resource.minion_header"]
   provisioner "local-exec" {
-    command =  "echo \"${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
+    command =  "echo \"$${format("%s ansible_ssh_host=%s ansible_ssh_port=%s ansible_ssh_user='%s' %s ip=%s flannel_interface=%s flannel_backend_type=host-gw local_release_dir=/vagrant/temp download_run_once=False",
                                     element(var.k8s_minions, count.index),
                                     var.k8s_ips[element(var.k8s_minions, count.index)],
                                     var.k8s_ports[element(var.k8s_minions, count.index)],

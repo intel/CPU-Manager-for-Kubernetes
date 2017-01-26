@@ -134,13 +134,6 @@ module "k8s_deploy" {
   k8s_os = "${var.os_type}"
 }
 
-resource "null_resource" "copy_inventory" {
-  depends_on = ["module.k8s_deploy"]
-  provisioner "local-exec" {
-    command = "cp ./inventory ./../workdir/mvp_inventory/ansible_inventory"
-  }
-}
-
 resource "null_resource" "wait_for_connectivity" {
   count = "${length(var.k8s_masters) + length(var.k8s_minions) + length(var.k8s_etcd)}"
   provisioner "remote-exec" {
@@ -155,8 +148,15 @@ resource "null_resource" "wait_for_connectivity" {
   }
 }
 
+resource "null_resource" "copy_inventory" {
+  depends_on = ["null_resource.wait_for_connectivity"]
+  provisioner "local-exec" {
+    command = "cp ./inventory ./../workdir/mvp_inventory/ansible_inventory"
+  }
+}
+
 resource "null_resource" "kargo_deployment" {
-  depends_on = ["null_resource.copy_inventory", "null_resource.wait_for_connectivity"]
+  depends_on = ["null_resource.wait_for_connectivity"]
   provisioner "local-exec" {
     command = "../scripts/ansible_provisioner.sh \"${var.os_type}\""
   }
