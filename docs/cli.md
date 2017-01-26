@@ -104,7 +104,7 @@ Options:
                         [default: init,reconcile,install,discover,nodereport].
   --kcm-img=<img>       KCM Docker image [default: kcm].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
-                        [default: Never].
+                        [default: IfNotPresent].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
   --install-dir=<dir>   KCM install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
@@ -567,7 +567,7 @@ _None_
   each host [default: init,reconcile,install,discover].
 - `--kcm-img=<img>` KCM Docker image [default: kcm].
 - `--kcm-img-pol=<pol>`   Image pull policy for the KCM Docker image
-  [default: Never].
+  [default: IfNotPresent].
 - `--conf-dir=<dir>` Path to the KCM configuration directory. This
   directory must either not exist or be an empty directory.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
