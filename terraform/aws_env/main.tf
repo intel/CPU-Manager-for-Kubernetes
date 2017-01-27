@@ -169,7 +169,7 @@ resource "null_resource" "wait_for_connectivity" {
 }
 
 resource "null_resource" "copy_inventory" {
-  depends_on = ["null_resource.wait_for_connectivity"]
+  depends_on = ["module.k8s_deploy"]
 
   provisioner "local-exec" {
     command = "cp ./inventory ./../workdir/mvp_inventory/ansible_inventory"
@@ -194,8 +194,8 @@ resource "null_resource" "deploy_seed" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt -qq update",
-      "sudo apt -qq install -y python-pip libssl-dev",
+      "sudo apt-get -qq update",
+      "sudo apt-get -qq install -y python-pip libssl-dev",
       "sudo pip install -q ansible==2.2.0.0",
       "sudo pip install -q -r ./terraform/requirements.txt",
     ]
@@ -211,7 +211,7 @@ resource "null_resource" "deploy_seed" {
 }
 
 resource "null_resource" "kargo_deployment" {
-  depends_on = ["null_resource.deploy_seed"]
+  depends_on = ["null_resource.wait_for_connectivity", "null_resource.deploy_seed"]
 
   provisioner "remote-exec" {
     inline = [
