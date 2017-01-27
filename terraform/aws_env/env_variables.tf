@@ -1,16 +1,25 @@
 variable "user_name" {
   description = "User name required for ssh access."
-  default = ["ubuntu"]
+  default     = ["ubuntu"]
 }
 
 variable "port_number" {
   description = "Port which provides SSH access."
-  default = ["22"]
+  default     = ["22"]
 }
 
 variable "aws_ami" {
   description = "AWS ami used for booting VM."
-  default = "ami-9dcfdb8a"
+  default     = "ami-9dcfdb8a"
+}
+
+variable "seed" {
+  default = {
+    ami         = "ami-9dcfdb8a"
+    flavor      = "m4.large"
+    user_name   = "ubuntu"
+    port_number = "22"
+  }
 }
 
 # Don't change following parameters.
