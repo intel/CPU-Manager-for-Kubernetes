@@ -137,6 +137,11 @@ are SHARED.
 
 Processor topology is discovered using [`lscpu`][lscpu].
 
+This command succeeds if the config directory is already written. If
+that is the case, logs are output saying so. If the existing
+configuration does not match the requested pool allocations, then the
+command logs at error level and exits with a nonzero status.
+
 For more information about the config format on disk, refer to
 [the `kcm` configuration directory][doc-config].
 

@@ -75,15 +75,42 @@ from . import config
 import collections
 import logging
 import subprocess
+import sys
 
 
 def init(conf_dir, num_dp_cores, num_cp_cores):
     check_hugepages()
     cpumap = discover_topo()
+
     logging.info("Writing config to {}.".format(conf_dir))
     logging.info("Requested data plane cores = {}.".format(num_dp_cores))
     logging.info("Requested control plane cores = {}.".format(num_cp_cores))
-    c = config.new(conf_dir)
+
+    try:
+        c = config.new(conf_dir)
+    except FileExistsError:
+        logging.info("Configuration directory already exists.")
+        c = config.Config(conf_dir)
+
+        num_dp_lists = len(c.pools("dataplane").cpu_lists())
+        num_cp_lists = len(c.pools("controlplane").cpu_lists())
+
+        alloc_error = None
+
+        if num_dp_lists is not num_dp_cores:
+            alloc_error = True
+            logging.error("{} dataplane cores ({} requested)".format(
+                num_dp_lists, num_dp_cores))
+        if num_cp_lists is not num_cp_cores:
+            alloc_error = True
+            logging.error("{} controlplane cores ({} requested)".format(
+                num_cp_lists, num_cp_cores))
+
+        if alloc_error:
+            sys.exit(1)
+
+        return
+
     with c.lock():
         logging.info("Adding dataplane pool.")
         dp = c.add_pool("dataplane", True)
