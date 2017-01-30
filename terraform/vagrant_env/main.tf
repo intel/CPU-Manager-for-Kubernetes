@@ -98,9 +98,9 @@ module "k8s_deploy" {
 }
 
 resource "null_resource" "kargo_deployment" {
-  depends_on = ["null_resource.copy_inventory", "null_resource.copy_code"]
+  depends_on = ["module.k8s_deploy"]
 
   provisioner "local-exec" {
-    command = "${format("%s", var.skip_deploy == "true" ? "echo Skipping ansible provisioning" : format("../scripts/ansible_provisioner.sh %s", var.k8s_os))}"
+    command = "${format("%s", var.skip_deploy == "true" ? "echo Skipping ansible provisioning" : format("../scripts/ansible_provisioner.sh %s", var.os_type))}"
   }
 }
