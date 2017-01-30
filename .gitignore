@@ -8,9 +8,13 @@ terraform/workdir/cluster.yml
 terraform/workdir/mvp_inventory/ansible_inventory
 terraform/workdir/mvp_inventory/group_vars/all.yml.old
 terraform/workdir/kubectl
+terraform/workdir/config.yml
+terraform/workdir/credentials/
 **/.terraform
 **/ssh_keys
 terraform/vagrant_env/inventory
 **/terraform.tfstate*
 **/terraform_hosts
 *.retry
+.coverage
+*.py,cover
