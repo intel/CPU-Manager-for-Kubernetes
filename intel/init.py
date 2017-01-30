@@ -72,52 +72,182 @@
 # apply to the Software.
 
 from . import config
-import collections
 import logging
 import subprocess
 
 
+class Socket:
+    def __init__(self, socket_id, cores={}):
+        self.socket_id = socket_id
+        self.cores = cores
+
+    def __str__(self):
+        out = "socket %d has %d cores\n" % (self.socket_id, len(self.cores))
+
+        for core in self.cores.values():
+            out += str(core)
+
+        return out
+
+
+class Core:
+    def __init__(self, core_id, cpus={}):
+        self.core_id = core_id
+        self.cpus = cpus
+        self.pool = None
+
+    def is_isolated(self):
+        num_isolated_cpus = len(self.isolated_cpus())
+        return num_isolated_cpus > 0 and num_isolated_cpus == len(self.cpus)
+
+    def isolated_cpus(self):
+        cpus = {}
+        for cpu_id in self.cpus:
+            if self.cpus[cpu_id].isolated:
+                cpus[cpu_id] = self.cpus[cpu_id]
+
+        return cpus
+
+    def cpu_ids(self):
+        cpus = []
+        for cpu_id in self.cpus:
+            cpus.append(cpu_id)
+
+        return cpus
+
+    def __str__(self):
+        isolated_string = ""
+        if self.is_isolated():
+            isolated_string = " and is isolated"
+
+        assigned_string = ""
+        if self.pool is not None:
+            assigned_string += " is assigned to the %s pool" % self.pool
+
+        out = "core %d%s has %d cpus%s\n" % (
+              self.core_id, assigned_string, len(self.cpus), isolated_string)
+
+        for cpu in self.cpus.values():
+            out += str(cpu)
+
+        return out
+
+
+class CPU:
+    def __init__(self, cpu_id):
+        self.cpu_id = cpu_id
+        self.isolated = False
+
+    def __str__(self):
+        isolated_string = "is not isolated"
+        if self.isolated:
+            isolated_string = "is isolated"
+
+        return "cpu %d %s\n" % (self.cpu_id, isolated_string)
+
+
+def dfilter(func, d):
+    out = {}
+    for k, v in d.items():
+        if func(v):
+            out[k] = v
+    return out
+
+
+def assign_cores(cores, pool, num_cores):
+    free_cores = dfilter(lambda core: core.pool is None, cores)
+    if len(free_cores) < num_cores:
+        logging.fatal("Isolated cores exhausted. "
+                      "could not assign %s cores" % pool)
+
+    allocated = 0
+    for free_core in free_cores.values():
+        free_core.pool = pool
+
+        allocated += 1
+        if allocated == num_cores:
+            break
+
+
 def init(conf_dir, num_dp_cores, num_cp_cores):
     check_hugepages()
-    cpumap = discover_topo()
+
     logging.info("Writing config to {}.".format(conf_dir))
     logging.info("Requested data plane cores = {}.".format(num_dp_cores))
     logging.info("Requested control plane cores = {}.".format(num_cp_cores))
+
+    num_dp_cores = int(num_dp_cores)
+    num_cp_cores = int(num_cp_cores)
+
+    # TODO: Consider moving into own function.
+    sockets = topology(lscpu(), cmdline())
+
+    # We only support one socket for now.
+    if len(sockets) != 1:
+        logging.fatal("Only single socket systems are supported for now. "
+                      "Found %d sockets" % len(sockets))
+
+    socket = sockets[0]
+    isolated_cores = dfilter(lambda core: core.is_isolated(), socket.cores)
+    num_isolated_cores = len(isolated_cores)
+    cores = socket.cores
+
+    if num_isolated_cores > 0:
+        if num_isolated_cores < (num_dp_cores + num_cp_cores):
+            logging.fatal(
+                "Cannot use isolated cores for data plane and control plane "
+                "cores: not enough isolated cores %d compared to requested %d"
+                % num_isolated_cores, (num_dp_cores + num_cp_cores))
+
+        # Allocate cores for data plane
+        assign_cores(isolated_cores, "dp", num_dp_cores)
+
+        # Allocate cores for control plane
+        assign_cores(isolated_cores, "cp", num_cp_cores)
+
+        # Allocate non isolated cores for infra
+        regular_cores = dfilter(lambda core: not core.is_isolated(),
+                                socket.cores)
+
+        assign_cores(regular_cores, "infra", len(regular_cores))
+
+    elif num_isolated_cores == 0:
+        # Allocate cores for data plane
+        assign_cores(cores, "dp", num_dp_cores)
+
+        # Allocate cores for control plane
+        assign_cores(cores, "cp", num_cp_cores)
+
+        # Allocate all free cores for infra
+        free_cores = dfilter(lambda core: core.pool is None, socket.cores)
+        assign_cores(cores, "infra", len(free_cores))
+
+    def pool_cpu_ids(cores, pool):
+        cores = dfilter(lambda core: core.pool == pool, cores)
+        core_ids = []
+        for core in cores:
+            for cpu_id in cores[core].cpu_ids():
+                core_ids.append(str(cpu_id))
+
+        return core_ids
+
+    # Write configuration.
     c = config.new(conf_dir)
     with c.lock():
-        logging.info("Adding dataplane pool.")
+        logging.info("Adding dataplane pool")
         dp = c.add_pool("dataplane", True)
-        for i in range(int(num_dp_cores)):
-            if not cpumap:
-                raise KeyError("No more cpus left to assign for data plane")
-            k, v = cpumap.popitem()
-            logging.info("Adding {} cpus to the dataplane pool.".format(v))
-            dp.add_cpu_list(v)
-        logging.info("Adding controlplane pool.")
+        dp_cores = pool_cpu_ids(cores, "dp")
+        dp.add_cpu_list(",".join(dp_cores))
+
+        logging.info("Adding controlplane pool")
         cp = c.add_pool("controlplane", False)
-        cpus = ""
-        for i in range(int(num_cp_cores)):
-            if not cpumap:
-                raise KeyError("No more cpus left to assign for control plane")
-            k, v = cpumap.popitem()
-            if cpus:
-                cpus = cpus + "," + v
-            else:
-                cpus = v
-        logging.info("Adding {} cpus to the controlplane pool.".format(cpus))
-        cp.add_cpu_list(cpus)
-        logging.info("Adding infra pool.")
+        cp_cores = pool_cpu_ids(cores, "cp")
+        cp.add_cpu_list(",".join(cp_cores))
+
+        logging.info("Adding infra pool")
         infra = c.add_pool("infra", False)
-        cpus = ""
-        if not cpumap:
-            raise KeyError("No more cpus left to assign for infra")
-        for k, v in cpumap.items():
-            if cpus:
-                cpus = cpus + "," + v
-            else:
-                cpus = v
-        logging.info("Adding {} cpus to the infra pool.".format(cpus))
-        infra.add_cpu_list(cpus)
+        infra_cores = pool_cpu_ids(cores, "infra")
+        infra.add_cpu_list(",".join(infra_cores))
 
 
 def check_hugepages():
@@ -133,29 +263,77 @@ def check_hugepages():
                 return
 
 
-# Discover cpu topology (physical to logical core mapping).
-def discover_topo():
-    cmd_out = subprocess.check_output("lscpu -p", shell=True)
-    return parse_topo(cmd_out.decode("UTF-8"))
-
-
-# Returns a map between physical and logical cpu cores using
-# `lscpu -p` output.
-# `lscpu -p` output has the following format:
-# # The following is the parsable format, which can be fed to other
-# # programs. Each different item in every column has an unique ID
-# # starting from zero.
-# # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
+# Returns output in format:
+# ["#", "CPU", "Core", Socket,Node,,L1d,L1i,L2,L3]
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def parse_topo(topo_output):
-    lines = topo_output.split("\n")
-    cpumap = collections.OrderedDict()
-    for line in lines:
+def lscpu():
+    cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    lines = cmd_out.decode("UTF-8").split("\n")
+    return lines
+
+
+def cmdline(cmdline_file="/proc/cmdline"):
+    cmdline_contents = []
+
+    with open(cmdline_file, "r") as cmdline:
+        cmdline_contents = cmdline.readlines()
+
+    return cmdline_contents
+
+
+def isolcpus(cmdlines=[]):
+    cpus = []
+
+    if len(cmdlines) == 0:
+        return cpus
+
+    cmdline_fields = cmdlines[0].split(" ")
+    for cmdline_field in cmdline_fields:
+        pair = cmdline_field.split("=")
+        if len(pair) != 2:
+            continue
+
+        key = pair[0]
+        value = pair[1]
+
+        if key == "isolcpus":
+            cpus_str = value.split(",")
+            for cpu_id in cpus_str:
+                cpus.append(int(cpu_id))
+
+    return cpus
+
+
+def topology(lscpu_lines=[], cmdlines=[]):
+    isolated_cpus = set(isolcpus(cmdlines))
+
+    sockets = {}
+    for line in lscpu_lines:
         if not line.startswith("#") and len(line) > 0:
             cpuinfo = line.split(",")
-            if cpuinfo[1] in cpumap:
-                cpumap[cpuinfo[1]] = cpumap[cpuinfo[1]] + "," + cpuinfo[0]
-            else:
-                cpumap[cpuinfo[1]] = cpuinfo[0]
-    return cpumap
+
+            socket_id = int(cpuinfo[2])
+            core_id = int(cpuinfo[1])
+            cpu_id = int(cpuinfo[0])
+
+            if socket_id not in sockets:
+                logging.info("socket %d not found: adding" % socket_id)
+                sockets[socket_id] = Socket(socket_id)
+
+            if core_id not in sockets[socket_id].cores:
+                logging.info("core %d not found in socket %d: adding" %
+                             (core_id, socket_id))
+                sockets[socket_id].cores[core_id] = Core(core_id)
+
+            if cpu_id not in sockets[socket_id].cores[core_id].cpus:
+                logging.info("cpu %d not found in core %d: adding" %
+                             (cpu_id, core_id))
+                sockets[socket_id].cores[core_id].cpus[cpu_id] = CPU(cpu_id)
+
+            if cpu_id in isolated_cpus:
+                sockets[socket_id].cores[core_id].cpus[cpu_id].isolated = True
+
+            logging.info("topology: %s", sockets[0])
+
+    return sockets

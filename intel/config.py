@@ -176,6 +176,8 @@ class Pool:
     def add_cpu_list(self, cpus):
         if cpus in self.cpu_lists():
             raise KeyError("CPU list {} already exists".format(cpus))
+        logging.fatal("os.path.join(self.path, cpus): %s" %
+                      str(os.path.join(self.path, cpus)))
         os.makedirs(os.path.join(self.path, cpus))
         open(os.path.join(self.path, cpus, "tasks"), "w+")
         return self.cpu_list(cpus)
