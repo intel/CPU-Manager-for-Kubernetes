@@ -48,6 +48,7 @@ terraform_logs() {
     unset TF_LOG
   fi
 }
+
 #############################
 # Validate AWS requirements #
 #############################
@@ -126,6 +127,7 @@ main() {
   terraform_logs
   export TF_VAR_skip_deploy=true
   export DEBUG
+
   ${target}_${action}
 }
 

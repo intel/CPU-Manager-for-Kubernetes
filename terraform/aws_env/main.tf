@@ -16,7 +16,7 @@ data "terraform_remote_state" "multinode_vpc" {
 
 # Prepare separate subnet based on provided variables.
 module "aws_subnet" {
-  source = "git::ssh://git@github.com/intelsdi-x/terraform-kopernik//modules/aws_subnet"
+  source = "git::ssh://git@github.com/intelsdi-x/terraform-kopernik/modules/aws_subnet"
 
   vpc_id      = "${data.terraform_remote_state.multinode_vpc.vpc_id}"
   vpc_cidr    = "${data.terraform_remote_state.multinode_vpc.vpc_cidr}"
@@ -110,28 +110,24 @@ resource "aws_instance" "aws_minions" {
 # Merge VMs data into shared maps.
 module "aggregator" {
   source = "../aggregator"
-
   instance_master_names     = ["${aws_instance.aws_master.*.tags.Name}"]
   instance_master_ips       = ["${aws_instance.aws_master.*.public_ip}"]
   instance_master_user      = ["${aws_instance.aws_master.*.tags.UserName}"]
   instance_master_port      = ["${aws_instance.aws_master.*.tags.PortNumber}"]
   instance_master_pk        = ["${aws_instance.aws_master.*.tags.DumpKey}"]
   instance_master_privateip = ["${aws_instance.aws_master.*.private_ip}"]
-
   instance_etcd_names     = ["${aws_instance.aws_etcd.*.tags.Name}"]
   instance_etcd_ips       = ["${aws_instance.aws_etcd.*.public_ip}"]
   instance_etcd_user      = ["${aws_instance.aws_etcd.*.tags.UserName}"]
   instance_etcd_port      = ["${aws_instance.aws_etcd.*.tags.PortNumber}"]
   instance_etcd_pk        = ["${aws_instance.aws_etcd.*.tags.DumpKey}"]
   instance_etcd_privateip = ["${aws_instance.aws_etcd.*.private_ip}"]
-
   instance_minions_names     = ["${aws_instance.aws_minions.*.tags.Name}"]
   instance_minions_ips       = ["${aws_instance.aws_minions.*.public_ip}"]
   instance_minions_user      = ["${aws_instance.aws_minions.*.tags.UserName}"]
   instance_minions_port      = ["${aws_instance.aws_minions.*.tags.PortNumber}"]
   instance_minions_pk        = ["${aws_instance.aws_minions.*.tags.DumpKey}"]
   instance_minions_privateip = ["${aws_instance.aws_minions.*.private_ip}"]
-
   use_agent = "true"
 }
 

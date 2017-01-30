@@ -22,13 +22,13 @@ variable "seed" {
   }
 }
 
+variable "aws_keyname" {
+  default = "snapbot-private"
+}
+
 # Don't change following parameters.
 variable "aws_region" {
   default = "us-east-1"
-}
-
-variable "aws_keyname" {
-  default = "snapbot-private"
 }
 
 variable agent_seed {}

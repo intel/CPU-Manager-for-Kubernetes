@@ -17,3 +17,5 @@ terraform/vagrant_env/inventory
 **/terraform_hosts
 **/cluster.retry
 **/post_deploy.retry
+.coverage
+*.py,cover
