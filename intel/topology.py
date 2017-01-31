@@ -97,17 +97,17 @@ class CPU:
         self.cpu_id = cpu_id
 
 
-# Returns of map of socket id to sockets.
-# `lscpu -p` output has the following format:
+# Returns of map of socket id (integer) to sockets (Socket type).
+# lscpu has the following format:
 # # The following is the parsable format, which can be fed to other
 # # programs. Each different item in every column has an unique ID
 # # starting from zero.
 # # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def parse(lscpu_lines=[]):
+def parse(lscpu_output):
     sockets = {}
-    for line in lscpu_lines:
+    for line in lscpu_output.split("\n"):
         if not line.startswith("#") and len(line) > 0:
             cpuinfo = line.split(",")
 

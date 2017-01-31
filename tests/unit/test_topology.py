@@ -81,7 +81,7 @@ def test_init_topology_small():
 # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 0,0,0,0,,0,0,0,0
 1,1,0,0,,1,1,1,0
-""".split("\n")
+"""
 
     sockets = topology.parse(lscpu)
     assert len(sockets) == 1
@@ -90,6 +90,8 @@ def test_init_topology_small():
     assert len(cpumap) == 2
     assert 0 in cpumap
     assert 1 in cpumap
+    assert cpumap[0].cpu_ids() == [0]
+    assert cpumap[1].cpu_ids() == [1]
 
 
 def test_init_topology_large():
@@ -105,7 +107,7 @@ def test_init_topology_large():
 5,1,0,0,,1,1,1,0
 6,2,0,0,,2,2,2,0
 7,3,0,0,,3,3,3,0
-""".split("\n")
+"""
 
     sockets = topology.parse(lscpu)
     assert len(sockets) == 1
