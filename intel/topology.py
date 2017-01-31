@@ -138,7 +138,7 @@ def isolcpus(cmdline):
     # Ensure that newlines are removed.
     cmdline_stripped = cmdline.rstrip()
 
-    cmdline_fields = cmdline_stripped.split(" ")
+    cmdline_fields = cmdline_stripped.split()
     for cmdline_field in cmdline_fields:
         pair = cmdline_field.split("=")
         if len(pair) != 2:
