@@ -100,3 +100,11 @@ def test_kcm_init():
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     helpers.execute(integration.kcm(), args)
+
+
+def test_kcm_init_exists():
+    args = ["init",
+            "--conf-dir={}".format(helpers.conf_dir("minimal"))]
+
+    with pytest.raises(subprocess.CalledProcessError):
+        helpers.execute(integration.kcm(), args)
