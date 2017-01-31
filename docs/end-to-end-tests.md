@@ -6,13 +6,26 @@ Currently K8s can be deployed on :
 
 In both cases [Terraform](https://www.terraform.io/) is used as the deployment tool and [Kargo](https://github.com/kubernetes-incubator/kargo) as Kubernetes deployer. Details on the 
 directories and files are as follows:
+ - *aggregator/*: terraform helper module for data aggregation
  - *aws_env/*: terraform files for AWS based environment
  - *scripts/*: helper shell scripts
- - *shared/*: helper module for shared code between local and AWS deployment used to create Kargo inventory
+ - *shared/*: terraform helper module for shared code between local and AWS deployment used to create Kargo inventory
  - *vagrant_env/*: terraform files for local vagrant based environment
- - *aggregator/*: helper module for data aggregation
- - *variables.tf*: file with VM's configuration
+ - *workdir/*: directory containing various e2e environemnt tools
+ 	- 	*.kargo/* - Kargo source code **<sup>1</sup>**
+ 	- 	*credentials/* - Kubernets cluster credentials **<sup>1</sup>**
+ 	- 	*mvp_inventory/* - inventory and group variables for cargo
+ 	-   *roles/* - directory with additional roles used in post deploy actions	
+ 	- 	*ansible.cfg* - Ansible configuration file for Kargo/Post Deploy
+ 	- 	*cluster.yml* - symbolic link to Kargo main playbook **<sup>1</sup>**
+ 	- 	*config.yml* - kubectl configuration file **<sup>1</sup>**
+ 	- 	*kubectl* - kubectl binary consistent with deployed Kubernetes server version **<sup>1</sup>**
+ 	- 	*post_deploy.yml* - Ansible playbook that performs post deploy
+ - *requirements.txt*: Ansible dependencies
  - *setup_env.sh*: Shell script to deploy and purge e2e environments
+ - *variables.tf*: file with VM's configuration
+
+**<sup>1</sup>** Component is downloaded/created during e2e deployment
 
 ### Prerequisites:
 1. [VirtualBox](https://www.virtualbox.org/wiki/VirtualBox)
@@ -49,7 +62,7 @@ directories and files are as follows:
 1. [Ansible](https://www.ansible.com/) (currently 2.2.0.0 version is tested, **dont use any other**)
     ```sh
     sudo pip2 install ansible==2.2.0.0
-    ```script
+    ```
     * **NOTE:** Make sure, that Ansible is using Python 2.7. A lot of Ansible scripts are prepared exlusivly for Python 2.7*
     * **NOTE:** You may need to increase number of file handles. For GNU\Linux use ulitmit. MacOS X users should run `sudo launchctl limit maxfiles unlimited`*
 
@@ -87,14 +100,29 @@ ssh -o StrictHostKeyChecking=no -p <ansible_ssh_port> -i <ansible_ssh_private_ke
 Alternatively, you can go to vagrant base directory of `ansible_ssh_private_key_file` (i.e. */tmp/vagrant_vbox_resXXXXXXXX*)
 and inside there execute `vagrant ssh`.
 
-* **NOTE 1:**
-Kubectl is installed only on Kubernetes master node (usually named: *k8s-m1*) with all proper credentials.
-In future releases, we will fetch all credentials and kubectl binary so user can interact with cluster remotely.
+#### Kubectl usage
+
+After Kargo is done, `setup_env.sh` script will automaticly run playbook `post_deploy.yml` from `.workdir/` that will perform the following actions:
+- download kubctl binary consistent with deployed Kubernetes server version
+- fetch `/etc/kubernetes` directory from Kubernetes master with SSL certificates and manifests into `./credentials` directory
+- template `config.yml` with proper Kube admin credentials
+- Setup docker registry on etcd node named `registry.dev.e2e` **<sup>1</sup>**
+- Setup this registry as "insecure registry on all e2e environment nodes **<sup>2</sup>**
+
+After this is done user can interact from `workdir/` with Kubernetes cluster using:
+```sh
+# sample usage
+./kubectl --kubeconfig cluster.yml get nodes
+```
+
+**<sup>1</sup>** Docker registry name can be configured in `post_deploy.yml`
+
+**<sup>2</sup>** Docker registry name is resolved using `/etc/hosts` file on each node and injected as argument into Docker daemon on each node. If name change is needed, it needs to be done before running deployment
 
 
 ### AWS Kubernetes cluster
 #### Deployment and purge
-To provide connectivity into VMs, AWS is using user's public keys. To learn more about AWS key management(incl. how to add another key) read [this](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+To provide connectivity into VMs, AWS is using user's public keys. To learn more about AWS key managment(incl. how to add another key) read [this](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 For e2e environment purposes, public key is defined within `terraform/aws_env/env_variables.tf` as `aws_keyname` variable. User can change this directly
 inside this file, or override it with `TF_VAR_aws_keyname`.
 
