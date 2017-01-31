@@ -91,10 +91,21 @@ class Core:
 
         return cpus
 
+    def is_isolated(self):
+        if len(self.cpus) == 0:
+            return False
+
+        for cpu_id in self.cpus:
+            if not self.cpus[cpu_id].isolated:
+                return False
+
+        return True
+
 
 class CPU:
     def __init__(self, cpu_id):
         self.cpu_id = cpu_id
+        self.isolated = False
 
 
 # Returns of map of socket id (integer) to sockets (Socket type).
@@ -105,7 +116,7 @@ class CPU:
 # # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def parse(lscpu_output):
+def parse(lscpu_output, isolated_cpus=[]):
     sockets = {}
     for line in lscpu_output.split("\n"):
         if not line.startswith("#") and len(line) > 0:
@@ -127,6 +138,11 @@ def parse(lscpu_output):
 
             if cpu_id not in core.cpus:
                 core.cpus[cpu_id] = CPU(cpu_id)
+
+            cpu = core.cpus[cpu_id]
+
+            if cpu_id in isolated_cpus:
+                cpu.isolated = True
 
     return sockets
 
