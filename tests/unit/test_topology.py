@@ -122,3 +122,21 @@ def test_init_topology_large():
     assert cpumap[1].cpu_ids() == [1, 5]
     assert cpumap[2].cpu_ids() == [2, 6]
     assert cpumap[3].cpu_ids() == [3, 7]
+
+
+def test_isolcpus_invalid_input():
+    assert topology.isolcpus("") == []
+    assert topology.isolcpus("a") == []
+    assert topology.isolcpus("a b") == []
+    assert topology.isolcpus("a b\n") == []
+    assert topology.isolcpus("a b c\nA B C") == []
+    assert topology.isolcpus("a b=7 c\nA B C") == []
+    assert topology.isolcpus("a b=7 c=7,8,9\nA B C") == []
+    assert topology.isolcpus("a b=7 c=7, 8,9\nA B C") == []
+
+
+def test_isolcpus_valid_input():
+    cmdline = ("BOOT_IMAGE=/boot/vmlinuz-4.4.14-040414-generic "
+               "root=/dev/md2 ro net.ifnames=0 isolcpus=0,1,2,3,8,9,10,11")
+
+    assert topology.isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11]
