@@ -319,20 +319,29 @@ def topology(lscpu_lines=[], cmdlines=[]):
 
             if socket_id not in sockets:
                 logging.info("socket %d not found: adding" % socket_id)
-                sockets[socket_id] = Socket(socket_id)
+                socket = Socket(socket_id)
+                sockets[socket_id] = socket
 
-            if core_id not in sockets[socket_id].cores:
+            socket = sockets[socket_id]
+
+            if core_id not in socket.cores:
                 logging.info("core %d not found in socket %d: adding" %
                              (core_id, socket_id))
-                sockets[socket_id].cores[core_id] = Core(core_id)
+                core = Core(core_id)
+                socket.cores[core_id] = core
 
-            if cpu_id not in sockets[socket_id].cores[core_id].cpus:
+            core = socket.cores[core_id]
+
+            if cpu_id not in core.cpus:
                 logging.info("cpu %d not found in core %d: adding" %
                              (cpu_id, core_id))
-                sockets[socket_id].cores[core_id].cpus[cpu_id] = CPU(cpu_id)
+                cpu = CPU(cpu_id)
+                core.cpus[cpu_id] = cpu
+
+            cpu = core.cpus[cpu_id]
 
             if cpu_id in isolated_cpus:
-                sockets[socket_id].cores[core_id].cpus[cpu_id].isolated = True
+                cpu.isolated = True
 
             logging.info("topology: %s", sockets[0])
 
