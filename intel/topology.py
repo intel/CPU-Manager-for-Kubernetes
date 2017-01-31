@@ -129,3 +129,27 @@ def parse(lscpu_output):
                 core.cpus[cpu_id] = CPU(cpu_id)
 
     return sockets
+
+
+# Returns list of isolated cpu ids from content in /proc/cmdline.
+def isolcpus(cmdline):
+    cpus = []
+
+    # Ensure that newlines are removed.
+    cmdline_stripped = cmdline.rstrip()
+
+    cmdline_fields = cmdline_stripped.split(" ")
+    for cmdline_field in cmdline_fields:
+        pair = cmdline_field.split("=")
+        if len(pair) != 2:
+            continue
+
+        key = pair[0]
+        value = pair[1]
+
+        if key == "isolcpus":
+            cpus_str = value.split(",")
+            for cpu_id in cpus_str:
+                cpus.append(int(cpu_id))
+
+    return cpus
