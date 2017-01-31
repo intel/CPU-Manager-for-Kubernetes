@@ -83,7 +83,7 @@ def test_init_topology_small():
 1,1,0,0,,1,1,1,0
 """.split("\n")
 
-    sockets = topology.topology(lscpu)
+    sockets = topology.parse(lscpu)
     assert len(sockets) == 1
 
     cpumap = sockets[0].cores
@@ -107,10 +107,8 @@ def test_init_topology_large():
 7,3,0,0,,3,3,3,0
 """.split("\n")
 
-    sockets = topology.topology(lscpu)
+    sockets = topology.parse(lscpu)
     assert len(sockets) == 1
-
-    print(sockets[0])
 
     cpumap = sockets[0].cores
     assert len(cpumap) == 4
