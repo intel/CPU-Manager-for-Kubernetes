@@ -218,3 +218,5 @@ def test_topology_isolated_one_socket():
     cores = sockets[0].cores
     assert len(cores) is 4
     assert len([c for c in cores.values() if c.is_isolated()]) is 4
+=======
+>>>>>>> Added cmdline parsing for isolcpus
