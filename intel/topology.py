@@ -97,11 +97,7 @@ class Core:
         self.pool = None
 
     def cpu_ids(self):
-        cpus = []
-        for cpu_id in self.cpus:
-            cpus.append(cpu_id)
-
-        return cpus
+        return list(self.cpus.keys())
 
     def is_isolated(self):
         if len(self.cpus) == 0:
@@ -143,8 +139,9 @@ class CPU:
 # 1,1,0,0,,1,1,1,0
 def parse(lscpu_output, isolated_cpus=[]):
     sockets = {}
+
     for line in lscpu_output.split("\n"):
-        if not line.startswith("#") and len(line) > 0:
+        if line and not line.startswith("#"):
             cpuinfo = line.split(",")
 
             socket_id = int(cpuinfo[2])
@@ -158,14 +155,10 @@ def parse(lscpu_output, isolated_cpus=[]):
 
             if core_id not in socket.cores:
                 socket.cores[core_id] = Core(core_id)
-
             core = socket.cores[core_id]
 
-            if cpu_id not in core.cpus:
-                core.cpus[cpu_id] = CPU(cpu_id)
-
-            cpu = core.cpus[cpu_id]
-
+            cpu = CPU(cpu_id)
+            core.cpus[cpu_id] = cpu
             if cpu_id in isolated_cpus:
                 cpu.isolated = True
 
