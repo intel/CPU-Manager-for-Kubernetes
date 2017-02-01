@@ -81,6 +81,12 @@ class Socket:
         self.socket_id = socket_id
         self.cores = cores
 
+    def as_dict(self):
+        return {
+            "id": self.socket_id,
+            "cores": [c.as_dict() for c in self.cores.values()]
+        }
+
 
 class Core:
     def __init__(self, core_id, cpus=None):
@@ -107,11 +113,24 @@ class Core:
 
         return True
 
+    def as_dict(self):
+        return {
+            "id": self.core_id,
+            "pool": self.pool,
+            "cpus": [c.as_dict() for c in self.cpus.values()]
+        }
+
 
 class CPU:
     def __init__(self, cpu_id):
         self.cpu_id = cpu_id
         self.isolated = False
+
+    def as_dict(self):
+        return {
+            "id": self.cpu_id,
+            "isolated": self.isolated,
+        }
 
 
 # Returns of map of socket id (integer) to sockets (Socket type).
