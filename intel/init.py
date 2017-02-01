@@ -71,13 +71,72 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-from . import config, topology, proc
+from . import config, topology
 import logging
 import sys
-import os
 
 
-def verify_allocation(conf_dir, num_dp_cores, num_cp_cores):
+def init(conf_dir, num_dp_cores, num_cp_cores):
+    check_hugepages()
+
+    logging.info("Writing config to {}.".format(conf_dir))
+    logging.info("Requested data plane cores = {}.".format(num_dp_cores))
+    logging.info("Requested control plane cores = {}.".format(num_cp_cores))
+
+    try:
+        c = config.new(conf_dir)
+    except FileExistsError:
+        logging.info("Configuration directory already exists.")
+        check_assignment(conf_dir, num_dp_cores, num_cp_cores)
+        return
+
+    sockets = topology.discover()
+
+    if len(sockets) != 1:
+        logging.error("Only single socket systems are supported for now. "
+                      "Found %d sockets" % len(sockets))
+        sys.exit(1)
+
+    # List of intel.topology.Core objects.
+    cores = list(sockets[0].cores.values())
+
+    check_isolated_cores(cores, num_dp_cores, num_cp_cores)
+
+    # Align dp+cp cores to isolated cores if possible
+    isolated_cores = [c for c in cores if c.is_isolated()]
+    shared_cores = [c for c in cores if not c.is_isolated()]
+
+    if isolated_cores:
+        logging.info("Isolated physical cores: {}".format(
+            ",".join([str(c.core_id) for c in isolated_cores])))
+        assign(isolated_cores, "dataplane", count=num_dp_cores)
+        assign(isolated_cores, "controlplane", count=num_cp_cores)
+        assign(shared_cores, "infra")
+    else:
+        assign(cores, "dataplane", count=num_dp_cores)
+        assign(cores, "controlplane", count=num_cp_cores)
+        assign(cores, "infra")
+
+    with c.lock():
+        write_exclusive_pool("dataplane", cores, c)
+        write_shared_pool("controlplane", cores, c)
+        write_shared_pool("infra", cores, c)
+
+
+def check_hugepages():
+    fd = open("/proc/meminfo", "r")
+    content = fd.read()
+    lines = content.split("\n")
+    for line in lines:
+        if line.startswith("HugePages_Free"):
+            parts = line.split()
+            num_free = int(parts[1])
+            if num_free == 0:
+                logging.warning("No hugepages are free")
+                return
+
+
+def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
     c = config.Config(conf_dir)
 
     num_dp_lists = len(c.pools("dataplane").cpu_lists())
@@ -98,7 +157,7 @@ def verify_allocation(conf_dir, num_dp_cores, num_cp_cores):
         sys.exit(1)
 
 
-def verify_isolated_cores(cores, num_dp_cores, num_cp_cores):
+def check_isolated_cores(cores, num_dp_cores, num_cp_cores):
     isolated_cores = [c for c in cores if c.is_isolated()]
     num_isolated_cores = len(isolated_cores)
 
@@ -163,68 +222,3 @@ def write_shared_pool(pool_name, cores, config):
 
     cpu_ids_str = ",".join([str(c) for c in cpu_ids])
     pool.add_cpu_list(cpu_ids_str)
-
-
-def init(conf_dir, num_dp_cores, num_cp_cores):
-    check_hugepages()
-
-    logging.info("Writing config to {}.".format(conf_dir))
-    logging.info("Requested data plane cores = {}.".format(num_dp_cores))
-    logging.info("Requested control plane cores = {}.".format(num_cp_cores))
-
-    try:
-        c = config.new(conf_dir)
-    except FileExistsError:
-        logging.info("Configuration directory already exists.")
-        verify_allocation(conf_dir, num_dp_cores, num_cp_cores)
-        return
-
-    sockets = topology.parse(
-        topology.lscpu(),
-        topology.isolcpus(os.path.join(proc.procfs(), "cmdline")))
-
-    if len(sockets) != 1:
-        logging.error("Only single socket systems are supported for now. "
-                      "Found %d sockets" % len(sockets))
-        sys.exit(1)
-
-    cores = list(sockets[0].cores.values())
-
-    verify_isolated_cores(cores, num_dp_cores, num_cp_cores)
-
-    # Align dp+cp cores to isolated cores if possible
-    isolated_cores = [c for c in cores if c.is_isolated()]
-    non_isolated_cores = [c for c in cores if not c.is_isolated()]
-
-    num_isolated_cores = len(isolated_cores)
-
-    if num_isolated_cores == 0:
-        dp_pool = cores
-        cp_pool = cores
-        infra_pool = cores
-    elif num_isolated_cores > 0:
-        dp_pool = isolated_cores
-        cp_pool = isolated_cores
-        infra_pool = non_isolated_cores
-
-    assign(dp_pool, "dataplane", count=num_dp_cores)
-    assign(cp_pool, "controlplane", count=num_cp_cores)
-    assign(infra_pool, "infra")
-
-    with c.lock():
-        write_exclusive_pool("dataplane", cores, c)
-        write_shared_pool("controlplane", cores, c)
-        write_shared_pool("infra", cores, c)
-
-
-def check_hugepages():
-    fd = open("/proc/meminfo", "r")
-    content = fd.read()
-    lines = content.split("\n")
-    for line in lines:
-        if line.startswith("HugePages_Free"):
-            parts = line.split()
-            num_free = int(parts[1])
-            if num_free == 0:
-                logging.warning("No hugepages are free")
-                return

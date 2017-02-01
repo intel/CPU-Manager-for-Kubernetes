@@ -71,7 +71,21 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
+from . import proc
+from collections import OrderedDict
+import json
+import logging
+import os
 import subprocess
+
+
+# Returns a dictionary of socket_id (int) to intel.topology.Socket.
+def discover():
+    isol = isolcpus()
+    if isol:
+        logging.info("Isolated logical cores: {}".format(
+            ",".join([str(c) for c in isol])))
+    return parse(lscpu(), isol)
 
 
 class Socket:
@@ -79,7 +93,8 @@ class Socket:
         if not cores:
             cores = {}
         self.socket_id = socket_id
-        self.cores = cores
+        self.cores = OrderedDict(
+            sorted(cores.items(), key=lambda pair: pair[1].core_id))
 
     def as_dict(self):
         return {
@@ -87,14 +102,18 @@ class Socket:
             "cores": [c.as_dict() for c in self.cores.values()]
         }
 
+    def json(self):
+        return json.dumps(self.as_dict(), indent=2, sort_keys=True)
+
 
 class Core:
     def __init__(self, core_id, cpus=None):
         if not cpus:
             cpus = {}
         self.core_id = core_id
-        self.cpus = cpus
         self.pool = None
+        self.cpus = OrderedDict(
+            sorted(cpus.items(), key=lambda pair: pair[1].cpu_id))
 
     def cpu_ids(self):
         return list(self.cpus.keys())
@@ -137,7 +156,10 @@ class CPU:
 # # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def parse(lscpu_output, isolated_cpus=[]):
+def parse(lscpu_output, isolated_cpus=None):
+    if not isolated_cpus:
+        isolated_cpus = []
+
     sockets = {}
 
     for line in lscpu_output.split("\n"):
@@ -158,15 +180,25 @@ def parse(lscpu_output, isolated_cpus=[]):
             core = socket.cores[core_id]
 
             cpu = CPU(cpu_id)
-            core.cpus[cpu_id] = cpu
-            if cpu_id in isolated_cpus:
+            if cpu.cpu_id in isolated_cpus:
                 cpu.isolated = True
+            core.cpus[cpu_id] = cpu
 
     return sockets
 
 
-# Returns list of isolated cpu ids from content in /proc/cmdline.
-def isolcpus(cmdline):
+def lscpu():
+    cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    return cmd_out.decode("UTF-8")
+
+
+def isolcpus():
+    with open(os.path.join(proc.procfs(), "cmdline")) as f:
+        return parse_isolcpus(f.read())
+
+
+# Returns list of isolated cpu ids from /proc/cmdline content.
+def parse_isolcpus(cmdline):
     cpus = []
 
     # Ensure that newlines are removed.
@@ -187,8 +219,3 @@ def isolcpus(cmdline):
                 cpus.append(int(cpu_id))
 
     return cpus
-
-
-def lscpu():
-    cmd_out = subprocess.check_output("lscpu -p", shell=True)
-    return cmd_out.decode("UTF-8")
