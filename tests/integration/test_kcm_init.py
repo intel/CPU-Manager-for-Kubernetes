@@ -73,14 +73,17 @@
 
 from . import integration
 from .. import helpers
-from intel import init
+from intel import proc, topology
 import os
 import pytest
 import tempfile
 import subprocess
 
 
-@pytest.mark.skipif(len(init.discover_topo()) >= 6,
+proc_env_ok = {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}
+
+
+@pytest.mark.skipif(len(topology.discover()[0].cores) >= 6,
                     reason="""skipping negative test if enough physical
                               cores are available""")
 def test_kcm_init_insufficient_cores():
@@ -89,17 +92,17 @@ def test_kcm_init_insufficient_cores():
 
     # Expect to fail if system has insufficient number of cores.
     with pytest.raises(subprocess.CalledProcessError):
-        helpers.execute(integration.kcm(), args)
+        helpers.execute(integration.kcm(), args, proc_env_ok)
 
 
-@pytest.mark.skipif(len(init.discover_topo()) < 6,
+@pytest.mark.skipif(len(topology.discover()[0].cores) < 6,
                     reason="""skipping test if system has insufficient
                               number of physical cores""")
 def test_kcm_init():
     args = ["init",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
-    helpers.execute(integration.kcm(), args)
+    helpers.execute(integration.kcm(), args, proc_env_ok)
 
 
 def test_kcm_init_exists():
@@ -107,4 +110,4 @@ def test_kcm_init_exists():
             "--conf-dir={}".format(helpers.conf_dir("minimal"))]
 
     with pytest.raises(subprocess.CalledProcessError):
-        helpers.execute(integration.kcm(), args)
+        helpers.execute(integration.kcm(), args, proc_env_ok)

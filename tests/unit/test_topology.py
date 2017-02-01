@@ -141,22 +141,22 @@ def test_init_topology_one_socket():
     assert cores[3].cpu_ids() == [3, 7]
 
 
-def test_isolcpus_invalid_input():
-    assert topology.isolcpus("") == []
-    assert topology.isolcpus("a") == []
-    assert topology.isolcpus("a b") == []
-    assert topology.isolcpus("a b\n") == []
-    assert topology.isolcpus("a b c\nA B C") == []
-    assert topology.isolcpus("a b=7 c\nA B C") == []
-    assert topology.isolcpus("a b=7 c=7,8,9\nA B C") == []
-    assert topology.isolcpus("a b=7 c=7, 8,9\nA B C") == []
+def test_parse_isolcpus_invalid_input():
+    assert topology.parse_isolcpus("") == []
+    assert topology.parse_isolcpus("a") == []
+    assert topology.parse_isolcpus("a b") == []
+    assert topology.parse_isolcpus("a b\n") == []
+    assert topology.parse_isolcpus("a b c\nA B C") == []
+    assert topology.parse_isolcpus("a b=7 c\nA B C") == []
+    assert topology.parse_isolcpus("a b=7 c=7,8,9\nA B C") == []
+    assert topology.parse_isolcpus("a b=7 c=7, 8,9\nA B C") == []
 
 
-def test_isolcpus_valid_input():
+def test_parse_isolcpus_valid_input():
     cmdline = ("BOOT_IMAGE=/boot/vmlinuz-4.4.14-040414-generic "
                "root=/dev/md2 ro net.ifnames=0 isolcpus=0,1,2,3,8,9,10,11")
 
-    assert topology.isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11]
+    assert topology.parse_isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11]
 
 
 def test_topology_isolated_one_socket():
@@ -178,7 +178,7 @@ def test_topology_isolated_one_socket():
     sockets = topology.parse(lscpu, isolated_cpus)
     assert len(sockets) == 1
 
-    cores = list(sockets[0].cores.values())
+    cores = sockets[0].cores
 
     assert len(cores) == 4
     assert 0 in cores
