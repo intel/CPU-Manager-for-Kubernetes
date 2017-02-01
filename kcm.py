@@ -133,8 +133,8 @@ def main():
         return
     if args["init"]:
         init.init(args["--conf-dir"],
-                  args["--num-dp-cores"],
-                  args["--num-cp-cores"])
+                  int(args["--num-dp-cores"]),
+                  int(args["--num-cp-cores"]))
         return
     if args["discover"]:
         discover.discover(args["--conf-dir"])
@@ -148,7 +148,7 @@ def main():
         return
     if args["reconcile"]:
         reconcile.reconcile(args["--conf-dir"],
-                            args["--interval"],
+                            int(args["--interval"]),
                             args["--publish"])
         return
     if args["install"]:
@@ -156,7 +156,7 @@ def main():
         return
     if args["node-report"]:
         nodereport.nodereport(args["--conf-dir"],
-                              args["--interval"],
+                              int(args["--interval"]),
                               args["--publish"])
         return
 

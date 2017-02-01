@@ -78,6 +78,8 @@ import logging
 import os
 import subprocess
 
+ENV_LSCPU_SYSFS = "KCM_DEV_LSCPU_SYSFS"
+
 
 # Returns a dictionary of socket_id (int) to intel.topology.Socket.
 def discover():
@@ -188,7 +190,13 @@ def parse(lscpu_output, isolated_cpus=None):
 
 
 def lscpu():
-    cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    sys_fs_path = os.getenv(ENV_LSCPU_SYSFS)
+    if sys_fs_path is None:
+        cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    else:
+        cmd_out = subprocess.check_output(
+            "lscpu -p -s %s" % sys_fs_path, shell=True)
+
     return cmd_out.decode("UTF-8")
 
 
