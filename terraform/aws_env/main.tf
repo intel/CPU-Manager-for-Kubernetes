@@ -63,6 +63,7 @@ resource "aws_instance" "aws_master" {
     Name       = "${element(var.k8s_masters, count.index)}"
     UserName   = "${element(var.user_name, count.index)}"
     PortNumber = "${element(var.port_number, count.index)}"
+    DumpKey    = "/dev/null"
   }
 
   subnet_id              = "${module.aws_subnet.subnet_id}"
@@ -80,6 +81,7 @@ resource "aws_instance" "aws_etcd" {
     Name       = "${element(var.k8s_etcd, count.index)}"
     UserName   = "${element(var.user_name, count.index)}"
     PortNumber = "${element(var.port_number, count.index)}"
+    DumpKey    = "/dev/null"
   }
 
   subnet_id              = "${module.aws_subnet.subnet_id}"
@@ -97,6 +99,7 @@ resource "aws_instance" "aws_minions" {
     Name       = "${element(var.k8s_minions, count.index)}"
     UserName   = "${element(var.user_name, count.index)}"
     PortNumber = "${element(var.port_number, count.index)}"
+    DumpKey    = "/dev/null"
   }
 
   subnet_id              = "${module.aws_subnet.subnet_id}"
@@ -107,28 +110,24 @@ resource "aws_instance" "aws_minions" {
 # Merge VMs data into shared maps.
 module "aggregator" {
   source = "../aggregator"
-
   instance_master_names     = ["${aws_instance.aws_master.*.tags.Name}"]
   instance_master_ips       = ["${aws_instance.aws_master.*.public_ip}"]
   instance_master_user      = ["${aws_instance.aws_master.*.tags.UserName}"]
   instance_master_port      = ["${aws_instance.aws_master.*.tags.PortNumber}"]
-  instance_master_pk        = ["${aws_instance.aws_master.*.tags.Name}"]
+  instance_master_pk        = ["${aws_instance.aws_master.*.tags.DumpKey}"]
   instance_master_privateip = ["${aws_instance.aws_master.*.private_ip}"]
-
   instance_etcd_names     = ["${aws_instance.aws_etcd.*.tags.Name}"]
   instance_etcd_ips       = ["${aws_instance.aws_etcd.*.public_ip}"]
   instance_etcd_user      = ["${aws_instance.aws_etcd.*.tags.UserName}"]
   instance_etcd_port      = ["${aws_instance.aws_etcd.*.tags.PortNumber}"]
-  instance_etcd_pk        = ["${aws_instance.aws_etcd.*.tags.Name}"]
+  instance_etcd_pk        = ["${aws_instance.aws_etcd.*.tags.DumpKey}"]
   instance_etcd_privateip = ["${aws_instance.aws_etcd.*.private_ip}"]
-
   instance_minions_names     = ["${aws_instance.aws_minions.*.tags.Name}"]
   instance_minions_ips       = ["${aws_instance.aws_minions.*.public_ip}"]
   instance_minions_user      = ["${aws_instance.aws_minions.*.tags.UserName}"]
   instance_minions_port      = ["${aws_instance.aws_minions.*.tags.PortNumber}"]
-  instance_minions_pk        = ["${aws_instance.aws_minions.*.tags.Name}"]
+  instance_minions_pk        = ["${aws_instance.aws_minions.*.tags.DumpKey}"]
   instance_minions_privateip = ["${aws_instance.aws_minions.*.private_ip}"]
-
   use_agent = "true"
 }
 
@@ -150,6 +149,9 @@ module "k8s_deploy" {
 
   k8s_use_agent = "true"
   k8s_os        = "${var.os_type}"
+
+  k8s_names   = "${module.aggregator.names_list}"
+  skip_deploy = "${var.skip_deploy}"
 }
 
 resource "null_resource" "wait_for_connectivity" {

@@ -93,4 +93,14 @@ module "k8s_deploy" {
 
   k8s_use_agent = "false"
   k8s_os        = "${var.os_type}"
+  k8s_names     = "${module.aggregator.names_list}"
+  skip_deploy   = "${var.skip_deploy}"
+}
+
+resource "null_resource" "kargo_deployment" {
+  depends_on = ["module.k8s_deploy"]
+
+  provisioner "local-exec" {
+    command = "${format("%s", var.skip_deploy == "true" ? "echo Skipping ansible provisioning" : format("../scripts/ansible_provisioner.sh %s", var.os_type))}"
+  }
 }

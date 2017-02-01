@@ -1,0 +1,11 @@
+---
+
+version: 0.1
+log:
+    level: debug
+    formatter: text
+storage:
+    filesystem:
+            rootdirectory: {{ docker_reg_storage_dir }}
+http:
+    addr: {{docker_reg_addr}}:{{docker_reg_port}}
