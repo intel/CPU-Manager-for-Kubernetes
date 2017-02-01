@@ -63,3 +63,8 @@ variable "k8s_minion_config" {
     flavor = "m4.4xlarge"
   }
 }
+
+variable "skip_deploy" {
+  type    = "string"
+  default = "false"
+}
