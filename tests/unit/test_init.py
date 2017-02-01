@@ -293,8 +293,8 @@ def test_init_failure2(monkeypatch):
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1)
         assert err is not None
-        # expected_msg = "No more cpus left to assign for control plane"
-        # assert err.value.args[0] == expected_msg
+        expected_msg = "No more free cores left to assign for controlplane"
+        assert err.value.args[0] == expected_msg
 
 
 def test_init_failure3(monkeypatch):
@@ -323,5 +323,5 @@ def test_init_failure3(monkeypatch):
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1)
         assert err is not None
-        # expected_msg = "No more cpus left to assign for infra"
-        # assert err.value.args[0] == expected_msg
+        expected_msg = "No more free cores left to assign for infra"
+        assert err.value.args[0] == expected_msg

@@ -113,6 +113,8 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         assign(isolated_cores, "controlplane", count=num_cp_cores)
         assign(shared_cores, "infra")
     else:
+        logging.info("No isolated physical cores detected: allocating "
+                     "control plane and data plane from full core list")
         assign(cores, "dataplane", count=num_dp_cores)
         assign(cores, "controlplane", count=num_cp_cores)
         assign(cores, "infra")
@@ -161,6 +163,14 @@ def check_isolated_cores(cores, num_dp_cores, num_cp_cores):
     isolated_cores = [c for c in cores if c.is_isolated()]
     num_isolated_cores = len(isolated_cores)
 
+    for core in cores:
+        for cpu in core.cpus.values():
+            if cpu.isolated and not core.is_isolated():
+                logging.warning(
+                    "Physical core {} is partially isolated: {}".format(
+                        core.core_id, core.as_dict()))
+                break
+
     if num_isolated_cores > 0:
         required_isolated_cores = (num_dp_cores + num_cp_cores)
 
@@ -182,8 +192,8 @@ def assign(cores, pool, count=None):
     free_cores = [c for c in cores if c.pool is None]
 
     if not free_cores:
-        raise RuntimeError("No more free cores left for assignment of %s" %
-                           pool)
+        raise RuntimeError(
+            "No more free cores left to assign for {}".format(pool))
 
     if count and len(free_cores) < count:
         raise RuntimeError("%d cores requested for %s. "
