@@ -75,13 +75,17 @@ import subprocess
 
 
 class Socket:
-    def __init__(self, socket_id, cores={}):
+    def __init__(self, socket_id, cores=None):
+        if not cores:
+            cores = {}
         self.socket_id = socket_id
         self.cores = cores
 
 
 class Core:
-    def __init__(self, core_id, cpus={}):
+    def __init__(self, core_id, cpus=None):
+        if not cpus:
+            cpus = {}
         self.core_id = core_id
         self.cpus = cpus
         self.pool = None
