@@ -71,17 +71,19 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
+import subprocess
+
 
 class Socket:
-    def __init__(self, socket_id):
+    def __init__(self, socket_id, cores={}):
         self.socket_id = socket_id
-        self.cores = {}
+        self.cores = cores
 
 
 class Core:
-    def __init__(self, core_id):
+    def __init__(self, core_id, cpus={}):
         self.core_id = core_id
-        self.cpus = {}
+        self.cpus = cpus
         self.pool = None
 
     def cpu_ids(self):
@@ -169,3 +171,8 @@ def isolcpus(cmdline):
                 cpus.append(int(cpu_id))
 
     return cpus
+
+
+def lscpu():
+    cmd_out = subprocess.check_output("lscpu -p", shell=True)
+    return cmd_out.decode("UTF-8")

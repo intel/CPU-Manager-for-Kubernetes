@@ -71,16 +71,102 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-from . import config
-import collections
+from . import config, topology, proc
 import logging
-import subprocess
 import sys
+import os
+
+
+def verify_allocation(conf_dir, num_dp_cores, num_cp_cores):
+    c = config.Config(conf_dir)
+
+    num_dp_lists = len(c.pools("dataplane").cpu_lists())
+    num_cp_lists = len(c.pools("controlplane").cpu_lists())
+
+    alloc_error = None
+
+    if num_dp_lists is not num_dp_cores:
+        alloc_error = True
+        logging.error("{} dataplane cores ({} requested)".format(
+            num_dp_lists, num_dp_cores))
+    if num_cp_lists is not num_cp_cores:
+        alloc_error = True
+        logging.error("{} controlplane cores ({} requested)".format(
+            num_cp_lists, num_cp_cores))
+
+    if alloc_error:
+        sys.exit(1)
+
+
+def verify_isolated_cores(cores, num_dp_cores, num_cp_cores):
+    isolated_cores = [c for c in cores if c.is_isolated()]
+    num_isolated_cores = len(isolated_cores)
+
+    if num_isolated_cores > 0:
+        required_isolated_cores = (num_dp_cores + num_cp_cores)
+
+        if num_isolated_cores < required_isolated_cores:
+            logging.error(
+                "Cannot use isolated cores for data plane and control plane "
+                "cores: not enough isolated cores %d compared to requested %d"
+                % num_isolated_cores, required_isolated_cores)
+            sys.exit(1)
+
+        if num_isolated_cores != required_isolated_cores:
+            logging.warning(
+                "Not all isolated cores will be used by data and "
+                "control plane. %d isolated but only %d used" %
+                (num_isolated_cores, required_isolated_cores))
+
+
+def assign(cores, pool, count=None):
+    free_cores = [c for c in cores if c.pool is None]
+
+    if not free_cores:
+        raise RuntimeError("No more free cores left for assignment of %s" %
+                           pool)
+
+    if count and len(free_cores) < count:
+        raise RuntimeError("%d cores requested for %s. "
+                           "Only %d cores available" %
+                           (count, pool, len(free_cores)))
+
+    assigned = free_cores
+    if count:
+        assigned = free_cores[:count]
+
+    for c in assigned:
+        c.pool = pool
+
+
+def write_exclusive_pool(pool_name, cores, config):
+    logging.info("Adding %s pool." % pool_name)
+    pool = config.add_pool(pool_name, True)
+
+    cores = [c for c in cores if c.pool == pool_name]
+
+    # We write one cpu list per core for exclusive pools/
+    for core in cores:
+        cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
+        pool.add_cpu_list(cpu_ids_str)
+
+
+def write_shared_pool(pool_name, cores, config):
+    logging.info("Adding %s pool." % pool_name)
+    pool = config.add_pool(pool_name, False)
+
+    cores = [c for c in cores if c.pool == pool_name]
+
+    cpu_ids = []
+    for core in cores:
+        cpu_ids.extend(core.cpu_ids())
+
+    cpu_ids_str = ",".join([str(c) for c in cpu_ids])
+    pool.add_cpu_list(cpu_ids_str)
 
 
 def init(conf_dir, num_dp_cores, num_cp_cores):
     check_hugepages()
-    cpumap = discover_topo()
 
     logging.info("Writing config to {}.".format(conf_dir))
     logging.info("Requested data plane cores = {}.".format(num_dp_cores))
@@ -90,61 +176,45 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         c = config.new(conf_dir)
     except FileExistsError:
         logging.info("Configuration directory already exists.")
-        c = config.Config(conf_dir)
-
-        num_dp_lists = len(c.pools("dataplane").cpu_lists())
-        num_cp_lists = len(c.pools("controlplane").cpu_lists())
-
-        alloc_error = None
-
-        if num_dp_lists is not num_dp_cores:
-            alloc_error = True
-            logging.error("{} dataplane cores ({} requested)".format(
-                num_dp_lists, num_dp_cores))
-        if num_cp_lists is not num_cp_cores:
-            alloc_error = True
-            logging.error("{} controlplane cores ({} requested)".format(
-                num_cp_lists, num_cp_cores))
-
-        if alloc_error:
-            sys.exit(1)
-
+        verify_allocation(conf_dir, num_dp_cores, num_cp_cores)
         return
 
+    sockets = topology.parse(
+        topology.lscpu(),
+        topology.isolcpus(os.path.join(proc.procfs(), "cmdline")))
+
+    if len(sockets) != 1:
+        logging.error("Only single socket systems are supported for now. "
+                      "Found %d sockets" % len(sockets))
+        sys.exit(1)
+
+    cores = list(sockets[0].cores.values())
+
+    verify_isolated_cores(cores, num_dp_cores, num_cp_cores)
+
+    # Align dp+cp cores to isolated cores if possible
+    isolated_cores = [c for c in cores if c.is_isolated()]
+    non_isolated_cores = [c for c in cores if not c.is_isolated()]
+
+    num_isolated_cores = len(isolated_cores)
+
+    if num_isolated_cores == 0:
+        dp_pool = cores
+        cp_pool = cores
+        infra_pool = cores
+    elif num_isolated_cores > 0:
+        dp_pool = isolated_cores
+        cp_pool = isolated_cores
+        infra_pool = non_isolated_cores
+
+    assign(dp_pool, "dataplane", count=num_dp_cores)
+    assign(cp_pool, "controlplane", count=num_cp_cores)
+    assign(infra_pool, "infra")
+
     with c.lock():
-        logging.info("Adding dataplane pool.")
-        dp = c.add_pool("dataplane", True)
-        for i in range(int(num_dp_cores)):
-            if not cpumap:
-                raise KeyError("No more cpus left to assign for data plane")
-            k, v = cpumap.popitem()
-            logging.info("Adding {} cpus to the dataplane pool.".format(v))
-            dp.add_cpu_list(v)
-        logging.info("Adding controlplane pool.")
-        cp = c.add_pool("controlplane", False)
-        cpus = ""
-        for i in range(int(num_cp_cores)):
-            if not cpumap:
-                raise KeyError("No more cpus left to assign for control plane")
-            k, v = cpumap.popitem()
-            if cpus:
-                cpus = cpus + "," + v
-            else:
-                cpus = v
-        logging.info("Adding {} cpus to the controlplane pool.".format(cpus))
-        cp.add_cpu_list(cpus)
-        logging.info("Adding infra pool.")
-        infra = c.add_pool("infra", False)
-        cpus = ""
-        if not cpumap:
-            raise KeyError("No more cpus left to assign for infra")
-        for k, v in cpumap.items():
-            if cpus:
-                cpus = cpus + "," + v
-            else:
-                cpus = v
-        logging.info("Adding {} cpus to the infra pool.".format(cpus))
-        infra.add_cpu_list(cpus)
+        write_exclusive_pool("dataplane", cores, c)
+        write_shared_pool("controlplane", cores, c)
+        write_shared_pool("infra", cores, c)
 
 
 def check_hugepages():
@@ -158,31 +228,3 @@ def check_hugepages():
             if num_free == 0:
                 logging.warning("No hugepages are free")
                 return
-
-
-# Discover cpu topology (physical to logical core mapping).
-def discover_topo():
-    cmd_out = subprocess.check_output("lscpu -p", shell=True)
-    return parse_topo(cmd_out.decode("UTF-8"))
-
-
-# Returns a map between physical and logical cpu cores using
-# `lscpu -p` output.
-# `lscpu -p` output has the following format:
-# # The following is the parsable format, which can be fed to other
-# # programs. Each different item in every column has an unique ID
-# # starting from zero.
-# # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
-# 0,0,0,0,,0,0,0,0
-# 1,1,0,0,,1,1,1,0
-def parse_topo(topo_output):
-    lines = topo_output.split("\n")
-    cpumap = collections.OrderedDict()
-    for line in lines:
-        if not line.startswith("#") and len(line) > 0:
-            cpuinfo = line.split(",")
-            if cpuinfo[1] in cpumap:
-                cpumap[cpuinfo[1]] = cpumap[cpuinfo[1]] + "," + cpuinfo[0]
-            else:
-                cpumap[cpuinfo[1]] = cpuinfo[0]
-    return cpumap
