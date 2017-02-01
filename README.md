@@ -3,7 +3,7 @@ Intel License for KCM (version January 2017)
 
 Copyright (c) 2017 Intel Corporation.
 
-Use.  You may use the software (the “Software”), without modification, provided
+Use.  You may use the software (the "Software"), without modification, provided
 the following conditions are met:
 
 * Neither the name of Intel nor the names of its suppliers may be used to
@@ -14,13 +14,13 @@ the following conditions are met:
 
 Limited patent license.  Intel grants you a world-wide, royalty-free,
 non-exclusive license under patents it now or hereafter owns or controls to
-make, have made, use, import, offer to sell and sell (“Utilize”) this Software,
+make, have made, use, import, offer to sell and sell ("Utilize") this Software,
 but solely to the extent that any such patent is necessary to Utilize the
 Software alone. The patent license shall not apply to any combinations which
 include this software.  No hardware per se is licensed hereunder.
 
-Third party and other Intel programs.  “Third Party Programs” are the files
-listed in the “third-party-programs.txt” text file that is included with the
+Third party and other Intel programs.  "Third Party Programs" are the files
+listed in the "third-party-programs.txt" text file that is included with the
 Software and may include Intel programs under separate license terms. Third
 Party Programs, even if included with the distribution of the Materials, are
 governed by separate license terms and those license terms solely govern your
@@ -51,7 +51,7 @@ your breach of this Agreement and you fail to cure the breach within a
 reasonable period of time.
 
 Feedback.  Should you provide Intel with comments, modifications, corrections,
-enhancements or other input (“Feedback”) related to the Software Intel will be
+enhancements or other input ("Feedback") related to the Software Intel will be
 free to use, disclose, reproduce, license or otherwise distribute or exploit
 the Feedback in its sole discretion without any obligations or restrictions of
 any kind, including without limitation, intellectual property rights or
