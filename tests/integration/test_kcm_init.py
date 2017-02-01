@@ -80,10 +80,13 @@ import tempfile
 import subprocess
 
 
+# Physical CPU cores on the first socket.
+cores = topology.parse(topology.lscpu())[0].cores
+
 proc_env_ok = {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}
 
 
-@pytest.mark.skipif(len(topology.discover()[0].cores) >= 6,
+@pytest.mark.skipif(len(cores) >= 6,
                     reason="""skipping negative test if enough physical
                               cores are available""")
 def test_kcm_init_insufficient_cores():
@@ -95,7 +98,7 @@ def test_kcm_init_insufficient_cores():
         helpers.execute(integration.kcm(), args, proc_env_ok)
 
 
-@pytest.mark.skipif(len(topology.discover()[0].cores) < 6,
+@pytest.mark.skipif(len(cores) < 6,
                     reason="""skipping test if system has insufficient
                               number of physical cores""")
 def test_kcm_init():
