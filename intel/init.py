@@ -126,23 +126,29 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
 
 
 def check_hugepages():
-    fd = open("/proc/meminfo", "r")
-    content = fd.read()
-    lines = content.split("\n")
-    for line in lines:
-        if line.startswith("HugePages_Free"):
-            parts = line.split()
-            num_free = int(parts[1])
-            if num_free == 0:
-                logging.warning("No hugepages are free")
-                return
+    meminfo_path = "/proc/meminfo"
+    try:
+        with open(meminfo_path, "r") as fd:
+            content = fd.read()
+            lines = content.split("\n")
+            for line in lines:
+                if line.startswith("HugePages_Free"):
+                    parts = line.split()
+                    num_free = int(parts[1])
+                    if num_free == 0:
+                        logging.warning("No hugepages are free")
+                        return
+
+    except FileNotFoundError:
+        logging.info("meminfo file '%s' not found: skipping huge pages check" %
+                     meminfo_path)
 
 
 def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
     c = config.Config(conf_dir)
 
-    num_dp_lists = len(c.pools("dataplane").cpu_lists())
-    num_cp_lists = len(c.pools("controlplane").cpu_lists())
+    num_dp_lists = len(c.pool("dataplane").cpu_lists())
+    num_cp_lists = len(c.pool("controlplane").cpu_lists())
 
     alloc_error = None
 
@@ -178,7 +184,7 @@ def check_isolated_cores(cores, num_dp_cores, num_cp_cores):
             logging.error(
                 "Cannot use isolated cores for data plane and control plane "
                 "cores: not enough isolated cores %d compared to requested %d"
-                % num_isolated_cores, required_isolated_cores)
+                % (num_isolated_cores, required_isolated_cores))
             sys.exit(1)
 
         if num_isolated_cores != required_isolated_cores:
@@ -218,6 +224,8 @@ def write_exclusive_pool(pool_name, cores, config):
     for core in cores:
         cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
         pool.add_cpu_list(cpu_ids_str)
+        logging.info("Adding cpu list %s to %s pool." %
+                     (cpu_ids_str, pool_name))
 
 
 def write_shared_pool(pool_name, cores, config):
@@ -232,3 +240,5 @@ def write_shared_pool(pool_name, cores, config):
 
     cpu_ids_str = ",".join([str(c) for c in cpu_ids])
     pool.add_cpu_list(cpu_ids_str)
+    logging.info("Adding cpu list %s to %s pool." %
+                 (cpu_ids_str, pool_name))
