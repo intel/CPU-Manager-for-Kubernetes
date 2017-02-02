@@ -102,3 +102,30 @@ def test_kcm_init_exists():
 
     with pytest.raises(subprocess.CalledProcessError):
         helpers.execute(integration.kcm(), args, proc_env_ok)
+
+
+def test_kcm_init_wrong_assignment():
+    args = ["init",
+            "--num-dp-cores=1",
+            "--num-cp-cores=1",
+            "--conf-dir={}".format(helpers.conf_dir("ok"))]
+
+    try:
+        helpers.execute(integration.kcm(), args, proc_env_ok)
+    
+
+
+def test_kcm_init_insufficient_isolated_cores():
+    pass
+
+
+def test_kcm_init_isolated_cores_mismatch():
+    pass
+
+
+def test_kcm_init_partial_isolation():
+    pass
+
+
+# def test_kcm_init_insufficient_cores():
+#     pass

@@ -141,8 +141,8 @@ def check_hugepages():
 def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
     c = config.Config(conf_dir)
 
-    num_dp_lists = len(c.pools("dataplane").cpu_lists())
-    num_cp_lists = len(c.pools("controlplane").cpu_lists())
+    num_dp_lists = len(c.pool("dataplane").cpu_lists())
+    num_cp_lists = len(c.pool("controlplane").cpu_lists())
 
     alloc_error = None
 
