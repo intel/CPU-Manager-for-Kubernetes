@@ -75,7 +75,7 @@
 
 all: docker
 
-version=v0.1.1
+version=v0.2.0-rc1
 
 docker:
 	docker build --no-cache -t kcm:$(version) .
