@@ -158,8 +158,8 @@ These isolated CPU IDs are used to construct the dataplane and controlplane pool
  If no isolated CPUs are available, KCM will continue to operate but the only guarantee is that pools are assigned in
  a core granular manner.
 
-The number of _full isolated cores_ should match the number of requested data plane plus
-control plane cores. A core is fully isolated if the logical cpu ids for core are
+The number of _fully isolated cores_ should match the number of requested dataplane plus
+controlplane cores. A core is fully isolated if all the logical cpu ids for the core are
 in the `isolcpus` list.
 
 ##### Example
@@ -192,7 +192,7 @@ The `lscpu -p` output from this system could be:
 ```
 
 We assign 4 cores to the dataplane pool, 1 core to the controlplane pool and the rest to the infra pool.
-Therefore, 5 physical cores must be isolated.
+Therefore, 5 physical cores must be isolated. These are the default values for `kcm init`.
 
 On a Ubuntu 16.04 server, `/etc/default/grub` contains:
 
@@ -217,15 +217,15 @@ the next core (cpu id 4, 12) for the controlplane pool and the rest (cpu id 5,13
 ##### Caveats
 
 CPUs may be stranded, i.e. not be utilized, if they are not isolated
- in a core granular manner. For example, in a system with 4 cpus with id 0, 1, 2, 3
+ in a core granular manner. For example, consider a system with 4 cpus with id 0, 1, 2, 3
  where 0 and 2 are resident on core 0 and 1 and 3 are resident on core 1. Then having
  `isolcpus=0,1` will result in two stranded cpus where data and control containers may or may not land.
 In this case, KCM will emit warnings such as `WARNING:root:Physical core 1 is partially isolated`.
 
-Similar to this, even full isolated cores which exceeds the number of data plane
-plus control plane cores will be stranded i.e. KCM will not be assigning any
+Similarily, even fully isolated cores in excess of the number of dataplane
+plus controlplane cores will be stranded i.e. KCM will not assign any
 left over isolated cores to the infra pool. In this case, KCM will emit warnings such as
-`WARNING:root:Not all isolated cores will be used by data and control plane.`.
+`WARNING:root:Not all isolated cores will be used by data and controlplane.`.
 
 **Args:**
 
