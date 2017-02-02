@@ -83,24 +83,12 @@ import subprocess
 # Physical CPU cores on the first socket.
 cores = topology.parse(topology.lscpu())[0].cores
 
-proc_env_ok = {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}
+proc_env_ok = {
+    proc.ENV_PROC_FS: helpers.procfs_dir("ok"),
+    topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
+}
 
 
-@pytest.mark.skipif(len(cores) >= 6,
-                    reason="""skipping negative test if enough physical
-                              cores are available""")
-def test_kcm_init_insufficient_cores():
-    args = ["init",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
-
-    # Expect to fail if system has insufficient number of cores.
-    with pytest.raises(subprocess.CalledProcessError):
-        helpers.execute(integration.kcm(), args, proc_env_ok)
-
-
-@pytest.mark.skipif(len(cores) < 6,
-                    reason="""skipping test if system has insufficient
-                              number of physical cores""")
 def test_kcm_init():
     args = ["init",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
