@@ -71,7 +71,6 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-import ast
 from intel import config
 import json
 from kubernetes import config as k8sconfig, client as k8sclient
@@ -106,8 +105,8 @@ def add_node_oir(conf_dir):
             raise KeyError("No CPU list in dataplane pool")
         num_slots = len(c.pool("dataplane").cpu_lists())
 
-    patch_path = ('/status/capacity/pod.alpha.kubernetes.io~1opaque-int-'
-                  'resource-kcm')
+    patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
+                  "resource-kcm")
     patch_body = [{
         "op": "add",
         "path": patch_path,
@@ -124,7 +123,7 @@ def add_node_oir(conf_dir):
 
 
 def add_node_label():
-    patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+    patch_path = "/metadata/labels/kcm.intel.com~1kcm-node"
     patch_body = [{
         "op": "add",
         "path": patch_path,
@@ -152,21 +151,29 @@ def add_node_taint():
     node_taint_key = "scheduler.alpha.kubernetes.io/taints"
     if node_taint_key in node_resp["metadata"]["annotations"]:
         node_taints = node_resp["metadata"]["annotations"][node_taint_key]
-        node_taints_list = ast.literal_eval(node_taints)
+        # Do not try to parse the empty string as JSON.
+        if node_taints:
+            node_taints_list = json.loads(node_taints)
 
-    kcm_taint = {
-            "key": "kcm",
-            "value": "true",
-            "effect": "NoSchedule"
-    }
-    node_taints_list.append(kcm_taint)
+    # Filter existing "kcm" taint, if it exists.
+    node_taints_list = [t for t in node_taints_list if t["key"] != "kcm"]
 
-    patch_path = '/metadata/annotations/scheduler.alpha.kubernetes.io~1taints'
-    patch_body = [{
-        "op": "replace",
-        "path": patch_path,
-        "value": json.dumps(node_taints_list)
-    }]
+    node_taints_list.append({
+        "key": "kcm",
+        "value": "true",
+        "effect": "NoSchedule"
+    })
+
+    patch_path = "/metadata/annotations/scheduler.alpha.kubernetes.io~1taints"
+
+    # See: https://tools.ietf.org/html/rfc6902#section-4.1
+    patch_body = [
+        {
+            "op": "add",
+            "path": patch_path,
+            "value": json.dumps(node_taints_list)
+        }
+    ]
 
     try:
         patch_k8s_node(patch_body)
@@ -183,6 +190,10 @@ def patch_k8s_node_status(patch_body):
     k8sapi = k8sclient.CoreV1Api()
     node_name = os.getenv("NODE_NAME")
 
+    logging.info("Patching node status {}:\n{}".format(
+        node_name,
+        json.dumps(patch_body, indent=2, sort_keys=True)))
+
     # Patch the node with the specified number of opaque integer resources.
     k8sapi.patch_node_status(node_name, patch_body)
 
@@ -191,6 +202,10 @@ def patch_k8s_node(patch_body):
     k8sconfig.load_incluster_config()
     k8sapi = k8sclient.CoreV1Api()
     node_name = os.getenv("NODE_NAME")
+
+    logging.info("Patching node {}:\n{}".format(
+        node_name,
+        json.dumps(patch_body, indent=2, sort_keys=True)))
 
     # Patch the node with the specified number of opaque integer resources.
     k8sapi.patch_node(node_name, patch_body)
