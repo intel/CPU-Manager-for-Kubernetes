@@ -118,11 +118,12 @@ Options:
 
 ## Global configuration
 
-| Environment variable | Description |
-| :------------------- | :---------- |
-| `KCM_LOCK_TIMEOUT`   | Maximum duration, in seconds, to hold the kcm configuration directory lock file. (Default: 30) |
-| `KCM_PROC_FS`        | Path to the [procfs] to consult for pid information. `kcm isolate` and `kcm reconcile` require access to the host's process information in `/proc`. |
-| `KCM_LOG_LEVEL`      | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
+| Environment variable  | Description |
+| :-------------------- | :---------- |
+| `KCM_LOCK_TIMEOUT`    | Maximum duration, in seconds, to hold the kcm configuration directory lock file. (Default: 30) |
+| `KCM_PROC_FS`         | Path to the [procfs] to consult for pid information. `kcm isolate` and `kcm reconcile` require access to the host's process information in `/proc`. |
+| `KCM_LOG_LEVEL`       | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
+| `KCM_DEV_LSCPU_SYSFS` | Path to the system root to be used by `lscpu` for enumerating the cpu topology. NOTE: should only be used for development purposes. |
 
 ## Subcommands
 
