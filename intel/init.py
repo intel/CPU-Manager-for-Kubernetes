@@ -128,17 +128,16 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
 def check_hugepages():
     meminfo_path = "/proc/meminfo"
     try:
-        fd = open(meminfo_path, "r")
-
-        content = fd.read()
-        lines = content.split("\n")
-        for line in lines:
-            if line.startswith("HugePages_Free"):
-                parts = line.split()
-                num_free = int(parts[1])
-                if num_free == 0:
-                    logging.warning("No hugepages are free")
-                    return
+        with open(meminfo_path, "r") as fd:
+            content = fd.read()
+            lines = content.split("\n")
+            for line in lines:
+                if line.startswith("HugePages_Free"):
+                    parts = line.split()
+                    num_free = int(parts[1])
+                    if num_free == 0:
+                        logging.warning("No hugepages are free")
+                        return
 
     except FileNotFoundError:
         logging.info("meminfo file '%s' not found: skipping huge pages check" %
