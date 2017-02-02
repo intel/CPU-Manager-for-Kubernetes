@@ -84,3 +84,29 @@ resource "null_resource" "children" {
     command = "echo \"\n[k8s-cluster:children]\nkube-node\nkube-master\" >> ./inventory"
   }
 }
+
+resource "null_resource" "copy_inventory" {
+  depends_on = ["null_resource.children"]
+
+  provisioner "local-exec" {
+    command = "cp ./inventory ./../workdir/mvp_inventory/ansible_inventory"
+  }
+}
+
+resource "null_resource" "copy_code" {
+  count = "${length(var.k8s_masters) + length(var.k8s_minions) + length(var.k8s_etcd)}"
+
+  provisioner "file" {
+    source      = "../../"
+    destination = "."
+
+    connection {
+      type        = "ssh"
+      user        = "${var.k8s_users[element(var.k8s_names, count.index)]}"
+      host        = "${var.k8s_ips[element(var.k8s_names, count.index)]}"
+      port        = "${var.k8s_ports[element(var.k8s_names, count.index)]}"
+      agent       = "${var.k8s_use_agent}"
+      private_key = "${file(var.k8s_keys[element(var.k8s_names, count.index)])}"
+    }
+  }
+}

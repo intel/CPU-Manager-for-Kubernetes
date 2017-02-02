@@ -141,12 +141,9 @@ dns_mode: dnsmasq_kubedns
 resolvconf_mode: docker_dns
 
 ## Upstream dns servers used by dnsmasq
-#upstream_dns_servers:
-#  - 8.8.8.8
-#  - 8.8.4.4
 upstream_dns_servers:
-  - 172.28.168.170
-  - 10.248.2.1
+  - 8.8.8.8
+  - 8.8.4.4
 
 dns_domain: "{{ cluster_name }}"
 

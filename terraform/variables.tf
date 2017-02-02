@@ -28,6 +28,11 @@ variable "k8s_minions" {
   description = "list of minion nodes. IMPORTANT WARNING: please be informed that hostname can contain only alpha-numerical characters or \"-\"."
 }
 
+variable "skip_deploy" {
+  type    = "string"
+  default = "false"
+}
+
 # [VirtualBox] cpu - number of virtual cores for VM.
 # [VirtualBox] mem - number of RAM for VM.
 # [AWS] flavor - valid name of AWS flavor.

@@ -3,20 +3,17 @@ set -o errexit
 set -o pipefail
 
 DEBUG=false
-WORK_DIR="./workdir"
-SCRIPT_DIR="./scripts"
-
-. ${SCRIPT_DIR}/install_kargo.sh
-. ${SCRIPT_DIR}/install_kubectl.sh
-
 
 #########################
 # The command line help #
 #########################
 display_help() {
-  echo "Usage: $0 [option...] {vagrant|aws} {deploy|purge}" >&2
-  echo
-  exit 1
+  echo ""
+  echo "Usage: $0 {vagrant|aws} {deploy|purge} [option...] " >&2
+  echo "Valid options:"
+  echo "    -d      enable debug to stdout"
+  echo "    -h      view help"
+  exit $1
 }
 
 
@@ -30,11 +27,7 @@ vagrant_deploy() {
   terraform apply
   USED_OS=$(terraform output used_os)
   popd
-
-  cp ./vagrant_env/inventory ./${WORK_DIR}/mvp_inventory/ansible_inventory
-
-  # Kargo deploying
-  exec ${SCRIPT_DIR}/ansible_provisioner.sh ${USED_OS}
+  exec ./scripts/ansible_provisioner.sh ${USED_OS}
 }
 
 #####################################
@@ -46,6 +39,14 @@ vagrant_purge() {
   terraform get
   terraform destroy --force
   popd
+}
+
+terraform_logs() {
+  if [ ${DEBUG} == "true" ]; then
+    export TF_LOG=DEBUG
+  else
+    unset TF_LOG
+  fi
 }
 
 #############################
@@ -71,7 +72,9 @@ aws_deploy() {
   pushd "./aws_env"
   terraform get
   terraform apply
+  USED_OS=$(terraform output used_os)
   popd
+  exec ./scripts/ansible_provisioner.sh ${USED_OS}
 }
 
 #################################
@@ -86,29 +89,45 @@ aws_purge(){
 }
 
 main() {
-  local target
-  local action
+  local target="invalid"
+  local action="invalid"
 
-  case "$1" in
-    aws)
-      target="aws"
-      ;;
-    vagrant)
-      target="vagrant"
-      ;;
-    *)
-      display_help
-  esac
-  case "$2" in
-    deploy)
-      action="deploy"
-      ;;
-    purge)
-      action="purge"
-      ;;
-    *)
-      display_help
-  esac
+
+  if [ $# -lt 2 ]; then
+    display_help 1
+  fi
+
+  options=$(getopt -o dh --long debug,help -- "$@")
+  [ $? -eq 0 ] || {
+    echo "Incorrect options provided"
+    display_help 1
+  }
+
+  while true ; do
+    case "$1" in
+        -d|--debug)
+            DEBUG=true ; shift ;;
+        -h|--help)
+            display_help 0 ;;
+        "aws"|"vagrant")
+            target=$1 ; shift ;;
+        "deploy"|"purge")
+            action=$1 ; shift ;;
+        --)
+            shift ; break ;;
+        *)
+            break ;;
+    esac
+  done
+
+  if [ "$target" = "invalid" ] || [ "$action" == "invalid" ]; then
+    display_help 1
+  fi
+
+  terraform_logs
+  export TF_VAR_skip_deploy=true
+  export DEBUG
+
   ${target}_${action}
 }
 
