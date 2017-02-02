@@ -109,7 +109,8 @@ def execute(cmd, args=[], env={}):
     host_env = copy.deepcopy(os.environ)
     host_env.update(env)
 
-    stdout = subprocess.check_output(cmd_str, shell=True, env=host_env)
+    stdout = subprocess.check_output(
+        cmd_str, shell=True, stderr=subprocess.STDOUT, env=host_env)
     return stdout
 
 
