@@ -195,8 +195,6 @@ def test_kcm_init_isolcpus():
     output = helpers.execute(
         integration.kcm(), args, proc_env_partially_isolated)
 
-    print("captured output: '%s'", str(output))
-
     assert "INFO:root:Isolated logical cores: 0,1,2,3,4,8,9,10,11,12" \
            in str(output)
 
