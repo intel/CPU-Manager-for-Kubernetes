@@ -146,6 +146,87 @@ command logs at error level and exits with a nonzero status.
 For more information about the config format on disk, refer to
 [the `kcm` configuration directory][doc-config].
 
+#### Core assignment policy
+
+KCM isolate constrains user tasks to CPUs in the requested pool.
+However, this does not prevent other system tasks from running on reserved CPUs.
+The recommended way to resolve this problem is to use the [`isolcpus`][isolcpus] Linux kernel parameter.
+
+KCM init discovers the value of `isolcpus` by inspecting `/proc/cmdline`.
+These isolated CPU IDs are used to construct the dataplane and controlplane pools.
+ In this way, the process scheduler will avoid co-scheduling other tasks there.
+ If no isolated CPUs are available, KCM will continue to operate but the only guarantee is that pools are assigned in
+ a core granular manner.
+
+The number of _full isolated cores_ should match the number of requested data plane plus
+control plane cores. A core is fully isolated if the logical cpu ids for core are
+in the `isolcpus` list.
+
+##### Example
+
+An example working setup could be as follows. On a single socket system with 8 cores
+and 16 cpus, the cpu ids 0, 8 are resident on core 0, cpu ids 1, 9 are resident on core 1 and so on.
+
+The `lscpu -p` output from this system could be:
+```
+# The following is the parsable format, which can be fed to other
+# programs. Each different item in every column has an unique ID
+# starting from zero.
+# CPU,Core,Socket,Node,,L1d,L1i,L2,L3
+0,0,0,0,,0,0,0,0
+1,1,0,0,,1,1,1,0
+2,2,0,0,,2,2,2,0
+3,3,0,0,,3,3,3,0
+4,4,0,0,,4,4,4,0
+5,5,0,0,,5,5,5,0
+6,6,0,0,,6,6,6,0
+7,7,0,0,,7,7,7,0
+8,0,0,0,,0,0,0,0
+9,1,0,0,,1,1,1,0
+10,2,0,0,,2,2,2,0
+11,3,0,0,,3,3,3,0
+12,4,0,0,,4,4,4,0
+13,5,0,0,,5,5,5,0
+14,6,0,0,,6,6,6,0
+15,7,0,0,,7,7,7,0
+```
+
+We assign 4 cores to the dataplane pool, 1 core to the controlplane pool and the rest to the infra pool.
+Therefore, 5 physical cores must be isolated.
+
+On a Ubuntu 16.04 server, `/etc/default/grub` contains:
+
+```
+GRUB_CMDLINE_LINUX_DEFAULT="net.ifnames=0 isolcpus=0,1,2,3,4,8,9,10,11,12"
+```
+
+The `isolcpus` list contains the cpu ids for the first 5 cores on the system.
+To verify the topology on other systems and get the cpu ids, use `lscpu` or `hwloc-ls`.
+After changing the file above, run the following:
+
+```
+update-grub
+```
+
+and reboot the system.
+
+After this, running `kcm init --num-dp-cores=4 --num-cp-cores=1` will allocate
+the first 4 cores (cpu id 0, 8, 1, 9, 2, 10, 3 and 11) for the dataplane pool,
+the next core (cpu id 4, 12) for the controlplane pool and the rest (cpu id 5,13,6,14,7,15) to the infra pool
+
+##### Caveats
+
+CPUs may be stranded, i.e. not be utilized, if they are not isolated
+ in a core granular manner. For example, in a system with 4 cpus with id 0, 1, 2, 3
+ where 0 and 2 are resident on core 0 and 1 and 3 are resident on core 1. Then having
+ `isolcpus=0,1` will result in two stranded cpus where data and control containers may or may not land.
+In this case, KCM will emit warnings such as `WARNING:root:Physical core 1 is partially isolated`.
+
+Similar to this, even full isolated cores which exceeds the number of data plane
+plus control plane cores will be stranded i.e. KCM will not be assigning any
+left over isolated cores to the infra pool. In this case, KCM will emit warnings such as
+`WARNING:root:Not all isolated cores will be used by data and control plane.`.
+
 **Args:**
 
 _None_
@@ -601,3 +682,4 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 [discover-op-manual]: operator.md#advertising-kcm-opaque-integer-resource-oir-slots
 [cluster-init-op-manual]: operator.md#prepare-kcm-nodes-by-running-kcm-cluster-init
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
+[isolcpus]: https://github.com/torvalds/linux/blob/master/Documentation/admin-guide/kernel-parameters.txt#L1669
