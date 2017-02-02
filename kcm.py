@@ -124,7 +124,7 @@ import sys
 def main():
     setup_logging()
 
-    args = docopt(__doc__, version="KCM v0.1.1")
+    args = docopt(__doc__, version="KCM v0.2.0-rc1")
     if args["cluster-init"]:
         clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
                                  args["--kcm-cmd-list"], args["--kcm-img"],

@@ -91,7 +91,7 @@ spec:
     - name: NUM_CP_CORES
       # Change this to modify the value passed to `--num-cp-cores` flag.
       value: '1'
-    image: kcm:v0.1.1
+    image: kcm:v0.2.0-rc1
     name: kcm-init-pod
     volumeMounts:
     - mountPath: "/etc/kcm"
