@@ -71,7 +71,7 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-from . import config, proc, third_party
+from . import config, proc, third_party, topology
 import itertools
 import json
 from kubernetes import config as k8sconfig, client as k8sclient
@@ -120,7 +120,8 @@ def generate_report(conf_dir):
     report = NodeReport()
     check_describe(report, conf_dir)
     check_kcm_config(report, conf_dir)
-    # TODO: check_procfs(report)
+    for socket in topology.discover().values():
+        report.add_socket(socket)
     return report
 
 
@@ -176,9 +177,13 @@ class NodeReport():
     def __init__(self):
         self.description = None
         self.checks = []
+        self.sockets = {}
 
     def add_description(self, description):
         self.description = description
+
+    def add_socket(self, socket):
+        self.sockets[socket.socket_id] = socket.as_dict(include_pool=False)
 
     def add_check(self, name):
         check = Check(name)
@@ -188,6 +193,7 @@ class NodeReport():
     def as_dict(self):
         return {
             "description": self.description,
+            "topology": {"sockets": self.sockets},
             "checks": {c.name: c.as_dict() for c in self.checks}
         }
 
