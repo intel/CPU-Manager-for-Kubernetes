@@ -98,10 +98,10 @@ class Socket:
         self.cores = OrderedDict(
             sorted(cores.items(), key=lambda pair: pair[1].core_id))
 
-    def as_dict(self):
+    def as_dict(self, include_pool=True):
         return {
             "id": self.socket_id,
-            "cores": [c.as_dict() for c in self.cores.values()]
+            "cores": [c.as_dict(include_pool) for c in self.cores.values()]
         }
 
     def json(self):
@@ -130,12 +130,16 @@ class Core:
 
         return True
 
-    def as_dict(self):
-        return {
+    def as_dict(self, include_pool=True):
+        result = {
             "id": self.core_id,
-            "pool": self.pool,
             "cpus": [c.as_dict() for c in self.cpus.values()]
         }
+
+        if include_pool:
+            result["pool"] = self.pool
+
+        return result
 
 
 class CPU:

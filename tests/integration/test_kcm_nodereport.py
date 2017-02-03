@@ -73,14 +73,20 @@
 
 from .. import helpers
 from . import integration
-from intel import proc
+from intel import proc, topology
+
+
+test_env = {
+    proc.ENV_PROC_FS: helpers.procfs_dir("ok"),
+    topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
+}
 
 
 def test_kcm_nodereport_ok():
     assert helpers.execute(
         integration.kcm(),
         ["node-report", "--conf-dir={}".format(helpers.conf_dir("ok"))],
-        {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}).decode() == """{
+        test_env).decode() == """{
   "checks": {
     "configDirectory": {
       "errors": [],
@@ -150,6 +156,119 @@ def test_kcm_nodereport_ok():
         "name": "infra"
       }
     }
+  },
+  "topology": {
+    "sockets": {
+      "0": {
+        "cores": [
+          {
+            "cpus": [
+              {
+                "id": 0,
+                "isolated": false
+              },
+              {
+                "id": 8,
+                "isolated": false
+              }
+            ],
+            "id": 0
+          },
+          {
+            "cpus": [
+              {
+                "id": 1,
+                "isolated": false
+              },
+              {
+                "id": 9,
+                "isolated": false
+              }
+            ],
+            "id": 1
+          },
+          {
+            "cpus": [
+              {
+                "id": 2,
+                "isolated": false
+              },
+              {
+                "id": 10,
+                "isolated": false
+              }
+            ],
+            "id": 2
+          },
+          {
+            "cpus": [
+              {
+                "id": 3,
+                "isolated": false
+              },
+              {
+                "id": 11,
+                "isolated": false
+              }
+            ],
+            "id": 3
+          },
+          {
+            "cpus": [
+              {
+                "id": 4,
+                "isolated": false
+              },
+              {
+                "id": 12,
+                "isolated": false
+              }
+            ],
+            "id": 4
+          },
+          {
+            "cpus": [
+              {
+                "id": 5,
+                "isolated": false
+              },
+              {
+                "id": 13,
+                "isolated": false
+              }
+            ],
+            "id": 5
+          },
+          {
+            "cpus": [
+              {
+                "id": 6,
+                "isolated": false
+              },
+              {
+                "id": 14,
+                "isolated": false
+              }
+            ],
+            "id": 6
+          },
+          {
+            "cpus": [
+              {
+                "id": 7,
+                "isolated": false
+              },
+              {
+                "id": 15,
+                "isolated": false
+              }
+            ],
+            "id": 7
+          }
+        ],
+        "id": 0
+      }
+    }
   }
 }
 """
@@ -159,7 +278,7 @@ def test_kcm_nodereport_minimal():
     assert helpers.execute(
         integration.kcm(),
         ["node-report", "--conf-dir={}".format(helpers.conf_dir("minimal"))],
-        {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}).decode() == """{
+        test_env).decode() == """{
   "checks": {
     "configDirectory": {
       "errors": [
@@ -190,6 +309,119 @@ def test_kcm_nodereport_minimal():
         },
         "exclusive": false,
         "name": "shared"
+      }
+    }
+  },
+  "topology": {
+    "sockets": {
+      "0": {
+        "cores": [
+          {
+            "cpus": [
+              {
+                "id": 0,
+                "isolated": false
+              },
+              {
+                "id": 8,
+                "isolated": false
+              }
+            ],
+            "id": 0
+          },
+          {
+            "cpus": [
+              {
+                "id": 1,
+                "isolated": false
+              },
+              {
+                "id": 9,
+                "isolated": false
+              }
+            ],
+            "id": 1
+          },
+          {
+            "cpus": [
+              {
+                "id": 2,
+                "isolated": false
+              },
+              {
+                "id": 10,
+                "isolated": false
+              }
+            ],
+            "id": 2
+          },
+          {
+            "cpus": [
+              {
+                "id": 3,
+                "isolated": false
+              },
+              {
+                "id": 11,
+                "isolated": false
+              }
+            ],
+            "id": 3
+          },
+          {
+            "cpus": [
+              {
+                "id": 4,
+                "isolated": false
+              },
+              {
+                "id": 12,
+                "isolated": false
+              }
+            ],
+            "id": 4
+          },
+          {
+            "cpus": [
+              {
+                "id": 5,
+                "isolated": false
+              },
+              {
+                "id": 13,
+                "isolated": false
+              }
+            ],
+            "id": 5
+          },
+          {
+            "cpus": [
+              {
+                "id": 6,
+                "isolated": false
+              },
+              {
+                "id": 14,
+                "isolated": false
+              }
+            ],
+            "id": 6
+          },
+          {
+            "cpus": [
+              {
+                "id": 7,
+                "isolated": false
+              },
+              {
+                "id": 15,
+                "isolated": false
+              }
+            ],
+            "id": 7
+          }
+        ],
+        "id": 0
       }
     }
   }
