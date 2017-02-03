@@ -74,7 +74,7 @@
 from setuptools import setup
 
 setup(name='kcm',
-      version='0.2.0-rc1',
+      version='0.2.0-rc2',
       description='Support minimal comms use cases on Kubernetes',
       url='http://github.com/intelsdi-x/kubernetes-comms-mvp',
       author='Intel SDI-E',
