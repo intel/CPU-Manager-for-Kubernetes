@@ -563,7 +563,7 @@ which is both writable and on the path.</em></p>
 <a id="user-content-kcm-node-report" class="anchor" href="#kcm-node-report" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm node-report</code>
 </h3>
 
-<p>Outputs a JSON report on node-level KCM configuration problems.</p>
+<p>Outputs a JSON report on node-level KCM configuration.</p>
 
 <p><code>--publish</code> will send the node report to the Kubernetes API server.
 This enables the operator to get node reports for all kubelets in one
@@ -651,6 +651,119 @@ kcm-02-zzwt7w   NodeReport.v1.kcm.intel.com</pre></div>
           <span class="pl-s"><span class="pl-pds">"</span>exclusive<span class="pl-pds">"</span></span>: false,
           <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>shared<span class="pl-pds">"</span></span>
         }
+      }
+    }
+  },
+  <span class="pl-s"><span class="pl-pds">"</span>topology<span class="pl-pds">"</span></span>: {
+    <span class="pl-s"><span class="pl-pds">"</span>sockets<span class="pl-pds">"</span></span>: {
+      <span class="pl-s"><span class="pl-pds">"</span>0<span class="pl-pds">"</span></span>: {
+        <span class="pl-s"><span class="pl-pds">"</span>cores<span class="pl-pds">"</span></span>: [
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 0,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 8,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 0
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 1,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 9,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 1
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 2,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 10,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 2
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 3,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 11,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 3
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 4,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 12,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 4
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 5,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 13,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 5
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 6,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 14,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 6
+          },
+          {
+            <span class="pl-s"><span class="pl-pds">"</span>cpus<span class="pl-pds">"</span></span>: [
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 7,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              },
+              {
+                <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 15,
+                <span class="pl-s"><span class="pl-pds">"</span>isolated<span class="pl-pds">"</span></span>: <span class="pl-c1">false</span>
+              }
+            ],
+            <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 7
+          }
+        ],
+        <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>: 0
       }
     }
   }
