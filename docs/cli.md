@@ -102,7 +102,7 @@ Options:
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=<img>       KCM Docker image [default: kcm].
+  --kcm-img=<img>       KCM Docker image [default: kcm:v0.2.0].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
