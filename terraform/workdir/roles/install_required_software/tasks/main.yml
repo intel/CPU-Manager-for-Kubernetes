@@ -1,0 +1,19 @@
+---
+
+- name: Install required software (Ubuntu)
+  apt:
+    name: python3-pip
+    state: latest
+  when: bootstrap_os == "ubuntu"
+
+- name: Install repositories software (Centos)
+  yum:
+    name: epel-release
+    state: latest
+  when: bootstrap_os == "centos"
+
+- name: Install required software (Centos)
+  yum:
+    name: python34-pip, make
+    state: latest
+  when: bootstrap_os == "centos"

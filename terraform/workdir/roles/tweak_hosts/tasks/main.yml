@@ -22,3 +22,8 @@
     line: "{{tweak_host_ip}} {{tweak_host_name}}"
   when: is_present.rc
 
+- name: Add user to docker group
+  user:
+    name: "{{ ansible_ssh_user }}"
+    groups: docker
+    append: yes
