@@ -77,6 +77,10 @@ all: docker
 
 version=v0.2.0
 
+# TODO: This target should be changed, when e2e tests will be ready and test
+# entrypoint will be defined.
+jenkins: docker
+
 docker:
 	docker build --no-cache -t kcm:$(version) .
 	@echo ""
