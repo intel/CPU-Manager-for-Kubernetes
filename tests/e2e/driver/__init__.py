@@ -2,31 +2,31 @@
 #
 # Copyright (c) 2017 Intel Corporation.
 #
-# Use. You may use the software (the "Software"), without modification,
+# Use.  You may use the software (the “Software”), without modification,
 # provided the following conditions are met:
 #
 # * Neither the name of Intel nor the names of its suppliers may be used to
-#   endorse or promote products derived from this Software without specific
-#   prior written permission.
+#   endorse or promote products derived from this Software without specific
+#   prior written permission.
 # * No reverse engineering, decompilation, or disassembly of this Software
-#   is permitted.
+#   is permitted.
 #
-# Limited patent license. Intel grants you a world-wide, royalty-free,
+# Limited patent license.  Intel grants you a world-wide, royalty-free,
 # non-exclusive license under patents it now or hereafter owns or controls to
-# make, have made, use, import, offer to sell and sell ("Utilize") this
+# make, have made, use, import, offer to sell and sell (“Utilize”) this
 # Software, but solely to the extent that any such patent is necessary to
 # Utilize the Software alone. The patent license shall not apply to any
-# combinations which include this software. No hardware per se is licensed
+# combinations which include this software.  No hardware per se is licensed
 # hereunder.
 #
-# Third party and other Intel programs. "Third Party Programs" are the files
-# listed in the "third-party-programs.txt" text file that is included with the
+# Third party and other Intel programs.  “Third Party Programs” are the files
+# listed in the “third-party-programs.txt” text file that is included with the
 # Software and may include Intel programs under separate license terms. Third
 # Party Programs, even if included with the distribution of the Materials, are
 # governed by separate license terms and those license terms solely govern your
 # use of those programs.
 #
-# DISCLAIMER. THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# DISCLAIMER.  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
 # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE
 # DISCLAIMED. THIS SOFTWARE IS NOT INTENDED NOR AUTHORIZED FOR USE IN SYSTEMS
@@ -43,7 +43,7 @@
 # INDEMNIFIY AND HOLD INTEL HARMLESS AGAINST ANY CLAIMS AND EXPENSES RESULTING
 # FROM YOUR USE OR UNAUTHORIZED USE OF THE SOFTWARE.
 #
-# No support. Intel may make changes to the Software, at any time without
+# No support.  Intel may make changes to the Software, at any time without
 # notice, and is not obligated to support, update or provide training for the
 # Software.
 #
@@ -51,18 +51,18 @@
 # of your breach of this Agreement and you fail to cure the breach within a
 # reasonable period of time.
 #
-# Feedback. Should you provide Intel with comments, modifications,
-# corrections, enhancements or other input ("Feedback") related to the Software
+# Feedback.  Should you provide Intel with comments, modifications,
+# corrections, enhancements or other input (“Feedback”) related to the Software
 # Intel will be free to use, disclose, reproduce, license or otherwise
 # distribute or exploit the Feedback in its sole discretion without any
 # obligations or restrictions of any kind, including without limitation,
 # intellectual property rights or licensing obligations.
 #
-# Compliance with laws. You agree to comply with all relevant laws and
+# Compliance with laws.  You agree to comply with all relevant laws and
 # regulations governing your use, transfer, import or export (or prohibition
 # thereof) of the Software.
 #
-# Governing law. All disputes will be governed by the laws of the United
+# Governing law.  All disputes will be governed by the laws of the United
 # States of America and the State of Delaware without reference to conflict of
 # law principles and subject to the exclusive jurisdiction of the state or
 # federal courts sitting in the State of Delaware, and each party agrees that
@@ -70,34 +70,3 @@
 # any objections. The United Nations Convention on Contracts for the
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
-
-[tox]
-envlist = lint, unit, integration
-
-[flake8]
-import-order-style=smarkets
-application-import-names=intel
-
-[testenv]
-deps =
-  pytest
-  -rrequirements.txt
-
-[testenv:lint]
-deps =
-  flake8
-  pep8-naming
-commands =
-  flake8 intel kcm.py tests setup.py
-
-[testenv:unit]
-commands =
-  py.test -v --cov --cov-report=annotate --cov-append tests/unit
-
-[testenv:integration]
-commands =
-  py.test -v --cov --cov-report=annotate --cov-append -x tests/integration
-
-[testenv:coverage]
-commands =
-  coverage report --show-missing --omit='./.tox/*','./tests/*'
