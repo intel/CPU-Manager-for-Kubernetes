@@ -37,3 +37,11 @@
   become: True
   roles:
    - {role: prepare_k8s_credentials}
+
+
+- name: install required packages
+  hosts: k8s-cluster,etcd
+  gather_facts: False
+  become: True
+  roles:
+   - {role: install_required_software}

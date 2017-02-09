@@ -74,7 +74,6 @@ aws_deploy() {
   terraform apply
   USED_OS=$(terraform output used_os)
   popd
-  exec ./scripts/ansible_provisioner.sh ${USED_OS}
 }
 
 #################################
