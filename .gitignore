@@ -1,5 +1,6 @@
 .cache/
 .tox/
+build/
 *.egg-info/
 **/__pycache__/*
 *.pyc
@@ -15,6 +16,7 @@ terraform/workdir/mvp_inventory/group_vars/all.yml.old
 terraform/vagrant_env/inventory
 **/terraform.tfstate*
 **/terraform_hosts
+kcm.spec
 **/cluster.retry
 **/post_deploy.retry
 .coverage

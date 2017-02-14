@@ -90,6 +90,7 @@ Usage:
               [--no-affinity]
   kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
   -h --help             Show this screen.
@@ -120,7 +121,7 @@ Options:
 """
 from intel import (
     clusterinit, describe, discover, init, install,
-    isolate, nodereport, reconcile)
+    isolate, nodereport, reconcile, uninstall)
 from docopt import docopt
 import logging
 import os
@@ -163,6 +164,10 @@ def main():
         return
     if args["install"]:
         install.install(args["--install-dir"])
+        return
+    if args["uninstall"]:
+        uninstall.uninstall(args["--install-dir"],
+                            args["--conf-dir"])
         return
     if args["node-report"]:
         nodereport.nodereport(args["--conf-dir"],

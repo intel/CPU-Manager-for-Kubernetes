@@ -190,6 +190,12 @@ class Pool:
         result["cpuLists"] = clists
         return result
 
+    def tasks_list(self):
+        result = []
+        for cpulist in self.cpu_lists().values():
+            result.extend(cpulist.tasks())
+        return result
+
 
 class CPUList:
     def __init__(self, path):

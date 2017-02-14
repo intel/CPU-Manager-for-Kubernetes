@@ -93,6 +93,7 @@ Usage:
               [--no-affinity]
   kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
   -h --help             Show this screen.
@@ -264,7 +265,7 @@ __dataplane__ pool, as determined by examining the `KCM` configuration directory
 For more information about the config format on disk, refer to 
 the [`kcm` configuration directory][doc-config].
 
-Notes:
+**Notes:**
 - `kcm discover` is expected to be run as a Kubernetes Pod as it uses
 [`incluster config`][link-incluster] provided by the
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
@@ -758,7 +759,7 @@ subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as
 Kubernetes Pods. By default, it runs all the subcommands and uses all the 
 default options. 
 
-Notes:
+**Notes:**
 - `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses
 [`incluster config`][link-incluster] provided by the
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
@@ -775,6 +776,7 @@ in `--kcm-cmd-list`.
 _None_
 
 **Flags:**
+
 - `--host-list=<list>` Comma seperated list of Kubernetes nodes to prepare
   for KCM software. Either this flag or `--all-hosts` flag must be used.
 - `--all-hosts` Prepare all Kubernetes nodes for the KCM software. Either
@@ -796,6 +798,49 @@ _None_
 ```shell
 $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
   kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
+```
+
+-------------------------------------------------------------------------------
+
+### `kcm uninstall`
+
+Removes `kcm` from a node. Uninstall process reverts `kcm cluster-init`:
+ - deletes `kcm-reconcile-nodereport-pod-{node}` if present
+ - removes `NodeReport` from Kubernetes ThirdPartyResources if present
+ - removes `ReconcileReport` from Kubernetes ThirdPartyResources if present
+ - removes kcm node label if present
+ - removes kcm node taint if present
+ - removes kcm node OIR if present
+ - removes `--conf-dir=<dir>` if present and no processes are running that use `kcm isolate`
+ - removes kcm binary from `--install-dir=<dir>`, if binary is not present then throws an error
+
+
+**Notes:**
+As described above "if present" indicates whether there isn't anything to delete/remove,
+uninstall process will not fail and proceed to the next step. This allows `kcm uninstall` command
+to fully purge inconsistent environment i.e. of some failures in `kcm cluster-init`
+
+Removing `--conf-dir=<dir>` requires no processes present on system that use `kcm isolate`
+(with entry in configuration directory). Please stop/remove them otherwise `kcm uninstall` will 
+throw an error in that step and uninstall will fail. 
+For this reason `kcm uninstall` cannot be run through `kcm isolate`.
+
+**Args:**
+
+_None_
+
+**Flags:**
+
+- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--install-dir=<dir>` KCM installation directory.
+
+**Example:**
+
+```sh
+$ docker run -it \
+--volume=/etc/kcm:/etc/kcm:rw \
+--volume=/opt/bin:/opt/bin:rw \
+  kcm uninstall
 ```
 
 -------------------------------------------------------------------------------

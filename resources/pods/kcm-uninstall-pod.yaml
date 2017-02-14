@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2017 Intel Corporation.
 #
-# Use.  You may use the software (the "Software"), without modification,
+# Use.  You may use the software (the “Software”), without modification,
 # provided the following conditions are met:
 #
 # * Neither the name of Intel nor the names of its suppliers may be used to
@@ -13,14 +13,14 @@
 #
 # Limited patent license.  Intel grants you a world-wide, royalty-free,
 # non-exclusive license under patents it now or hereafter owns or controls to
-# make, have made, use, import, offer to sell and sell ("Utilize") this
+# make, have made, use, import, offer to sell and sell (“Utilize”) this
 # Software, but solely to the extent that any such patent is necessary to
 # Utilize the Software alone. The patent license shall not apply to any
 # combinations which include this software.  No hardware per se is licensed
 # hereunder.
 #
-# Third party and other Intel programs.  "Third Party Programs" are the files
-# listed in the "third-party-programs.txt" text file that is included with the
+# Third party and other Intel programs.  “Third Party Programs” are the files
+# listed in the “third-party-programs.txt” text file that is included with the
 # Software and may include Intel programs under separate license terms. Third
 # Party Programs, even if included with the distribution of the Materials, are
 # governed by separate license terms and those license terms solely govern your
@@ -52,7 +52,7 @@
 # reasonable period of time.
 #
 # Feedback.  Should you provide Intel with comments, modifications,
-# corrections, enhancements or other input ("Feedback") related to the Software
+# corrections, enhancements or other input (“Feedback”) related to the Software
 # Intel will be free to use, disclose, reproduce, license or otherwise
 # distribute or exploit the Feedback in its sole discretion without any
 # obligations or restrictions of any kind, including without limitation,
@@ -70,55 +70,51 @@
 # any objections. The United Nations Convention on Contracts for the
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: kcm-uninstall-pod
+  name: kcm-uninstall-pod
+  annotations:
+    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"kcm", "value":"true"}]'
+spec:
+  containers:
+  - args:
+  # Uninstall canno't be run through kcm isolate
+    - "/kcm/kcm.py uninstall"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: KCM_PROC_FS
+      value: "/host/proc"
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    image: kcm:v0.1.1
+    name: kcm-uninstall-pod
+    volumeMounts:
+    - mountPath: "/etc/kcm"
+      name: kcm-conf-dir
+    - mountPath: "/host/proc"
+      name: host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: kcm-install-dir
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      # Change this to modify the KCM config dir in the host file system.
+        path: "/etc/kcm"
+    name: kcm-conf-dir
+  - hostPath:
+        path: "/proc"
+    name: host-proc
+  - hostPath:
+      # Change this to modify the KCM installation dir in the host file system.
+      path: "/opt/bin"
+    name: kcm-install-dir
 
-from .. import helpers
-from . import integration
-
-
-def test_kcm_help():
-    assert helpers.execute(integration.kcm(), ["--help"]) == b"""kcm.
-
-Usage:
-  kcm (-h | --help)
-  kcm --version
-  kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
-                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
-                   [--install-dir=<dir>] [--num-dp-cores=<num>]
-                   [--num-cp-cores=<num>]
-  kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-  kcm discover [--conf-dir=<dir>]
-  kcm describe [--conf-dir=<dir>]
-  kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-              [--no-affinity]
-  kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
-
-Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for KCM software.
-  --all-hosts           Prepare all Kubernetes nodes for the KCM software.
-  --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
-                        each host
-                        [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=<img>       KCM Docker image [default: kcm:v0.3.0].
-  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
-                        [default: IfNotPresent].
-  --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-  --install-dir=<dir>   KCM install directory [default: /opt/bin].
-  --interval=<seconds>  Number of seconds to wait between rerunning.
-                        If set to 0, will only run once. [default: 0]
-  --num-dp-cores=<num>  Number of data plane cores [default: 4].
-  --num-cp-cores=<num>  Number of control plane cores [default: 1].
-  --pool=<pool>         Pool name: either infra, controlplane or dataplane.
-  --publish             Whether to publish reports to the Kubernetes
-                        API server.
-  --no-affinity         Do not set cpu affinity before forking the child
-                        command. In this mode the user program is responsible
-                        for reading the `KCM_CPUS_ASSIGNED` environment
-                        variable and moving a subset of its own processes
-                        and/or tasks to the assigned CPUs.
-"""
