@@ -409,6 +409,10 @@ If you want to look at the logs from the container which ran the `discover` subc
 If you want to look at the logs from the container which ran the `reconcile` subcommand in the pod, you can use 
 `kubectl logs -f kcm-reconcile-nodereport-pod-<node-name> reconcile`
 
+If you want to remove `kcm` use `kcm-uninstall-pod.yaml`. [nodeSelector](https://kubernetes.io/docs/user-guide/node-selection)
+can help to fine-grain the deletion for specific node.
+
+
 [cluster-setup]: #setting-up-the-cluster
 [doc-cli]: cli.md
 [kcm-init]: cli.md#kcm-init

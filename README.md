@@ -114,6 +114,7 @@ Usage:
               [--no-affinity]
   kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
   -h --help             Show this screen.
