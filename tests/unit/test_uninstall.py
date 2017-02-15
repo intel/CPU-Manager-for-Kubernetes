@@ -186,7 +186,6 @@ def test_uninstall_remove_node_oir_success(caplog):
 
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(side_effect=fake_api_exception)):
-
         uninstall.remove_node_kcm_oir()
         caplog_tuple = caplog.record_tuples
         patch_path = '/status/capacity/pod.alpha.kubernetes.' \
@@ -209,7 +208,7 @@ def test_uninstall_remove_node_label_success(caplog):
         assert caplog_tuple[-1][2] == exp_str
 
 
-def test_check_remove_conf_dir_success(monkeypatch, caplog):
+def test_check_remove_lock_file_success(monkeypatch, caplog):
     temp_dir = tempfile.mkdtemp()
     conf_dir = os.path.join(temp_dir, "ok")
     helpers.execute(
@@ -222,13 +221,12 @@ def test_check_remove_conf_dir_success(monkeypatch, caplog):
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
     uninstall.check_remove_conf_dir(conf_dir)
     caplog_tuple = caplog.record_tuples
+
+    lock_file = os.path.join(conf_dir, "lock")
+
     with pytest.raises(Exception):
-        helpers.execute(
-            "stat",
-            ["{}".format(conf_dir)]
-        )
-    assert caplog_tuple[-1][2] == "\"{}\" " \
-                                  "removed".format(conf_dir)
+        helpers.execute("stat", ["{}".format(lock_file)])
+    assert caplog_tuple[-1][2] == "\"{}\" removed".format(lock_file)
 
 
 def test_check_remove_conf_dir_failure(monkeypatch, caplog):

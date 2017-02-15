@@ -201,8 +201,9 @@ def check_remove_conf_dir(conf_dir):
             if len(pending_pools) == 0:
                 # Remove kcm lock file with rest of dir after "with" scope
                 # that has lock
-                shutil.rmtree(os.path.join(conf_dir))
-                logging.info("\"{}\" removed".format(conf_dir))
+                os.remove(os.path.join(conf_dir, "lock"))
+                logging.info(
+                    "\"{}\" removed".format(os.path.join(conf_dir, "lock")))
                 break
             elif not retries:
                 # If no retries left, it's a fail
