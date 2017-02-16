@@ -80,6 +80,8 @@ version=v0.3.0
 # TODO: This target should be changed, when e2e tests will be ready and test
 # entrypoint will be defined.
 jenkins: docker
+	docker tag kcm:$(version) registry.dev.e2e/kcm:latest
+	docker push registry.dev.e2e/kcm:latest
 
 docker:
 	docker build --no-cache -t kcm:$(version) .

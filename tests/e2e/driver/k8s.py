@@ -163,20 +163,22 @@ class Driver(object):
             map(lambda node: node["spec"]["external_id"], compute_nodes))
 
     # Create pod inside random generated namespace.
-    def create_pod(self, name, containers):
+    def create_pod(self, name, containers, node=None, volumes=None):
         """
         :param name: pod name(string)
-        :param containers: containers specification
-        (list[kubernetes.client.models.V1Container])
+        :param containers: containers specification (list of V1Container dicts)
+        :param volumes: list of attached volumes
         :return: API response
         """
         if self.active is not True:
             raise Exception("Namespace has been removed")
         pod = k8s.get_pod_template()
         pod["metadata"]["name"] = name
-        pod["spec"]["nodeName"] = None
+        pod["spec"]["nodeName"] = node
         pod["spec"]["nodeSelector"] = {"namespace": self.ns_name}
         pod["spec"]["containers"] = containers
+        if volumes is not None:
+            pod["spec"]["volumes"] = volumes
         k8s.create_pod(self.configuration, pod, self.ns_name)
 
     # Delete pod from random generated namespace.
@@ -185,15 +187,71 @@ class Driver(object):
             raise Exception("Namespace has been removed")
         k8s.delete_pod(self.configuration, name, self.ns_name, body)
 
+    def _prep_uninstall(self, node, image_name, container_name):
+
+        return {
+            "args": ["/kcm/kcm.py uninstall"],
+            "command": ["/bin/bash", "-c"],
+            "env": [
+                {"name": "KCM_PROC_FS", "value": "/host/proc"},
+                {"name": "NODE_NAME", "value": node}
+            ],
+            "name": container_name,
+            "volumeMounts": [
+                {"mountPath": "/etc/kcm", "name": "kcm-conf-dir"},
+                {"mountPath": "/host/proc", "name": "host-proc",
+                 "readOnly": True},
+                {"mountPath": "/opt/bin", "name": "kcm-install-dir"},
+            ],
+            "image": image_name
+        }
+
+    def _detect_uninstall_is_running(self, name):
+        pods = k8s.get_pod_list(self.configuration)
+        pod_map = list(
+            map(lambda x: {"pod_name": x["metadata"]["name"],
+                           "status": x["status"]["phase"]},
+                pods["items"]))
+
+        for pod in pod_map:
+            if pod["pod_name"] == name:
+                if pod["status"] != ("Running" or "Pending"):
+                    return False
+                else:
+                    return True
+            else:
+                continue
+        return False
+
+    def _uninstall(self, kcm_image):
+        volumes = [{"hostPath": {"path": "/etc/kcm"}, "name": "kcm-conf-dir"},
+                   {"hostPath": {"path": "/proc"}, "name": "host-proc"},
+                   {"hostPath": {"path": "/opt/bin"},
+                    "name": "kcm-install-dir"}]
+
+        for node in self.nodes:
+            name = "uninstall-{}-{}".format(self.ns_name, node)
+
+            uninstall_container = self._prep_uninstall(node,
+                                                       kcm_image,
+                                                       name)
+            self.create_pod(name, [uninstall_container], node, volumes)
+            while not self._detect_uninstall_is_running(name):
+                time.sleep(1)
+
     # Cleanup removes nodes from namespace and delete used namespace.
     # All created pods in namespace should be removed during deleting parent
     # namespace.
-    def cleanup(self):
+    # If KCM image name is passed as an argument, then cleanup will try to
+    # cleanup cluster from KCM installation.
+    def cleanup(self, kcm_image=""):
         if self.active is False:
             return
+
+        if kcm_image != "":
+            self._uninstall(kcm_image)
+
         self.active = False
-        # TODO: run kcm uninstallation here, when it's ready.
-        # https://github.com/intelsdi-x/kubernetes-comms-mvp/pull/81
         for node in self.nodes:
             k8s.unset_node_label(self.configuration, node, "namespace")
 
