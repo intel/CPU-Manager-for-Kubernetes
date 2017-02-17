@@ -124,8 +124,7 @@ def main():
 
     logging.basicConfig(level=logging.DEBUG)
     try:
-        github_token = os.environ["GITHUB_TOKEN", "951f218461abcd71cd2b2673927f86d5a29fffd9"]
-        # github_token = os.environ["GITHUB_TOKEN"]
+        github_token = os.environ["GITHUB_TOKEN"]
     except KeyError:
         logging.error("Missing environment variable GITHUB_TOKEN")
         exit(1)
@@ -133,10 +132,9 @@ def main():
     validate_env()
     githelpers.validate_master_branch()
     release_tag = validate_commit_msg_get_tag()
-    #release_tag = "v3.2.1"
 
-    org = "intelsdi-x"
-    #org = "squall0gd"
+    #org = "intelsdi-x"
+    org = "squall0gd"
     repo = "kubernetes-comms-mvp"
 
     gClient = githelpers.GitHubClient(token=github_token, org=org, repo=repo)
