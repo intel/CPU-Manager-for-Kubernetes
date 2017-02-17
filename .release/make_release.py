@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Intel License for KCM (version January 2017)
 #
 # Copyright (c) 2017 Intel Corporation.
@@ -71,42 +72,100 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-.PHONY: docker docs
 
-all: docker
+import logging
+import os
+import re
 
-version=v0.2.0
+import githelpers
 
-# TODO: This target should be changed, when e2e tests will be ready and test
-# entrypoint will be defined.
-jenkins: docker
 
-docker:
-	docker build --no-cache -t kcm:$(version) .
-	@echo ""
-	@echo "To run the docker image, run command:"
-	@echo "docker run -it kcm:$(version) ..."
+def validate_env():
+    try:
+        os.environ["JENKINS_HOME"]
+        os.environ["JENKINS_URL"]
+        os.environ["BUILD_DISPLAY_NAME"]
+        os.environ["JENKINS_HOME"]
+    except KeyError:
+        logging.error("Aborting: This scrip should be run only on release VM.")
+        exit(1)
 
-# Output neatly formatted HTML docs to `docs/html`.
-#
-# This target uses `grip` (see https://github.com/joeyespo/grip).
-#
-# The files are passed securely to the GitHub rendering API.
-# GitHub imposes a limit of 60 unauthorized requests per hour.
-# To authenticate, create a personal access token and add it to a file
-# named `~/grip/settings.py` as described in the project README.
-docs:
-	mkdir -p docs/html/docs
-	cp -R docs/images docs/html/docs/
-	grip README.md --export docs/html/index.html --title="KCM"
-	grip docs/build.md --export docs/html/docs/build.html --title="Building kcm"
-	grip docs/cli.md --export docs/html/docs/cli.html --title="Using the kcm command-line tool"
-	grip docs/config.md --export docs/html/docs/config.html --title="The kcm configuration directory"
-	grip docs/operator.md --export docs/html/docs/operator.html --title="kcm operator manual"
-	grip docs/user.md --export docs/html/docs/user.html --title="kcm user manual"
-	sed -i"" "s/\.md/\.html/g" docs/html/index.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/build.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/cli.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/config.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/operator.html
-	sed -i"" "s/\.md/\.html/g" docs/html/docs/user.html
+
+def validate_commit_msg_get_tag():
+    commit_msg_pattern = re.compile('^(Regenerated HTML docs for |Bumped version to )'
+                                    + githelpers.version_pattern.pattern + '\.$')
+
+    commit_msg = [githelpers.get_last_commit_msg(0)[0], githelpers.get_last_commit_msg(1)[0]]
+    version_from_commits = []
+
+    for idx, msg in enumerate(commit_msg):
+        if not commit_msg_pattern.fullmatch(msg):
+            logging.warning("Aborting: Commit message on HEAD~{} is not release commit".format(idx))
+            logging.warning("Skipping release process")
+            exit(0)
+        version_from_commits.append(githelpers.version_pattern.search(msg).group(0))
+    logging.info("Last 2 commits are \"release commits\".")
+
+    if len(set(version_from_commits)) != 1:
+        logging.error("Aborting: Commit release messages have different versions:\n{}".format(commit_msg))
+        exit(1)
+
+    release_tag = version_from_commits[0]
+    logging.info("Release version/tag is \"{}\".".format(release_tag))
+
+    if githelpers.is_tag_present(release_tag):
+        logging.error("Aborting: Tag \"{}\" already exists.".format(release_tag))
+        exit(1)
+
+    return release_tag
+
+
+def main():
+
+    logging.basicConfig(level=logging.DEBUG)
+    try:
+        github_token = os.environ["GITHUB_TOKEN", "951f218461abcd71cd2b2673927f86d5a29fffd9"]
+        # github_token = os.environ["GITHUB_TOKEN"]
+    except KeyError:
+        logging.error("Missing environment variable GITHUB_TOKEN")
+        exit(1)
+
+    validate_env()
+    githelpers.validate_master_branch()
+    release_tag = validate_commit_msg_get_tag()
+    #release_tag = "v3.2.1"
+
+    org = "intelsdi-x"
+    #org = "squall0gd"
+    repo = "kubernetes-comms-mvp"
+
+    gClient = githelpers.GitHubClient(token=github_token, org=org, repo=repo)
+    if gClient.get_release_by_tag(release_tag):
+        logging.error("Aborting: Release with tag \"{}\" already exists.".format(release_tag))
+        exit(1)
+
+    previous_release = gClient.get_latest_release()
+    if not previous_release:
+        previous_release_id = githelpers.execute_git_cmd("rev-list --max-parents=0 HEAD")
+    else:
+        previous_release_id = previous_release["tag_name"]
+
+    logging.info("Creating tag \"{}\" and pushing to origin".format(release_tag))
+    githelpers.create_and_push_tag(release_tag)
+
+    change_log = githelpers.generate_changelog(org, repo, release_tag, previous_release_id)
+    pre_release = bool("-rc" in release_tag)
+
+    release_body = {
+        "tag_name": release_tag,
+        "name": "KCM release {}".format(release_tag),
+        "body": change_log,
+        "prerelease": pre_release
+    }
+
+    logging.info("Creating release".format(release_tag))
+    logging.info("Release details: {}".format(release_body))
+    print(gClient.make_release(release_body).json())
+
+if __name__ == "__main__":
+    main()
