@@ -18,6 +18,7 @@ Vagrant.configure(2) do |config|
 
 $script = <<SCRIPT
 echo "Prepare env"
+apt update
 apt install python3-pip -y
 pip3 install --upgrade pip3
 pip3 install -r /kcm/requirements.txt
