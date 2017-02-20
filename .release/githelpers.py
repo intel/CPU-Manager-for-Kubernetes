@@ -92,6 +92,7 @@ def execute_cmd(cmd):
     except subprocess.CalledProcessError as err:
         logging.error("Aborting: Got error while calling \"{}\"".format(cmd))
         logging.error("Details: {}".format(err))
+        logging.error("Details: {}".format(err.output))
         exit(1)
     return out.strip()
 
