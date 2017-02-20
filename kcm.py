@@ -99,7 +99,7 @@ Options:
   --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=<img>       KCM Docker image [default: kcm:v0.2.0].
+  --kcm-img=<img>       KCM Docker image [default: kcm:v3.2.1].
   --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
@@ -124,7 +124,7 @@ import sys
 def main():
     setup_logging()
 
-    args = docopt(__doc__, version="KCM v0.2.0")
+    args = docopt(__doc__, version="KCM v3.2.1")
     if args["cluster-init"]:
         clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
                                  args["--kcm-cmd-list"], args["--kcm-img"],

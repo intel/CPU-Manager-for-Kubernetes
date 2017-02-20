@@ -87,6 +87,6 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: kcm:v0.2.0
+    image: kcm:v3.2.1
     name: kcm-cluster-init-pod
   restartPolicy: Never
