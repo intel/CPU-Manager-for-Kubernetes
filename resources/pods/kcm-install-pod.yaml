@@ -84,7 +84,7 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: kcm:v0.2.0
+    image: kcm:v3.2.1
     name: kcm-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"

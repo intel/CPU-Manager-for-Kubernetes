@@ -1,7 +1,7 @@
 # Releasing KCM
 
 The example commands given here assume:
-- The current version of KCM is `v0.2.0`.
+- The current version of KCM is `v3.2.1`.
 - The version you want to release is `v0.3.0-rc1`.
 - Your upstream git remote is named `origin`.
 

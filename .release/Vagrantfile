@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# q -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+
+  aws_data_file = "#{ENV['HOME']}/.vagrant/aws-creds"
+
+  vagrant_user=ENV['VAGRANT_USER']
+
+  # SSH agent forwarding (for host private keys)
+  config.ssh.forward_agent = true
+  config.ssh.keys_only = false
+  config.ssh.insert_key = false
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_check_update = false
+
+
+$script = <<SCRIPT
+echo "Prepare env"
+apt update
+apt install python3-pip -y
+pip3 install --upgrade pip3
+pip3 install -r /kcm/requirements.txt
+SCRIPT
+
+  config.vm.provision "shell", inline: $script
+
+  config.vm.synced_folder "..", "/kcm", type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z", "--links"]
+
+  config.vm.provider "virtualbox" do |vb, override|
+    vb.gui = false
+
+    override.ssh.insert_key = true
+    override.ssh.keys_only = true
+  end
+
+  config.vm.provider :aws do |aws, override|
+    require 'yaml'
+    # load a file at this location that can be used to set aws specific
+    # information. This allows you to set your own credentials, but also
+    # custom what ami the job runs on.
+    if File.exists?(aws_data_file)
+      data = YAML.load_file(aws_data_file)
+    else
+      data = {}
+    end
+    override.nfs.functional = false
+    aws.access_key_id = data['access_key_id']
+    aws.secret_access_key = data['secret_access_key']
+
+    override.vm.box = "aws"
+    # requiretty cannot be set in sudoers for vagrant to work
+    aws.user_data = "#!/bin/bash\nsed -i 's/Defaults    requiretty/#Defaults    requiretty/' /etc/sudoers"
+
+    aws.ami = "ami-9dcfdb8a"
+    aws.instance_type = "m4.large"
+    aws.keypair_name = "snapbot-private"
+    override.ssh.username = "ubuntu"
+  end
+end

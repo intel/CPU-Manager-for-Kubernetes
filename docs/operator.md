@@ -157,7 +157,7 @@ for some reason.
 - The subcommands described below should be run in the same order. 
 - The documentation in this section assumes that the `KCM` configuration directory is `/etc/kcm` and the `kcm`
 binary is installed on the host under `/opt/bin`.
-- In all the pod templates used in this section, the name of container image used is `kcm:v0.2.0`. It is expected that the 
+- In all the pod templates used in this section, the name of container image used is `kcm:v3.2.1`. It is expected that the 
 `kcm` container image is built and cached locally in the host. The `image` field will require modification if the 
 container image is hosted remotely (e.g., in https://hub.docker.com/).
 
