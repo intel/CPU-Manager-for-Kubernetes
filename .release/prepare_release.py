@@ -161,7 +161,7 @@ def main():
     logging.info("All check have passed")
 
     while True:
-        proceed_input = input("Proceed with release(yes/no)?: ")
+        proceed_input = input("Proceed with preparing the release(yes/no)?: ")
         try:
             if proceed_input in ["yes", "no"]:
                 break

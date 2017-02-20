@@ -196,7 +196,12 @@ class GitHubClient:
 
     def upload(self,file_name):
         url = self._uploadUrl.replace("{?name,label}","?name={}".format(file_name))
-        print (url)
         data = open(file_name, 'rb')
         resp = requests.post(url, headers=dict(self.authHeader, **{'Content-Type':'application/zip'}), data=data)
         return resp
+
+    def get_login_by_token(self):
+        url = "/".join(["https://api.github.com", "user"])
+        resp = requests.get(url, headers=self.authHeader)
+        resp.raise_for_status()
+        return resp.json()["login"]
