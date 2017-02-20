@@ -80,17 +80,6 @@ import re
 import githelpers
 
 
-def validate_env():
-    try:
-        os.environ["JENKINS_HOME"]
-        os.environ["JENKINS_URL"]
-        os.environ["BUILD_DISPLAY_NAME"]
-        os.environ["JENKINS_HOME"]
-    except KeyError:
-        logging.error("Aborting: This scrip should be run only on release VM.")
-        exit(1)
-
-
 def validate_commit_msg_get_tag():
     commit_msg_pattern = re.compile('^(Regenerated HTML docs for |Bumped version to )'
                                     + githelpers.version_pattern.pattern + '\.$')
@@ -129,7 +118,6 @@ def main():
         logging.error("Missing environment variable GITHUB_TOKEN")
         exit(1)
 
-    validate_env()
     githelpers.validate_master_branch()
     release_tag = validate_commit_msg_get_tag()
 
@@ -137,12 +125,19 @@ def main():
     org = "squall0gd"
     repo = "kubernetes-comms-mvp"
 
-    gClient = githelpers.GitHubClient(token=github_token, org=org, repo=repo)
-    if gClient.get_release_by_tag(release_tag):
+    github_client = githelpers.GitHubClient(token=github_token, org=org, repo=repo)
+
+    if github_client.get_login_by_token() is not "snapbot-private":
+        logging.error("This script can only be run by snap-bot-private user on relase VM")
+        exit(1)
+
+
+    if github_client.get_release_by_tag(release_tag):
         logging.error("Aborting: Release with tag \"{}\" already exists.".format(release_tag))
         exit(1)
 
-    previous_release = gClient.get_latest_release()
+    previous_release = github_client.get_latest_release()
+
     if not previous_release:
         previous_release_id = githelpers.execute_git_cmd("rev-list --max-parents=0 HEAD")
     else:
@@ -163,7 +158,9 @@ def main():
 
     logging.info("Creating release".format(release_tag))
     logging.info("Release details: {}".format(release_body))
-    print(gClient.make_release(release_body).json())
+
+    github_client.make_release(release_body)
+
 
 if __name__ == "__main__":
     main()
