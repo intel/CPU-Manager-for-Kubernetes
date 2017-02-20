@@ -26,7 +26,7 @@ SCRIPT
 
   config.vm.provision "shell", inline: $script
 
-  config.vm.synced_folder "..", "/kcm", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
+  config.vm.synced_folder "..", "/kcm", type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z", "--links"]
 
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
