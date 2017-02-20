@@ -118,6 +118,8 @@ def main():
         logging.error("Missing environment variable GITHUB_TOKEN")
         exit(1)
 
+    githelpers.execute_git_cmd("checkout master")
+
     githelpers.validate_master_branch()
     release_tag = validate_commit_msg_get_tag()
 
