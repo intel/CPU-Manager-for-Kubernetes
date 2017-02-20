@@ -15,6 +15,18 @@ Vagrant.configure(2) do |config|
   config.vm.box = "ubuntu/xenial64"
   config.vm.box_check_update = false
 
+
+$script = <<SCRIPT
+echo "Prepare env"
+apt update
+apt install python3-pip -y
+pip3 install --upgrade pip3
+pip3 install -r /kcm/requirements.txt
+env
+SCRIPT
+
+  config.vm.provision "shell", inline: $script
+
   config.vm.synced_folder "..", "/kcm", :mount_options => ["umask=0022,dmask=0022,fmask=0022"]
 
   config.vm.provider "virtualbox" do |vb, override|
