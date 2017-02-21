@@ -121,6 +121,7 @@ Usage:
   kcm describe [--conf-dir=&lt;dir&gt;]
   kcm reconcile [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
   kcm isolate [--conf-dir=&lt;dir&gt;] --pool=&lt;pool&gt; &lt;command&gt; [-- &lt;args&gt; ...]
+              [--no-affinity]
   kcm install [--install-dir=&lt;dir&gt;]
   kcm node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
 
@@ -145,6 +146,11 @@ Options:
   --pool=&lt;pool&gt;         Pool name: either infra, controlplane or dataplane.
   --publish             Whether to publish reports to the Kubernetes
                         API server.
+  --no-affinity         Do not set cpu affinity before forking the child
+                        command. In this mode the user program is responsible
+                        for reading the `KCM_CPUS_ASSIGNED` environment
+                        variable and moving a subset of its own processes
+                        and/or tasks to the assigned CPUs.
 </code></pre>
 
 <p><em>For detailed usage information about each subcommand, see

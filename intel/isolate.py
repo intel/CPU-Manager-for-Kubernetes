@@ -73,13 +73,16 @@
 
 from . import config, proc
 import logging
+import os
 import random
 import psutil
 import signal
 import subprocess
 
+ENV_CPUS_ASSIGNED = "KCM_CPUS_ASSIGNED"
 
-def isolate(conf_dir, pool_name, command, args):
+
+def isolate(conf_dir, pool_name, no_affinity, command, args):
     c = config.Config(conf_dir)
     with c.lock():
         pools = c.pools()
@@ -109,6 +112,9 @@ def isolate(conf_dir, pool_name, command, args):
 
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
+        # Advertise assigned CPU IDs in the environment.
+        os.environ[ENV_CPUS_ASSIGNED] = clist.cpus()
+
         # We use psutil here (instead of the kcm provided
         # process abstraction) as we need to change the affinity of the current
         # process. This, in turn, is done through a system call which does
@@ -116,10 +122,15 @@ def isolate(conf_dir, pool_name, command, args):
         # operate within the PID namespace as we are changing our own affinity
         # and count on the child processes inheriting the affinity settings.
         p = psutil.Process()
-        cpu_list = proc.unfold_cpu_list(clist.cpus())
-        p.cpu_affinity(cpu_list)
 
-        logging.debug("Setting affinity to %s", cpu_list)
+        if no_affinity:
+            logging.info("""Not setting CPU affinity before forking the child\
+command because the --no-affinity flag was supplied""")
+
+        else:
+            cpu_list = proc.unfold_cpu_list(clist.cpus())
+            logging.debug("Setting CPU affinity to %s", cpu_list)
+            p.cpu_affinity(cpu_list)
 
         child = subprocess.Popen("{} {}".format(command,
                                  " ".join(args)),

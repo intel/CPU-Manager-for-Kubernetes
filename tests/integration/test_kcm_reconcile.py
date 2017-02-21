@@ -100,7 +100,6 @@ def test_kcm_reconcile(monkeypatch):
         ["reconcile", "--conf-dir={}"
          .format(os.path.join(temp_dir, "reconcile"))],
         {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}) == b"""{
-  "mismatchedCpuMasks": [],
   "reclaimedCpuLists": [
     {
       "cpus": "3,11",
