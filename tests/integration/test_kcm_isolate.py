@@ -85,6 +85,18 @@ import tempfile
 proc_env = {proc.ENV_PROC_FS: "/proc"}
 
 
+def test_kcm_isolate_child_env():
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("minimal")),
+            "--pool=shared",
+            "env | grep KCM"]
+
+    assert helpers.execute(integration.kcm(), args, proc_env) == b"""\
+KCM_PROC_FS=/proc
+KCM_CPUS_ASSIGNED=0
+"""
+
+
 def test_kcm_isolate_shared():
     args = ["isolate",
             "--conf-dir={}".format(helpers.conf_dir("minimal")),

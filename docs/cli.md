@@ -90,6 +90,7 @@ Usage:
   kcm describe [--conf-dir=<dir>]
   kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
+              [--no-affinity]
   kcm install [--install-dir=<dir>]
   kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
 
@@ -114,6 +115,11 @@ Options:
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
   --publish             Whether to publish reports to the Kubernetes
                         API server.
+  --no-affinity         Do not set cpu affinity before forking the child
+                        command. In this mode the user program is responsible
+                        for reading the `KCM_CPUS_ASSIGNED` environment
+                        variable and moving a subset of its own processes
+                        and/or tasks to the assigned CPUs.
 ```
 
 ## Global configuration
@@ -466,8 +472,13 @@ isolate` process exits abnormally (or receives the KILL signal) then the
 subcommand is designed to resolve this problem, and must be run
 frequently on any host where `kcm isolate` is used.
 
+`kcm isolate` sets the `KCM_CPUS_ASSIGNED`  variable in the child process'
+environment. The value is the assigned CPU list from the requested pool,
+formatted as a Linux [CPU list][cpu-list] string.
+
 Core affinity is achieved by first setting the CPU mask of the `kcm`
-process before executing the command.
+process before executing the command. This step can be turned off by
+supplying the `--no-affinity` flag.
 
 _**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
 to be set._
@@ -480,7 +491,12 @@ to be set._
 **Flags:**
 
 - `--conf-dir=<dir>` Path to the KCM configuration directory.
-- `--pool=<pool>` Pool name: either _infra_, _controlplane_ or _dataplane_.
+- `--pool=<pool>`    Pool name: either _infra_, _controlplane_ or _dataplane_.
+- `--no-affinity`    Do not set cpu affinity before forking the child
+                     command. In this mode the user program is responsible
+                     for reading the `KCM_CPUS_ASSIGNED` environment
+                     variable and moving a subset of its own processes and/or
+                     tasks to the assigned CPUs.
 
 **Example:**
 
@@ -785,6 +801,7 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
 -------------------------------------------------------------------------------
 
 
+[cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-config]: config.md
 [kcm-isolate]: #kcm-isolate
 [kcm-reconcile]: #kcm-reconcile

@@ -75,6 +75,7 @@ Usage:
   kcm describe [--conf-dir=&lt;dir&gt;]
   kcm reconcile [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
   kcm isolate [--conf-dir=&lt;dir&gt;] --pool=&lt;pool&gt; &lt;command&gt; [-- &lt;args&gt; ...]
+              [--no-affinity]
   kcm install [--install-dir=&lt;dir&gt;]
   kcm node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
 
@@ -99,6 +100,11 @@ Options:
   --pool=&lt;pool&gt;         Pool name: either infra, controlplane or dataplane.
   --publish             Whether to publish reports to the Kubernetes
                         API server.
+  --no-affinity         Do not set cpu affinity before forking the child
+                        command. In this mode the user program is responsible
+                        for reading the `KCM_CPUS_ASSIGNED` environment
+                        variable and moving a subset of its own processes
+                        and/or tasks to the assigned CPUs.
 </code></pre>
 
 <h2>
@@ -492,8 +498,13 @@ isolate</code> process exits abnormally (or receives the KILL signal) then the
 subcommand is designed to resolve this problem, and must be run
 frequently on any host where <code>kcm isolate</code> is used.</p>
 
+<p><code>kcm isolate</code> sets the <code>KCM_CPUS_ASSIGNED</code>  variable in the child process'
+environment. The value is the assigned CPU list from the requested pool,
+formatted as a Linux <a href="http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS">CPU list</a> string.</p>
+
 <p>Core affinity is achieved by first setting the CPU mask of the <code>kcm</code>
-process before executing the command.</p>
+process before executing the command. This step can be turned off by
+supplying the <code>--no-affinity</code> flag.</p>
 
 <p><em><strong>NOTE:</strong> This subcommand requires the <code>KCM_PROC_FS</code> environment variable
 to be set.</em></p>
@@ -513,7 +524,13 @@ to be set.</em></p>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
 <li>
-<code>--pool=&lt;pool&gt;</code> Pool name: either <em>infra</em>, <em>controlplane</em> or <em>dataplane</em>.</li>
+<code>--pool=&lt;pool&gt;</code>    Pool name: either <em>infra</em>, <em>controlplane</em> or <em>dataplane</em>.</li>
+<li>
+<code>--no-affinity</code>    Do not set cpu affinity before forking the child
+                 command. In this mode the user program is responsible
+                 for reading the <code>KCM_CPUS_ASSIGNED</code> environment
+                 variable and moving a subset of its own processes and/or
+                 tasks to the assigned CPUs.</li>
 </ul>
 
 <p><strong>Example:</strong></p>
