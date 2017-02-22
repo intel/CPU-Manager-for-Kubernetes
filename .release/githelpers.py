@@ -115,7 +115,7 @@ def is_tag_valid(tag):
 
 
 def is_tag_present(tag):
-    return bool(tag in get_tags())
+    return tag in get_tags()
 
 
 def validate_master_branch():
@@ -164,43 +164,35 @@ class GitHubClient:
         self._uploadUrl = ''
 
     def get_all_releases(self):
-        url = "/".join([self.baseUrl, "releases"])
+        url = self.baseUrl + "/releases"
         resp = requests.get(url, headers=self.authHeader)
         return resp.json()
 
     def get_latest_release(self):
-        url = "/".join([self.baseUrl, "releases", "latest"])
+        url = self.baseUrl + "/releases/latest"
         resp = requests.get(url, headers=self.authHeader)
-        if resp.status_code != requests.codes.ok:
-            if resp.status_code == requests.codes.not_found:
-                return None
-            resp.raise_for_status()
+        if resp.status_code == requests.codes.not_found:
+            return
+        resp.raise_for_status()
         return resp.json()
 
     def get_release_by_tag(self, tag):
-        url = "/".join([self.baseUrl, "releases/tags", tag])
+        url = self.baseUrl + "releases/tags"
         resp = requests.get(url, headers=self.authHeader)
-        if resp.status_code != requests.codes.ok:
-            if resp.status_code == requests.codes.not_found:
-                return None
-            resp.raise_for_status()
+        if resp.status_code == requests.codes.not_found:
+            return
+        resp.raise_for_status()
         return resp.json()
 
     def make_release(self,release_body):
-        url = "/".join([self.baseUrl, "releases"])
+        url = self.baseUrl + "/releases"
         resp = requests.post(url, json=release_body, headers=self.authHeader)
         resp.raise_for_status()
         self._uploadUrl = resp.json()['upload_url']
         return resp
 
-    def upload(self,file_name):
-        url = self._uploadUrl.replace("{?name,label}","?name={}".format(file_name))
-        data = open(file_name, 'rb')
-        resp = requests.post(url, headers=dict(self.authHeader, **{'Content-Type':'application/zip'}), data=data)
-        return resp
-
     def get_login_by_token(self):
-        url = "/".join(["https://api.github.com", "user"])
+        url = "https://api.github.com/user"
         resp = requests.get(url, headers=self.authHeader)
         resp.raise_for_status()
         return resp.json()["login"]
