@@ -113,11 +113,12 @@ def test_uninstall_remove_node_kcm_oir_failure(caplog):
             uninstall.remove_node_kcm_oir()
         patch_path = "/status/capacity/" \
                      "pod.alpha.kubernetes.io~1opaque-int-resource-kcm"
-        exp_err = "Exception when removing OIR \"{}\"".format(patch_path)
+        exp_err = "Aborting uninstall: " \
+                  "Exception when removing OIR \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
         caplog_tuple = caplog.record_tuples
 
-        assert caplog_tuple[-1][2] == "Aborting uninstall: " + exp_log_err
+        assert caplog_tuple[-1][2] == exp_log_err
 
 
 def test_uninstall_remove_node_taint_failure1(caplog):
@@ -129,12 +130,12 @@ def test_uninstall_remove_node_taint_failure1(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_taint()
-        exp_err = "Exception when getting the " \
+        exp_err = "Aborting uninstall: Exception when getting the " \
                   "node \"{}\" obj".format(node_name)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
         caplog_tuple = caplog.record_tuples
 
-        assert caplog_tuple[-1][2] == "Aborting uninstall: " + exp_log_err
+        assert caplog_tuple[-1][2] == exp_log_err
 
 
 def test_uninstall_remove_node_taint_failure2(caplog):
@@ -154,11 +155,12 @@ def test_uninstall_remove_node_taint_failure2(caplog):
             uninstall.remove_node_taint()
         patch_path = '/metadata/annotations/' \
                      'scheduler.alpha.kubernetes.io~1taints'
-        exp_err = "Exception when removing taint \"{}\"".format(patch_path)
+        exp_err = "Aborting uninstall: " \
+                  "Exception when removing taint \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
         caplog_tuple = caplog.record_tuples
 
-        assert caplog_tuple[-1][2] == "Aborting uninstall: " + exp_log_err
+        assert caplog_tuple[-1][2] == exp_log_err
 
 
 def test_uninstall_remove_node_label_failure(caplog):
@@ -171,14 +173,15 @@ def test_uninstall_remove_node_label_failure(caplog):
         with pytest.raises(SystemExit):
             uninstall.remove_node_label()
         patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
-        exp_err = "Exception when removing node label" \
+        exp_err = "Aborting uninstall: Exception when removing node label" \
                   " \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
         caplog_tuple = caplog.record_tuples
 
-        assert caplog_tuple[-1][2] == "Aborting uninstall: " + exp_log_err
+        assert caplog_tuple[-1][2] == exp_log_err
 
 
+# Test removing non existing oir
 def test_uninstall_remove_node_oir_success(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason",
                                       "{\"message\":\"nonexistant\"}")
@@ -191,9 +194,25 @@ def test_uninstall_remove_node_oir_success(caplog):
         patch_path = '/status/capacity/pod.alpha.kubernetes.' \
                      'io~1opaque-int-resource-kcm'
         assert \
+            caplog_tuple[-2][2] == "KCM oir \"{}\" does not " \
+                                   "exist".format(patch_path)
+        assert \
             caplog_tuple[-1][2] == "Removed node oir \"{}\"".format(patch_path)
 
 
+# Test removing existing oir
+def test_uninstall_remove_node_oir_success2(caplog):
+    with patch('intel.discover.patch_k8s_node_status',
+               MagicMock(return_value=0)):
+        uninstall.remove_node_kcm_oir()
+        caplog_tuple = caplog.record_tuples
+        patch_path = '/status/capacity/pod.alpha.kubernetes.' \
+                     'io~1opaque-int-resource-kcm'
+        assert \
+            caplog_tuple[-1][2] == "Removed node oir \"{}\"".format(patch_path)
+
+
+# Test removing non existing label
 def test_uninstall_remove_node_label_success(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason",
                                       "{\"message\":\"nonexistant\"}")
@@ -201,6 +220,19 @@ def test_uninstall_remove_node_label_success(caplog):
 
     with patch('intel.discover.patch_k8s_node',
                MagicMock(side_effect=fake_api_exception)):
+        uninstall.remove_node_label()
+        caplog_tuple = caplog.record_tuples
+        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        exp_str = "Removed node label \"{}\"".format(patch_path)
+        exp_str2 = "Label \"{}\" does not exist".format(patch_path)
+        assert caplog_tuple[-2][2] == exp_str2
+        assert caplog_tuple[-1][2] == exp_str
+
+
+# Test removing existing label
+def test_uninstall_remove_node_label_success2(caplog):
+    with patch('intel.discover.patch_k8s_node',
+               MagicMock(return_value=0)):
         uninstall.remove_node_label()
         caplog_tuple = caplog.record_tuples
         patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
@@ -285,6 +317,7 @@ def test_remove_binary_failure(caplog):
     caplog_tuple = caplog.record_tuples
     notexisting = "[Errno 2] No such file or directory:" \
                   " \'{}/kcm\'".format(temp_dir)
-    exp_log = "Could not remove kcm from \"{}\": {}".format(
-        temp_dir, notexisting)
-    assert caplog_tuple[-1][2] == "Aborting uninstall: " + exp_log
+    exp_log = "Aborting uninstall: " \
+              "Could not remove kcm from \"{}\": {}"\
+        .format(temp_dir, notexisting)
+    assert caplog_tuple[-1][2] == exp_log

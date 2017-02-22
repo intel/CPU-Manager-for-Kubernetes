@@ -108,10 +108,10 @@ spec:
   volumes:
   - hostPath:
       # Change this to modify the KCM config dir in the host file system.
-        path: "/etc/kcm"
+      path: "/etc/kcm"
     name: kcm-conf-dir
   - hostPath:
-        path: "/proc"
+      path: "/proc"
     name: host-proc
   - hostPath:
       # Change this to modify the KCM installation dir in the host file system.
