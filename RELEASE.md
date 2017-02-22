@@ -1,73 +1,74 @@
 # Releasing KCM
+General flow is:
+ - run `prepare_release.py` script
+ - create PR, get review
+ - "Rebase and merge" PR into master branch
+ - Jenkins CI/CD will build VM based on `.release/Vagrantfile`
+ - Jenkins CI/CD will run `.release/make_release.py`
+
+### Short Version
+---
 
 The example commands given here assume:
-- The current version of KCM is `v0.2.0`.
-- The version you want to release is `v0.3.0-rc1`.
-- Your upstream git remote is named `origin`.
+  - The current version of KCM is `v0.2.0`.
+  - The version you want to release is `v0.3.0-rc1`.
+  - Your upstream git remote is named `origin`.
 
-1. Create a local release branch.
-   ```
-   git checkout master
-   git pull origin master
-   git checkout -b release-v0.3.0-rc1
-   ```
+1. Make sure that:
+  - You are on `master` branch.
+  - Your `master` branch is up to date with remote `origin/master`.
+  - There are no un-staged files.
+  
+1. Chose release tag value according to pattern `vX.Y.Z[-rcV]` and set is as environment variable `KCM_RELEASE_VER`:
+  - `X` - single digit [0-9] (required)
+  - `Y` - single digit [0-9] (required)
+  - `Z` - single digit [0-9] (required)
+  - `-rc` - indicates pre-release (optional)
+	  - `V` - single or double digit 
 
-1. Update the version string in the entire repository.
-   ```
-   git ls-files | xargs -I {} sed -i "" "s/v0\.2\.0/v0.3.0-rc1/g" {}
-   ```
+	examples: `v0.3.0-rc1`, `v0.1.3`.
+ 
+1. Run `prepare_release.py` script from main repository directory:
+```sh
+KCM_RELEASE_VER=v0.3.0-rc1 .release/prepare_release.py
+# or
+export KCM_RELEASE_VER=v0.3.0-rc1 
+.release/prepare_release.py
+```
+You can execute `.release/prepare_release.py --help` to get more information.
 
-1. Commit changes.
-   ```
-   git add -u
-   git commit -m "Bumped version to v0.3.0-rc1."
-   ```
+1. Got to Github repository, create pull request and get review.
+1. When review is done, use "**Rebase and merge**" button to make the release. Do not change the release commit message.
 
-1. Build HTML docs.
-   ```
-   make docs
-   ```
+####**VERY IMPORTANT NOTE** - Read before you release
+You need to use "Rebase and merge" in order to preserve latest commit message from release branch
+(`kcm-release-v0.3.0-rc1`). The Jenkins CI/CD part of automation based on commit message prepared by `prepare_release.py` script will trigger creation of tag, creation of release and change log generation
 
-1. Commit changes.
-   ```
-   git add -u
-   git commit -m "Regenerated HTML docs."
-   ```
+Additionally, tag and release are created once PR from release branch gets onto master branch, if in the meantime someone makes some changes to master branch (i.e. new feature from other PR is merged) those changes will be included into the release. Make sure that 
 
-1. Push branch and create a PR.
-   ```
-   git push origin release-v0.3.0-rc1
-   ```
 
-1. Get review, wait for CI to pass, merge the release branch to upstream master.
+### Details
+---
 
-1. Update local master branch.
-   ```
-   git checkout master
-   git pull origin master
-   ```
+**What will `prepare_release.py` do :**
+ - check whether script is run from main repository directory
+ - check whether current branch is `master` and if it's "clean"
+ - fetch origin
+ - check whether `KCM_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
+ - check whether there is no `kcm-release-v0.3.0-rc1` branch neither locally nor remotely
+ - get previous version string from `Makefile` (`version=v0.2.0`) and check
 
-1. Create a git tag and push it upstream.
-   ```
-   git tag -a v0.3.0-rc1 -m "KCM v0.3.0-rc1"
-   git push origin --tags
-   ```
+If all above checks pass, script will:
+ - create local branch `kcm-release-v0.3.0-rc1`
+ - replace old release string (`v0.2.0`) with new one (`v0.3.0-rc1`) in all repo files
+ - commit changes with message `KCM release - version v0.3.0-rc1.`
+ - push branch to origin
+ - checkout to `master` branch.
 
-1. Manually test the tarball.
-   Download https://github.com/intelsdi-x/kubernetes-comms-mvp/archive/v0.3.0-rc1.tar.gz
+**What will happen after PR gets to `master` branch**
+After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
-   ```
-   tar -xf v0.3.0-rc1.tar.gz
-   cd <extracted-dir>
-   make
-   ```
-
-1. Mark the release as a final or pre-release in GitHub, as appropriate.
-   See https://github.com/intelsdi-x/kubernetes-comms-mvp/releases
-
-1. Add release notes to the tag in GitHub, using recent releases as an
-   example. Be sure to include any incompatible changes or other major
-   behavior changes. Also outline bugs that were fixed since the previous
-   release.
-
-1. Attach the tarball from the GitHub releases page to an announcement email to the appropriate lists.
+**What will `make_release.py` do :**
+- check latest commit message for `KCM release - version v0.3.0-rc1.` string
+- generate change log
+- create release with change log based on tag found in commit message
