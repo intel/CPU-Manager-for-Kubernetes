@@ -19,3 +19,5 @@ terraform/vagrant_env/inventory
 **/post_deploy.retry
 .coverage
 *.py,cover
+.release/.vagrant/
+.release/*.log
