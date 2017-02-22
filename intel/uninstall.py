@@ -240,6 +240,7 @@ def remove_node_label():
                 "Aborting uninstall: Exception when removing node "
                 "label \"{}\": {}".format(patch_path, err))
             sys.exit(1)
+        logging.warning("Label \"{}\" does not exist".format(patch_path))
     logging.info("Removed node label \"{}\"".format(patch_path))
 
 
@@ -259,9 +260,8 @@ def remove_node_taint():
     if node_taint_key in node_resp["metadata"]["annotations"]:
         node_taints = node_resp["metadata"]["annotations"][node_taint_key]
         node_taints_list = ast.literal_eval(node_taints)
-        for item in node_taints_list:
-            if item['key'] == "kcm":
-                node_taints_list.remove(item)
+        node_taints_list = \
+            [taint for taint in node_taints_list if taint["key"] != "kcm"]
 
     patch_path = '/metadata/annotations/scheduler.alpha.kubernetes.io~1taints'
     patch_body = [{
@@ -297,4 +297,5 @@ def remove_node_kcm_oir():
                 "Aborting uninstall: Exception when removing OIR \"{}\": "
                 "{}".format(patch_path, err))
             sys.exit(1)
+        logging.warning("KCM oir \"{}\" does not exist".format(patch_path))
     logging.info("Removed node oir \"{}\"".format(patch_path))
