@@ -100,7 +100,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: kcm:v0.2.0
+        image: kcm:v0.3.0-rc1
         name: kcm-nodereport
         volumeMounts:
         - mountPath: "/host/proc"
