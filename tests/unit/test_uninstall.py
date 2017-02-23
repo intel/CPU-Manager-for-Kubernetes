@@ -72,7 +72,7 @@
 # apply to the Software.
 
 from .. import helpers
-from intel import proc, uninstall
+from intel import proc, uninstall, third_party
 from kubernetes.client.rest import ApiException as K8sApiException
 import os
 import pytest
@@ -121,6 +121,71 @@ def test_uninstall_remove_node_kcm_oir_failure(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+def test_remove_report_success(caplog):
+    fake_tpr_report = MagicMock()
+    fake_tpr_report.remove.return_value = 0
+
+    with patch('kubernetes.config.load_incluster_config',
+               MagicMock(return_value=0)),\
+            patch('kubernetes.client.ExtensionsV1beta1Api',
+                  MagicMock(return_value=0)), \
+            patch.object(third_party.ThirdPartyResourceType, 'create',
+                         MagicMock(return_value=fake_tpr_report)):
+        uninstall.remove_report("NodeReport")
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-1][2] == "\"NodeReport\" for node \"{}\" " \
+                                      "removed.".format(os.getenv("NODE_NAME"))
+
+
+# Remove success due to not existing report
+def test_remove_report_success2(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"NotFound\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+
+    fake_tpr_report = MagicMock()
+    fake_tpr_report.remove.side_effect = fake_api_exception
+
+    with patch('kubernetes.config.load_incluster_config',
+               MagicMock(return_value=0)),\
+            patch('kubernetes.client.ExtensionsV1beta1Api',
+                  MagicMock(return_value=0)), \
+            patch.object(third_party.ThirdPartyResourceType, 'create',
+                         MagicMock(return_value=fake_tpr_report)):
+
+        uninstall.remove_report("NodeReport")
+        caplog_tuple = caplog.record_tuples
+        assert \
+            caplog_tuple[-2][2] == "\"NodeReport\" for node \"{}\" does" \
+                                   " not exist.".format(os.getenv("NODE_NAME"))
+        assert \
+            caplog_tuple[-1][2] == "\"NodeReport\" for node \"{}\" " \
+                                   "removed.".format(os.getenv("NODE_NAME"))
+
+
+def test_remove_report_failure(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"WrongReason\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+
+    fake_tpr_report = MagicMock()
+    fake_tpr_report.remove.side_effect = fake_api_exception
+
+    with patch('kubernetes.config.load_incluster_config',
+               MagicMock(return_value=0)),\
+            patch('kubernetes.client.ExtensionsV1beta1Api',
+                  MagicMock(return_value=0)), \
+            patch.object(third_party.ThirdPartyResourceType, 'create',
+                         MagicMock(return_value=fake_tpr_report)):
+        with pytest.raises(SystemExit):
+            uninstall.remove_report("NodeReport")
+        caplog_tuple = caplog.record_tuples
+        exp_err = "Aborting uninstall: " \
+                  "Exception when removing third party resource \"NodeReport\""
+        exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
+        assert caplog_tuple[-1][2] == exp_log_err
+
+
 def test_uninstall_remove_node_taint_failure1(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -163,6 +228,34 @@ def test_uninstall_remove_node_taint_failure2(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+# Test removing non existing label
+def test_uninstall_remove_node_label_success(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "fake reason",
+                                      "{\"message\":\"nonexistant\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+
+    with patch('intel.discover.patch_k8s_node',
+               MagicMock(side_effect=fake_api_exception)):
+        uninstall.remove_node_label()
+        caplog_tuple = caplog.record_tuples
+        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        exp_str = "Removed node label \"{}\".".format(patch_path)
+        exp_str2 = "Label \"{}\" does not exist.".format(patch_path)
+        assert caplog_tuple[-2][2] == exp_str2
+        assert caplog_tuple[-1][2] == exp_str
+
+
+# Test removing existing label
+def test_uninstall_remove_node_label_success2(caplog):
+    with patch('intel.discover.patch_k8s_node',
+               MagicMock(return_value=0)):
+        uninstall.remove_node_label()
+        caplog_tuple = caplog.record_tuples
+        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        exp_str = "Removed node label \"{}\".".format(patch_path)
+        assert caplog_tuple[-1][2] == exp_str
+
+
 def test_uninstall_remove_node_label_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason",
                                       "{\"message\":\"fake message\"}")
@@ -195,9 +288,10 @@ def test_uninstall_remove_node_oir_success(caplog):
                      'io~1opaque-int-resource-kcm'
         assert \
             caplog_tuple[-2][2] == "KCM oir \"{}\" does not " \
-                                   "exist".format(patch_path)
+                                   "exist.".format(patch_path)
         assert \
-            caplog_tuple[-1][2] == "Removed node oir \"{}\"".format(patch_path)
+            caplog_tuple[-1][2] == "Removed node oir " \
+                                   "\"{}\".".format(patch_path)
 
 
 # Test removing existing oir
@@ -209,35 +303,8 @@ def test_uninstall_remove_node_oir_success2(caplog):
         patch_path = '/status/capacity/pod.alpha.kubernetes.' \
                      'io~1opaque-int-resource-kcm'
         assert \
-            caplog_tuple[-1][2] == "Removed node oir \"{}\"".format(patch_path)
-
-
-# Test removing non existing label
-def test_uninstall_remove_node_label_success(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason",
-                                      "{\"message\":\"nonexistant\"}")
-    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-
-    with patch('intel.discover.patch_k8s_node',
-               MagicMock(side_effect=fake_api_exception)):
-        uninstall.remove_node_label()
-        caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
-        exp_str = "Removed node label \"{}\"".format(patch_path)
-        exp_str2 = "Label \"{}\" does not exist".format(patch_path)
-        assert caplog_tuple[-2][2] == exp_str2
-        assert caplog_tuple[-1][2] == exp_str
-
-
-# Test removing existing label
-def test_uninstall_remove_node_label_success2(caplog):
-    with patch('intel.discover.patch_k8s_node',
-               MagicMock(return_value=0)):
-        uninstall.remove_node_label()
-        caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
-        exp_str = "Removed node label \"{}\"".format(patch_path)
-        assert caplog_tuple[-1][2] == exp_str
+            caplog_tuple[-1][2] == "Removed node oir " \
+                                   "\"{}\".".format(patch_path)
 
 
 def test_check_remove_lock_file_success(monkeypatch, caplog):
@@ -280,7 +347,7 @@ def test_check_remove_conf_dir_failure(monkeypatch, caplog):
     )
     caplog_tuple = caplog.record_tuples
     exp_str = "Aborting uninstall: Exception when removing \"{}\": There " \
-              "are running tasks, check pools in \"{}\""\
+              "are running tasks, check pools in \"{}\"."\
         .format(conf_dir, conf_dir)
     assert caplog_tuple[-1][2] == exp_str
 
@@ -299,7 +366,7 @@ def test_remove_binary_sucess(caplog):
             [fake_binary_path]
         )
     caplog_tuple = caplog.record_tuples
-    exp_log = "kcm binary from \"{}\" removed successfully".format(
+    exp_log = "kcm binary from \"{}\" removed successfully.".format(
         temp_dir)
     assert caplog_tuple[-1][2] == exp_log
 
