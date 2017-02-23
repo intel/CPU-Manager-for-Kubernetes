@@ -10,7 +10,7 @@ General flow is:
 ---
 
 The example commands given here assume:
-  - The current version of KCM is `v0.2.0`.
+  - The current version of KCM is `v0.3.0-rc1`.
   - The version you want to release is `v0.3.0-rc1`.
   - Your upstream git remote is named `origin`.
 
@@ -56,11 +56,11 @@ Additionally, tag and release are created once PR from release branch gets onto 
  - fetch origin
  - check whether `KCM_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
  - check whether there is no `kcm-release-v0.3.0-rc1` branch neither locally nor remotely
- - get previous version string from `Makefile` (`version=v0.2.0`) and check
+ - get previous version string from `Makefile` (`version=v0.3.0-rc1`) and check
 
 If all above checks pass, script will:
  - create local branch `kcm-release-v0.3.0-rc1`
- - replace old release string (`v0.2.0`) with new one (`v0.3.0-rc1`) in all repo files
+ - replace old release string (`v0.3.0-rc1`) with new one (`v0.3.0-rc1`) in all repo files
  - commit changes with message `KCM release - version v0.3.0-rc1.`
  - push branch to origin
  - checkout to `master` branch.
