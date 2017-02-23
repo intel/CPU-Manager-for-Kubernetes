@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+#
 #!/usr/bin/env python
+#
 # Intel License for KCM (version January 2017)
 #
 # Copyright (c) 2017 Intel Corporation.
