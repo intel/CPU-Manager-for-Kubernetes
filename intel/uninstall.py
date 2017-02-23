@@ -103,7 +103,7 @@ def remove_binary(install_dir):
     remove_file = os.path.join(install_dir, "kcm")
     try:
         os.remove(remove_file)
-        logging.info("kcm binary from \"{}\" removed successfully".format(
+        logging.info("kcm binary from \"{}\" removed successfully.".format(
             install_dir))
     except OSError as err:
         logging.error("Aborting uninstall: Could not remove kcm "
@@ -113,7 +113,7 @@ def remove_binary(install_dir):
 
 def remove_report(report_type):
     logging.info(
-        "Removing \"{}\" from Kubernetes API server for node \"{}\"".format(
+        "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
     k8sconfig.load_incluster_config()
     v1beta = k8sclient.ExtensionsV1beta1Api()
@@ -132,7 +132,7 @@ def remove_report(report_type):
                 " party resource \"{}\": {}".format(report_type, err))
             sys.exit(1)
 
-        logging.debug("\"{}\" for node \"{}\" does not exist".format(
+        logging.debug("\"{}\" for node \"{}\" does not exist.".format(
             report_type, os.getenv("NODE_NAME")))
     logging.info("\"{}\" for node \"{}\" removed.".format(
         report_type, os.getenv("NODE_NAME")))
@@ -163,13 +163,13 @@ def delete_reconcile_nodereport_pod():
 
 def check_remove_conf_dir(conf_dir):
     # Verify we can read the config directory
-    logging.info("Removing \"{}\"".format(conf_dir))
+    logging.info("Removing \"{}\".".format(conf_dir))
     try:
         conf = config.Config(conf_dir)
     except Exception as err:
         logging.error(
             "Aborting uninstall: Unable to read the KCM configuration "
-            "directory at \"{}\": {}".format(conf_dir, err))
+            "directory at \"{}\": {}.".format(conf_dir, err))
         sys.exit(1)
 
     try:
@@ -181,7 +181,7 @@ def check_remove_conf_dir(conf_dir):
             pending_pools = ["controlplane", "dataplane", "infra"]
             sleep(1)
             logging.info("Running reconcile before removing config "
-                         "dir, attempts left: {}".format(retries))
+                         "dir, attempts left: {}.".format(retries))
             with conf.lock():
                 reconcile.reclaim_cpu_lists(
                     conf, reconcile.generate_report(conf))
@@ -189,7 +189,7 @@ def check_remove_conf_dir(conf_dir):
                     if len(get_pool_tasks(conf, pool_name)) == 0:
                         pending_pools.remove(pool_name)
                         continue
-                    logging.warn("\"{}\" pool still has running tasks".format(
+                    logging.warn("\"{}\" pool still has running tasks.".format(
                         pool_name))
                     retries -= 1
                     break
@@ -209,7 +209,7 @@ def check_remove_conf_dir(conf_dir):
                 # If no retries left, it's a fail
                 raise RuntimeError("There are running "
                                    "tasks, check pools in "
-                                   "\"{}\"".format(conf_dir))
+                                   "\"{}\".".format(conf_dir))
     except Exception as err:
         logging.error("Aborting uninstall: Exception when removing "
                       "\"{}\": {}".format(conf_dir, err))
@@ -218,14 +218,14 @@ def check_remove_conf_dir(conf_dir):
 
 def get_pool_tasks(c, pool_name):
     if pool_name not in c.pools():
-        raise KeyError("\"{}\" pool does not exist".format(pool_name))
+        raise KeyError("\"{}\" pool does not exist.".format(pool_name))
     if len(c.pool(pool_name).cpu_lists()) == 0:
-        raise KeyError("No CPU list in \"{}\" pool".format(pool_name))
+        raise KeyError("No CPU list in \"{}\" pool.".format(pool_name))
     return c.pool(pool_name).tasks_list()
 
 
 def remove_node_label():
-    logging.info("Removing node label")
+    logging.info("Removing node label.")
     patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
     patch_body = [{
         "op": "remove",
@@ -240,12 +240,12 @@ def remove_node_label():
                 "Aborting uninstall: Exception when removing node "
                 "label \"{}\": {}".format(patch_path, err))
             sys.exit(1)
-        logging.warning("Label \"{}\" does not exist".format(patch_path))
-    logging.info("Removed node label \"{}\"".format(patch_path))
+        logging.warning("Label \"{}\" does not exist.".format(patch_path))
+    logging.info("Removed node label \"{}\".".format(patch_path))
 
 
 def remove_node_taint():
-    logging.info("Removing node taint")
+    logging.info("Removing node taint.")
     node_name = os.getenv("NODE_NAME")
 
     try:
@@ -277,13 +277,13 @@ def remove_node_taint():
             "Aborting uninstall: Exception when removing taint \"{}\": "
             "{}".format(patch_path, err))
         sys.exit(1)
-    logging.info("Removed node taint with key\"{}\"".format("kcm"))
+    logging.info("Removed node taint with key\"{}\".".format("kcm"))
 
 
 def remove_node_kcm_oir():
     patch_path = ('/status/capacity/pod.alpha.kubernetes.io~1opaque-int-'
                   'resource-kcm')
-    logging.info("Removing node oir \"{}\"".format(patch_path))
+    logging.info("Removing node oir \"{}\".".format(patch_path))
     patch_body = [{
         "op": "remove",
         "path": patch_path
@@ -297,5 +297,5 @@ def remove_node_kcm_oir():
                 "Aborting uninstall: Exception when removing OIR \"{}\": "
                 "{}".format(patch_path, err))
             sys.exit(1)
-        logging.warning("KCM oir \"{}\" does not exist".format(patch_path))
-    logging.info("Removed node oir \"{}\"".format(patch_path))
+        logging.warning("KCM oir \"{}\" does not exist.".format(patch_path))
+    logging.info("Removed node oir \"{}\".".format(patch_path))
