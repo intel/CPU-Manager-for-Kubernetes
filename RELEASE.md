@@ -10,8 +10,8 @@ General flow is:
 ---
 
 The example commands given here assume:
-  - The current version of KCM is `v0.3.0-rc1`.
-  - The version you want to release is `v0.3.0-rc1`.
+  - The current version of KCM is `v0.3.0`.
+  - The version you want to release is `v0.3.0`.
   - Your upstream git remote is named `origin`.
 
 1. Make sure that:
@@ -26,13 +26,13 @@ The example commands given here assume:
   - `-rc` - indicates pre-release (optional)
 	  - `V` - single or double digit 
 
-	examples: `v0.3.0-rc1`, `v0.1.3`.
+	examples: `v0.3.0`, `v0.1.3`.
  
 1. Run `prepare_release.py` script from main repository directory:
 ```sh
-KCM_RELEASE_VER=v0.3.0-rc1 .release/prepare_release.py
+KCM_RELEASE_VER=v0.3.0 .release/prepare_release.py
 # or
-export KCM_RELEASE_VER=v0.3.0-rc1 
+export KCM_RELEASE_VER=v0.3.0 
 .release/prepare_release.py
 ```
 You can execute `.release/prepare_release.py --help` to get more information.
@@ -42,7 +42,7 @@ You can execute `.release/prepare_release.py --help` to get more information.
 
 ####**VERY IMPORTANT NOTE** - Read before you release
 You need to use "Rebase and merge" in order to preserve latest commit message from release branch
-(`kcm-release-v0.3.0-rc1`). The Jenkins CI/CD part of automation based on commit message prepared by `prepare_release.py` script will trigger creation of tag, creation of release and change log generation
+(`kcm-release-v0.3.0`). The Jenkins CI/CD part of automation based on commit message prepared by `prepare_release.py` script will trigger creation of tag, creation of release and change log generation
 
 Additionally, tag and release are created once PR from release branch gets onto master branch, if in the meantime someone makes some changes to master branch (i.e. new feature from other PR is merged) those changes will be included into the release. Make sure that 
 
@@ -55,13 +55,13 @@ Additionally, tag and release are created once PR from release branch gets onto 
  - check whether current branch is `master` and if it's "clean"
  - fetch origin
  - check whether `KCM_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
- - check whether there is no `kcm-release-v0.3.0-rc1` branch neither locally nor remotely
- - get previous version string from `Makefile` (`version=v0.3.0-rc1`) and check
+ - check whether there is no `kcm-release-v0.3.0` branch neither locally nor remotely
+ - get previous version string from `Makefile` (`version=v0.3.0`) and check
 
 If all above checks pass, script will:
- - create local branch `kcm-release-v0.3.0-rc1`
- - replace old release string (`v0.3.0-rc1`) with new one (`v0.3.0-rc1`) in all repo files
- - commit changes with message `KCM release - version v0.3.0-rc1.`
+ - create local branch `kcm-release-v0.3.0`
+ - replace old release string (`v0.3.0`) with new one (`v0.3.0`) in all repo files
+ - commit changes with message `KCM release - version v0.3.0.`
  - push branch to origin
  - checkout to `master` branch.
 
@@ -69,6 +69,6 @@ If all above checks pass, script will:
 After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
 **What will `make_release.py` do :**
-- check latest commit message for `KCM release - version v0.3.0-rc1.` string
+- check latest commit message for `KCM release - version v0.3.0.` string
 - generate change log
 - create release with change log based on tag found in commit message
