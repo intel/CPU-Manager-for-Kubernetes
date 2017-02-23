@@ -73,10 +73,13 @@
 
 FROM python:3.4.5-wheezy
 
+ADD requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
+
 ADD . /kcm
 WORKDIR /kcm
 
-RUN pip install -r requirements.txt && chmod +x /kcm/kcm.py
+RUN chmod +x /kcm/kcm.py
 
 RUN tox -e lint
 RUN tox -e unit
