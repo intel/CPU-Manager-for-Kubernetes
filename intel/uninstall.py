@@ -86,7 +86,8 @@ from . import discover
 
 
 def uninstall(install_dir, conf_dir):
-    delete_reconcile_nodereport_pod()
+    delete_kcm_pod("kcm-init-install-discover-pod")
+    delete_kcm_pod("kcm-reconcile-nodereport-pod")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -138,16 +139,16 @@ def remove_report(report_type):
         report_type, os.getenv("NODE_NAME")))
 
 
-def delete_reconcile_nodereport_pod():
+def delete_kcm_pod(pod_base_name, namespace="default"):
     k8sconfig.load_incluster_config()
     v1api = k8sclient.CoreV1Api()
-    pod_name = "kcm-reconcile-nodereport-pod-{}".format(os.getenv("NODE_NAME"))
+    pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
     logging.info("Removing \"{}\" pod".format(pod_name))
 
     try:
         v1api.delete_namespaced_pod(
             name=pod_name,
-            namespace="default",
+            namespace=namespace,
             body=k8sclient.V1DeleteOptions(),
             grace_period_seconds=0)
     except K8sApiException as err:
