@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 #!/usr/bin/env python
-#
+# -*- coding: utf-8 -*-
 # Intel License for KCM (version January 2017)
 #
 # Copyright (c) 2017 Intel Corporation.
@@ -131,8 +129,8 @@ def main():
 
     github_client = githelpers.GitHubClient(token=github_token, org=org_name, repo=repo_name)
 
-    if github_client.get_login_by_token() != "snapbot-private":
-        logging.error("This script can only be run by snapbot-private user on relase VM")
+    if not github_client.get_login_by_token():
+        logging.error("Aborting: Provided GITHUB_TOKEN does not have access to {}/{}".format(org_name, repo_name))
         exit(1)
 
     if github_client.get_release_by_tag(release_tag):
@@ -156,7 +154,8 @@ def main():
         "tag_name": release_tag,
         "name": "KCM release {}".format(release_tag),
         "body": change_log,
-        "prerelease": pre_release
+        "prerelease": pre_release,
+        "target_commitish": githelpers.get_head_sha()
     }
 
     logging.info("Creating release".format(release_tag))

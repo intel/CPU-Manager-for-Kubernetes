@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Intel License for KCM (version January 2017)
 #
 # Copyright (c) 2017 Intel Corporation.
@@ -130,6 +131,10 @@ def get_branch_name():
     return execute_git_cmd("rev-parse --abbrev-ref HEAD")
 
 
+def get_head_sha():
+    return execute_git_cmd("rev-parse HEAD")
+
+
 def is_branch_clean():
     return bool(len(execute_git_cmd("status --porcelain").split("\n")))
 
@@ -194,5 +199,7 @@ class GitHubClient:
     def get_login_by_token(self):
         url = "https://api.github.com/user"
         resp = requests.get(url, headers=self.authHeader)
+        if resp.status_code == requests.codes.unauthorized:
+            return
         resp.raise_for_status()
         return resp.json()["login"]
