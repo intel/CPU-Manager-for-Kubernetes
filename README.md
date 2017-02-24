@@ -164,4 +164,4 @@ _For detailed usage information about each subcommand, see
 [doc-user]: docs/user.md
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
 [doc-e2e]: docs/end-to-end-tests.md
-[release]: Release.md
+[release]: RELEASE.md
