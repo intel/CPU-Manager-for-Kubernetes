@@ -16,6 +16,7 @@ If you want to release manually, please read also
 
 
 ## Prepare release script
+
 ---
 The example commands given here assume:
   - The current version of KCM is `v0.1.0`.
