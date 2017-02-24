@@ -30,16 +30,19 @@ SCRIPT
 
   config.vm.provision "shell", inline: $script
 
-  config.vm.synced_folder "..", "/kcm", type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z", "--links"]
-
   config.vm.provider "virtualbox" do |vb, override|
     vb.gui = false
+
+    override.vm.synced_folder "..", "/kcm"
 
     override.ssh.insert_key = true
     override.ssh.keys_only = true
   end
 
   config.vm.provider :aws do |aws, override|
+
+    override.vm.synced_folder "..", "/kcm", type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z", "--links"]
+
     require 'yaml'
     # load a file at this location that can be used to set aws specific
     # information. This allows you to set your own credentials, but also
