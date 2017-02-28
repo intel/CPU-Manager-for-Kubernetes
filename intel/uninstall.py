@@ -106,10 +106,11 @@ def remove_binary(install_dir):
         os.remove(remove_file)
         logging.info("kcm binary from \"{}\" removed successfully.".format(
             install_dir))
-    except OSError as err:
-        logging.error("Aborting uninstall: Could not remove kcm "
-                      "from \"{}\": {}".format(install_dir, err))
-        sys.exit(1)
+    except FileNotFoundError as err:
+        logging.warning("Could not found kcm binary in "
+                        "\"{}\".".format(install_dir))
+        logging.warning("Wrong path or file has already been removed.")
+        sys.exit(0)
 
 
 def remove_report(report_type):
