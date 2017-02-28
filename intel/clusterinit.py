@@ -237,7 +237,8 @@ def get_kcm_node_list(host_list, all_hosts):
     if all_hosts:
         try:
             node_list_resp = k8s.get_node_list(None)
-            for node in node_list_resp["items"]:
+            for node_obj in node_list_resp:
+                node = node_obj.to_dict()
                 kcm_node_list.append(node["metadata"]["name"])
         except K8sApiException as err:
             logging.error("Exception when getting the node list: {}"
