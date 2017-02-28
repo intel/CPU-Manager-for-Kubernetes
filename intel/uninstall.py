@@ -134,7 +134,7 @@ def remove_report(report_type):
                 " party resource \"{}\": {}".format(report_type, err))
             sys.exit(1)
 
-        logging.debug("\"{}\" for node \"{}\" does not exist.".format(
+        logging.warning("\"{}\" for node \"{}\" does not exist.".format(
             report_type, os.getenv("NODE_NAME")))
     logging.info("\"{}\" for node \"{}\" removed.".format(
         report_type, os.getenv("NODE_NAME")))
@@ -159,7 +159,7 @@ def delete_kcm_pod(pod_base_name, namespace="default"):
                 "{}".format(pod_name, err))
             sys.exit(1)
 
-        logging.debug("\"{}\" pod does not exist".format(pod_name))
+        logging.warning("\"{}\" pod does not exist".format(pod_name))
     logging.info("\"{}\" pod deleted".format(pod_name))
 
 
@@ -212,6 +212,12 @@ def check_remove_conf_dir(conf_dir):
                 raise RuntimeError("There are running "
                                    "tasks, check pools in "
                                    "\"{}\".".format(conf_dir))
+    except (KeyError, FileNotFoundError) as err:
+        logging.warning("Could not remove \"{}\", got exception {}"
+                        .format(conf_dir, err))
+        logging.warning("Wrong path or \"{}\" has already been removed."
+                        .format(conf_dir))
+        sys.exit(0)
     except Exception as err:
         logging.error("Aborting uninstall: Exception when removing "
                       "\"{}\": {}".format(conf_dir, err))
