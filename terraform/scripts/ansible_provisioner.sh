@@ -30,5 +30,5 @@ echo ""
 echo "============================"
 echo "Running post deploy"
 echo "============================"
-ansible-playbook --connection=ssh --timeout=30 --limit=all --inventory-file=./mvp_inventory/ --sudo ${ansible_verbosity} post_deploy.yml
+ansible-playbook --connection=ssh --timeout=30 --inventory-file=./mvp_inventory/ --sudo ${ansible_verbosity} post_deploy.yml
 popd
