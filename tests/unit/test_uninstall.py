@@ -382,9 +382,9 @@ def test_remove_binary_failure(caplog):
         uninstall.remove_binary(temp_dir)
 
     caplog_tuple = caplog.record_tuples
-    notexisting = "[Errno 2] No such file or directory:" \
-                  " \'{}/kcm\'".format(temp_dir)
-    exp_log = "Aborting uninstall: " \
-              "Could not remove kcm from \"{}\": {}"\
-        .format(temp_dir, notexisting)
-    assert caplog_tuple[-1][2] == exp_log
+    exp_log = "Could not found kcm binary in \"{}\"."\
+        .format(temp_dir)
+
+    exp_log2 = "Wrong path or file has already been removed."
+    assert caplog_tuple[-2][2] == exp_log
+    assert caplog_tuple[-1][2] == exp_log2
