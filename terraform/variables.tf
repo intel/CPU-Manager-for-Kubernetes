@@ -63,7 +63,7 @@ variable "k8s_minion_config" {
   description = "minion nodes configuration."
 
   default = {
-    cpu    = "4"
+    cpu    = "8"
     mem    = "2048"
     flavor = "m4.4xlarge"
   }
