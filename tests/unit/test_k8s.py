@@ -82,9 +82,9 @@ from intel import clusterinit, k8s
 
 def test_k8s_node_list_all():
     fake_node_list_resp = [
-        {"metadata": {"name": "fakenode1"}},
-        {"metadata": {"name": "fakenode2"}},
-        {"metadata": {"name": "fakenode3"}}
+        {"metadata": {"name": "fakenode1"}, "spec": {}},
+        {"metadata": {"name": "fakenode2"}, "spec": {}},
+        {"metadata": {"name": "fakenode3"}, "spec": {}}
     ]
     with patch('intel.k8s.get_node_list',
                MagicMock(return_value=fake_node_list_resp)):
