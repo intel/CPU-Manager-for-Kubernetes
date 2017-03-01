@@ -124,7 +124,7 @@ def isolate(conf_dir, pool_name, no_affinity, command, args):
         p = psutil.Process()
 
         if no_affinity:
-            logging.info("""Not setting CPU affinity before forking the child\
+            logging.info("""Not setting CPU affinity before forking the child \
 command because the --no-affinity flag was supplied""")
 
         else:
