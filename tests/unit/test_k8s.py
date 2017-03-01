@@ -74,7 +74,6 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from kubernetes import client as k8sclient
-from kubernetes.client.models import V1Node, V1ObjectMeta
 from kubernetes.config import ConfigException
 from urllib3.util.retry import MaxRetryError
 
@@ -83,9 +82,9 @@ from intel import clusterinit, k8s
 
 def test_k8s_node_list_all():
     fake_node_list_resp = [
-        V1Node(V1ObjectMeta(name="fakenode1")),
-        V1Node(V1ObjectMeta(name="fakenode2")),
-        V1Node(V1ObjectMeta(name="fakenode3"))
+        {"metadata": {"name": "fakenode1"}},
+        {"metadata": {"name": "fakenode2"}},
+        {"metadata": {"name": "fakenode3"}}
     ]
     with patch('intel.k8s.get_node_list',
                MagicMock(return_value=fake_node_list_resp)):
@@ -95,18 +94,9 @@ def test_k8s_node_list_all():
 
 def test_k8s_get_compute_nodes():
     fake_node_list = [
-        k8sclient.V1Node(
-            metadata=k8sclient.V1ObjectMeta(name="fakenode1"),
-            spec=k8sclient.V1NodeSpec(unschedulable=True)
-        ),
-        k8sclient.V1Node(
-            metadata=k8sclient.V1ObjectMeta(name="fakenode2"),
-            spec=k8sclient.V1NodeSpec()
-        ),
-        k8sclient.V1Node(
-            metadata=k8sclient.V1ObjectMeta(name="fakenode3"),
-            spec=k8sclient.V1NodeSpec()
-        )
+        {"metadata": {"name": "fakenode1"}, "spec": {"unschedulable": True}},
+        {"metadata": {"name": "fakenode2"}, "spec": {"unschedulable": False}},
+        {"metadata": {"name": "fakenode3"}, "spec": {}}
     ]
     with patch('intel.k8s.get_node_list',
                MagicMock(return_value=fake_node_list)):

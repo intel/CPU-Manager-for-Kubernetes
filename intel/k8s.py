@@ -168,10 +168,10 @@ def get_container_template():
 def get_node_list(config, label_selector=None):
     k8s_api = client_from_config(config)
     if label_selector:
-        nodes = k8s_api.list_node(label_selector=label_selector)
+        nodes = k8s_api.list_node(label_selector=label_selector).to_dict()
     else:
-        nodes = k8s_api.list_node()
-    return nodes.items
+        nodes = k8s_api.list_node().to_dict()
+    return nodes["items"]
 
 
 # get_pod_list() returns the pod list in the current Kubernetes cluster.
@@ -191,9 +191,10 @@ def create_pod(config, podspec, ns_name="default"):
 def get_compute_nodes(config, label_selector=None):
     compute_nodes = []
     for node in get_node_list(config, label_selector):
-        if node.spec.unschedulable:
+        if "unschedulable" in node["spec"] and \
+                node["spec"]["unschedulable"]:
             continue
-        compute_nodes.append(node.to_dict())
+        compute_nodes.append(node)
     return compute_nodes
 
 
