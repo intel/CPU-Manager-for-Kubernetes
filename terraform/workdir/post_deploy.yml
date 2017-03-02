@@ -25,7 +25,7 @@
 - name: get kubectl
   hosts: localhost
   gather_facts: False
-  become: True
+  become: False
   roles:
    - {role: get_kubectl}
 
