@@ -13,6 +13,7 @@ display_help() {
   echo "Valid options:"
   echo "    -d      enable debug to stdout"
   echo "    -h      view help"
+  echo "    -f      force (valid only for purge removes: kargo, terraform files, kubectl and credentials)"
   exit $1
 }
 
@@ -38,15 +39,9 @@ vagrant_purge() {
   rm -rf ./inventory 2>&1 >/dev/null
   terraform get
   terraform destroy --force
+  [[ ${FORCE} = "true" ]] && rm -rf .terraform terraform.tfstate terraform.tfstate.backup
   popd
-}
-
-terraform_logs() {
-  if [ ${DEBUG} == "true" ]; then
-    export TF_LOG=DEBUG
-  else
-    unset TF_LOG
-  fi
+  [[ ${FORCE} = "true" ]] && pushd "./workdir" && rm -rf .kargo credentials *.retry kubectl config.yml cluster.yml 2>&1 >/dev/null && popd
 }
 
 #############################
@@ -96,7 +91,7 @@ main() {
     display_help 1
   fi
 
-  options=$(getopt -o dh --long debug,help -- "$@")
+  options=$(getopt -o dfh --long debug,help -- "$@")
   [ $? -eq 0 ] || {
     echo "Incorrect options provided"
     display_help 1
@@ -106,6 +101,8 @@ main() {
     case "$1" in
         -d|--debug)
             DEBUG=true ; shift ;;
+        -f|--force)
+            FORCE=true ; shift ;;
         -h|--help)
             display_help 0 ;;
         "aws"|"vagrant")
@@ -123,7 +120,8 @@ main() {
     display_help 1
   fi
 
-  terraform_logs
+  # terraform logs
+  [[ ${DEBUG} = "true" ]] && export TF_LOG=DEBUG || unset TF_LOG
   export TF_VAR_skip_deploy=true
   export DEBUG
 
