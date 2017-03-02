@@ -75,6 +75,7 @@ import json
 from kubernetes.client.rest import ApiException as K8sApiException
 import datetime
 import logging
+import re
 import time
 
 # Example usage:
@@ -171,7 +172,7 @@ class ThirdPartyResource:
 
         self.api = api
         self.resource_type = resource_type
-        self.name = name
+        self.name = ldh_convert_check(name)
         self.namespace = namespace
 
         self.body = {
@@ -180,7 +181,7 @@ class ThirdPartyResource:
                 self.resource_type.type_version
             ]),
             "kind": self.resource_type.kind_name,
-            "metadata": {"name": name}
+            "metadata": {"name": self.name}
         }
 
         self.header_params = {
@@ -234,3 +235,15 @@ class ThirdPartyResource:
 
             self.remove()
             self.create()
+
+
+def ldh_convert_check(name):
+    name_con = re.sub(r'[^-a-z0-9]', '-', name.lower())
+    logging.info("Converted \"{}\" to \"{}\" for"
+                 " TPR name".format(name, name_con))
+    if not re.fullmatch('[a-z0-9]([-a-z0-9]*[a-z0-9])?', name_con):
+        logging.error("Cant create valid TPR name using "
+                      "\"{}\" - must match regex "
+                      "[a-z0-9]([-a-z0-9]*[a-z0-9])?".format(name_con))
+        exit(1)
+    return name_con
