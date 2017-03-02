@@ -41,7 +41,7 @@ resource "vagrant_vbox" "vbox_minions" {
   mem        = "${var.k8s_minion_config["mem"]}"
 
   count                  = "${length(var.k8s_minions)}"
-  private_ip             = "${element(var.ips, length(var.k8s_minions) + count.index)}"
+  private_ip             = "${element(var.ips, length(var.k8s_masters) + length(var.k8s_etcd) + count.index)}"
   box_name               = "${element(var.k8s_minions, count.index)}"
   box                    = "${var.box}"
   no_vbox_guest_addition = true
