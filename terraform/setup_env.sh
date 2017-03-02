@@ -91,7 +91,7 @@ main() {
     display_help 1
   fi
 
-  options=$(getopt -o dfh --long debug,help -- "$@")
+  options=$(getopt -o dfh --long debug,force,help -- "$@")
   [ $? -eq 0 ] || {
     echo "Incorrect options provided"
     display_help 1
