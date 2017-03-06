@@ -71,7 +71,7 @@
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
 
-FROM python:3.4.5-wheezy
+FROM python:3.4.6
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
