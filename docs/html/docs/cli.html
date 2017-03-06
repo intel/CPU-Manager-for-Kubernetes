@@ -78,6 +78,7 @@ Usage:
               [--no-affinity]
   kcm install [--install-dir=&lt;dir&gt;]
   kcm node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
+  kcm uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;]
 
 Options:
   -h --help             Show this screen.
@@ -88,7 +89,7 @@ Options:
   --kcm-cmd-list=&lt;list&gt; Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.3.0].
+  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.4.0-rc1].
   --kcm-img-pol=&lt;pol&gt;   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=&lt;dir&gt;      KCM configuration directory [default: /etc/kcm].
@@ -279,7 +280,7 @@ OIR slots advertised is equal to the number of cpu lists under the
 For more information about the config format on disk, refer to 
 the <a href="config.html"><code>kcm</code> configuration directory</a>.</p>
 
-<p>Notes:</p>
+<p><strong>Notes:</strong></p>
 
 <ul>
 <li>
@@ -797,7 +798,7 @@ subcommands, passed as comma-seperated values to <code>--kcm-cmd-list</code>, as
 Kubernetes Pods. By default, it runs all the subcommands and uses all the 
 default options. </p>
 
-<p>Notes:</p>
+<p><strong>Notes:</strong></p>
 
 <ul>
 <li>
@@ -850,6 +851,56 @@ in the controlplane pool.</li>
 
 <div class="highlight highlight-source-shell"><pre>$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
   kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1</pre></div>
+
+<hr>
+
+<h3>
+<a id="user-content-kcm-uninstall" class="anchor" href="#kcm-uninstall" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm uninstall</code>
+</h3>
+
+<p>Removes <code>kcm</code> from a node. Uninstall process reverts <code>kcm cluster-init</code>:</p>
+
+<ul>
+<li>deletes <code>kcm-reconcile-nodereport-pod-{node}</code> if present</li>
+<li>removes <code>NodeReport</code> from Kubernetes ThirdPartyResources if present</li>
+<li>removes <code>ReconcileReport</code> from Kubernetes ThirdPartyResources if present</li>
+<li>removes kcm node label if present</li>
+<li>removes kcm node taint if present</li>
+<li>removes kcm node OIR if present</li>
+<li>removes <code>--conf-dir=&lt;dir&gt;</code> if present and no processes are running that use <code>kcm isolate</code>
+</li>
+<li>removes kcm binary from <code>--install-dir=&lt;dir&gt;</code>, if binary is not present then throws an error</li>
+</ul>
+
+<p><strong>Notes:</strong>
+As described above "if present" indicates whether there isn't anything to delete/remove,
+uninstall process will not fail and proceed to the next step. This allows <code>kcm uninstall</code> command
+to fully purge inconsistent environment i.e. of some failures in <code>kcm cluster-init</code></p>
+
+<p>Removing <code>--conf-dir=&lt;dir&gt;</code> requires no processes present on system that use <code>kcm isolate</code>
+(with entry in configuration directory). Please stop/remove them otherwise <code>kcm uninstall</code> will 
+throw an error in that step and uninstall will fail. 
+For this reason <code>kcm uninstall</code> cannot be run through <code>kcm isolate</code>.</p>
+
+<p><strong>Args:</strong></p>
+
+<p><em>None</em></p>
+
+<p><strong>Flags:</strong></p>
+
+<ul>
+<li>
+<code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
+<li>
+<code>--install-dir=&lt;dir&gt;</code> KCM installation directory.</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+
+<div class="highlight highlight-source-shell"><pre>$ docker run -it \
+--volume=/etc/kcm:/etc/kcm:rw \
+--volume=/opt/bin:/opt/bin:rw \
+  kcm uninstall</pre></div>
 
 <hr>
 

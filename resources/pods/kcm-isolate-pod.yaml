@@ -89,7 +89,7 @@ spec:
     env:
     - name: KCM_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.3.0
+    image: kcm:v0.4.0-rc1
     name: kcm-isolate-dp
     resources:
       requests:
@@ -110,7 +110,7 @@ spec:
     env:
     - name: KCM_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.3.0
+    image: kcm:v0.4.0-rc1
     name: kcm-isolate-cp
     volumeMounts:
     - mountPath: "/host/proc"
@@ -128,7 +128,7 @@ spec:
     env:
     - name: KCM_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.3.0
+    image: kcm:v0.4.0-rc1
     name: kcm-isolate-infra
     volumeMounts:
     - mountPath: "/host/proc"

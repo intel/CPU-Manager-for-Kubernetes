@@ -189,7 +189,7 @@ for some reason.</li>
 <li>The subcommands described below should be run in the same order. </li>
 <li>The documentation in this section assumes that the <code>KCM</code> configuration directory is <code>/etc/kcm</code> and the <code>kcm</code>
 binary is installed on the host under <code>/opt/bin</code>.</li>
-<li>In all the pod templates used in this section, the name of container image used is <code>kcm:v0.3.0</code>. It is expected that the 
+<li>In all the pod templates used in this section, the name of container image used is <code>kcm:v0.4.0-rc1</code>. It is expected that the 
 <code>kcm</code> container image is built and cached locally in the host. The <code>image</code> field will require modification if the 
 container image is hosted remotely (e.g., in <a href="https://hub.docker.com/">https://hub.docker.com/</a>).</li>
 </ul>
@@ -461,6 +461,9 @@ should create two pods on each node named <code>kcm-init-install-discover-pod-&l
 
 <p>If you want to look at the logs from the container which ran the <code>reconcile</code> subcommand in the pod, you can use 
 <code>kubectl logs -f kcm-reconcile-nodereport-pod-&lt;node-name&gt; reconcile</code></p>
+
+<p>If you want to remove <code>kcm</code> use <code>kcm-uninstall-pod.yaml</code>. <a href="https://kubernetes.io/docs/user-guide/node-selection">nodeSelector</a>
+can help to fine-grain the deletion for specific node.</p>
 
               </article>
             </div>
