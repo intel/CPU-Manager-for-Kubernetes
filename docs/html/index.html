@@ -124,6 +124,7 @@ Usage:
               [--no-affinity]
   kcm install [--install-dir=&lt;dir&gt;]
   kcm node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
+  kcm uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;]
 
 Options:
   -h --help             Show this screen.
@@ -134,7 +135,7 @@ Options:
   --kcm-cmd-list=&lt;list&gt; Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.3.0].
+  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.4.0-rc1].
   --kcm-img-pol=&lt;pol&gt;   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=&lt;dir&gt;      KCM configuration directory [default: /etc/kcm].
@@ -166,6 +167,7 @@ Options:
 <li><a href="docs/cli.html">Using the kcm command-line tool</a></li>
 <li><a href="docs/config.html">The kcm configuration directory</a></li>
 <li><a href="docs/end-to-end-tests.html">End to end tests</a></li>
+<li><a href="RELEASE.html">Making release</a></li>
 </ul>
 
               </article>
