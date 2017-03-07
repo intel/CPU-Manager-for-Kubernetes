@@ -102,13 +102,13 @@ Running Vagrant locally syncs your repository directory into `/kcm` using by def
  - check whether current branch is `master` and if it's "clean"
  - fetch origin
  - check whether `KCM_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
- - check whether there is no `kcm-release-v0.4.0-rc1` branch neither locally nor remotely
- - get previous version string from `Makefile` (`version=v0.4.0-rc1`) and check
+ - check whether there is no `kcm-release-v0.4.0` branch neither locally nor remotely
+ - get previous version string from `Makefile` (`version=v0.4.0`) and check
 
 If all above checks pass, script will:
- - create local branch `kcm-release-v0.4.0-rc1`
- - replace old release string (`v0.4.0-rc1`) with new one (`v0.4.0-rc1`) in all repo files
- - commit changes with message `KCM release - version v0.4.0-rc1.`
+ - create local branch `kcm-release-v0.4.0`
+ - replace old release string (`v0.4.0`) with new one (`v0.4.0`) in all repo files
+ - commit changes with message `KCM release - version v0.4.0.`
  - push branch to origin
  - checkout to `master` branch.
 
@@ -116,7 +116,7 @@ If all above checks pass, script will:
 After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
 **What will `make_release.py` do :**
-- check latest commit message for `KCM release - version v0.4.0-rc1.` string
-- `v0.4.0-rc1` will become tag value
+- check latest commit message for `KCM release - version v0.4.0.` string
+- `v0.4.0` will become tag value
 - generate change log
 - create release with change log based on tag found in commit message
