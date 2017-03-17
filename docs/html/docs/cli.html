@@ -847,12 +847,15 @@ in the dataplane pool.</li>
 <li>
 <code>--num-cp-cores=&lt;num&gt;</code> Number of (physical) processor cores to include
 in the controlplane pool.</li>
+<li>
+<code>--pull-secret=&lt;name&gt;</code> Name of secret used for pulling Docker images from
+  restricted Docker registry.</li>
 </ul>
 
 <p><strong>Example:</strong></p>
 
 <div class="highlight highlight-source-shell"><pre>$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
-  kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1</pre></div>
+  kcm cluster-init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1</pre></div>
 
 <hr>
 

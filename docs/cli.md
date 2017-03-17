@@ -794,12 +794,14 @@ _None_
   in the dataplane pool.
 - `--num-cp-cores=<num>` Number of (physical) processor cores to include
   in the controlplane pool.
+- `--pull-secret=<name>`  Name of secret used for pulling Docker images from
+  restricted Docker registry.
 
 **Example:**
 
 ```shell
 $ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
-  kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
+  kcm cluster-init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
 ```
 
 -------------------------------------------------------------------------------
