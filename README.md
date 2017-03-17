@@ -105,7 +105,7 @@ Usage:
   kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
                    [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
-                   [--num-cp-cores=<num>]
+                   [--num-cp-cores=<num>] [--pull-secret=<name>]
   kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   kcm discover [--conf-dir=<dir>]
   kcm describe [--conf-dir=<dir>]
@@ -137,6 +137,8 @@ Options:
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
   --publish             Whether to publish reports to the Kubernetes
                         API server.
+  --pull-secret=<name>  Name of secret used for pulling Docker images from
+                        restricted Docker registry.
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `KCM_CPUS_ASSIGNED` environment
