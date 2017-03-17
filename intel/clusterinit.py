@@ -81,7 +81,8 @@ from intel import k8s
 
 
 def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
-                 conf_dir, install_dir, num_dp_cores, num_cp_cores):
+                 conf_dir, install_dir, num_dp_cores, num_cp_cores,
+                 pull_secret):
     kcm_node_list = get_kcm_node_list(host_list, all_hosts)
     logging.debug("KCM node list: {}".format(kcm_node_list))
 
@@ -120,10 +121,12 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
     # provided options.
     if kcm_cmd_init_list:
         run_pods(None, kcm_cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list,
+                 pull_secret)
     if kcm_cmd_list:
         run_pods(kcm_cmd_list, None, kcm_img, kcm_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list,
+                 pull_secret)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -131,7 +134,8 @@ def cluster_init(host_list, all_hosts, cmd_list, kcm_img, kcm_img_pol,
 # on pod_phase_name.
 # Note: Only one of cmd_list or cmd_init_list should be specified.
 def run_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
-             install_dir, num_dp_cores, num_cp_cores, kcm_node_list):
+             install_dir, num_dp_cores, num_cp_cores, kcm_node_list,
+             pull_secret):
     if cmd_list:
         logging.info("Creating kcm pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -139,7 +143,8 @@ def run_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
                      .format(cmd_init_list))
 
     run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list)
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list,
+                 pull_secret)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -167,8 +172,11 @@ def run_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
 # run_cmd_pods() makes the appropriate changes to pod templates and runs the
 # pod on each node provided by kcm_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list):
+                 install_dir, num_dp_cores, num_cp_cores, kcm_node_list,
+                 pull_secret):
     pod = k8s.get_pod_template()
+    if pull_secret:
+        update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir)
         for cmd in cmd_list:
@@ -281,6 +289,10 @@ def update_pod_with_node_details(pod, node_name, cmd_list):
     pod["spec"]["nodeName"] = node_name
     pod_name = "kcm-{}-pod-{}".format("-".join(cmd_list), node_name)
     pod["metadata"]["name"] = pod_name
+
+
+def update_pod_with_pull_secret(pod, pull_secret):
+    pod["spec"]["imagePullSecrets"] = [{"name": pull_secret}]
 
 
 # update_pod_with_container() updates the pod template with a container using
