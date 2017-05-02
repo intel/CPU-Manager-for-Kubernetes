@@ -96,7 +96,6 @@ docker:
 # To authenticate, create a personal access token and add it to a file
 # named `~/grip/settings.py` as described in the project README.
 docs:
-	pip install grip
 	mkdir -p docs/html/docs
 	cp -R docs/images docs/html/docs/
 	grip README.md --export docs/html/index.html --title="KCM"
