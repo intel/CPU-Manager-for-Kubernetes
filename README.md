@@ -71,7 +71,7 @@ Sale of Goods (1980) is specifically excluded and will not apply to the
 Software.
 -->
 
-# kubernetes-comms-mvp
+# CPU Manager for Kubernetes
 
 [![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
 
