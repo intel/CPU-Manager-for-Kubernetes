@@ -193,7 +193,7 @@ class Driver(object):
             return
         self.active = False
         # TODO: run kcm uninstallation here, when it's ready.
-        # https://github.com/intelsdi-x/kubernetes-comms-mvp/pull/81
+        # https://github.com/intelsdi-x/CPU-Manager-for-Kubernetes/pull/81
         for node in self.nodes:
             k8s.unset_node_label(self.configuration, node, "namespace")
 
