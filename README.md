@@ -73,7 +73,7 @@ Software.
 
 # CPU Manager for Kubernetes
 
-[![Build Status](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp)
+[![Build Status](https://travis-ci.com/intelsdi-x/CPU-Manager-for-Kubernetes.svg?token=ajyZ5osyX5HNjsUu5muj&branch=master)](https://travis-ci.com/intelsdi-x/CPU-Manager-for-Kubernetes)
 
 ## Overview
 
