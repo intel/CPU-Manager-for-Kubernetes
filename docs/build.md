@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Building `kcm`
+# Building `cmk`
 
 ## System requirements
 
@@ -28,27 +28,27 @@ commands) is required before running:
 $ make
 ```
 
-After this step completes successfully, `kcm` can be run inside a Docker
+After this step completes successfully, `cmk` can be run inside a Docker
 container:
 
 ```bash
-$ docker run -it kcm ...
+$ docker run -it cmk ...
 ```
 
-Before running any subsequent comments, the KCM configuration directory must
+Before running any subsequent comments, the CMK configuration directory must
 exist. Note that is it important that this configuration directory is
 bind-mounted into the container, such that the directory resides on the host
 system and _not_ in the container.
 
 Configuration directory initialization is done through
-[`kcm init`][doc-init]:
+[`cmk init`][doc-init]:
 
 ```bash
-$ kcm init
+$ cmk init
 ```
 
 Please note that the default settings require at least six physical cores
 (four for data plane, one for control plane and one for infra).
 To change these settings, use the `--num-dp-cores` and `--num-cp-cores` flags.
 
-[doc-init]: cli.md#kcm-init
+[doc-init]: cli.md#cmk-init

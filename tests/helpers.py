@@ -24,18 +24,18 @@ from threading import Thread
 # Returns the absolute path to the test config directory with the supplied
 # name.
 def conf_dir(name):
-    return os.path.join(util.kcm_root(), "tests", "data", "config", name)
+    return os.path.join(util.cmk_root(), "tests", "data", "config", name)
 
 
 # Returns the absolute path to the test procfs directory with the supplied
 # name.
 def procfs_dir(name):
     return os.path.join(
-        util.kcm_root(), "tests", "data", "sysfs", name, "proc")
+        util.cmk_root(), "tests", "data", "sysfs", name, "proc")
 
 
 def sysfs_dir(name):
-    return os.path.join(util.kcm_root(), "tests", "data", "sysfs", name)
+    return os.path.join(util.cmk_root(), "tests", "data", "sysfs", name)
 
 
 def rand_str(length=8, chars=string.ascii_lowercase + string.digits):

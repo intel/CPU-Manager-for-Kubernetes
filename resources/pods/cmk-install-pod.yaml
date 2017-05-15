@@ -16,23 +16,23 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: kcm-install-pod
-  name: kcm-install-pod
+    app: cmk-install-pod
+  name: cmk-install-pod
 spec:
   containers:
   - args:
-    - "/kcm/kcm.py install --install-dir=/opt/bin"
+    - "/cmk/cmk.py install --install-dir=/opt/bin"
     command:
     - "/bin/bash"
     - "-c"
-    image: kcm:v0.5.0
-    name: kcm-install-pod
+    image: cmk:v0.5.0
+    name: cmk-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"
-      name: kcm-install-dir
+      name: cmk-install-dir
   restartPolicy: Never
   volumes:
   - hostPath:
-      # Change this to modify the KCM installation dir in the host file system.
+      # Change this to modify the CMK installation dir in the host file system.
       path: "/opt/bin"
-    name: kcm-install-dir
+    name: cmk-install-dir

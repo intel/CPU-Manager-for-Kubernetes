@@ -19,7 +19,7 @@ import os
 import tempfile
 
 
-def test_kcm_reconcile(monkeypatch):
+def test_cmk_reconcile(monkeypatch):
     temp_dir = tempfile.mkdtemp()
     helpers.execute(
         "cp",
@@ -37,7 +37,7 @@ def test_kcm_reconcile(monkeypatch):
     clcp["3,11"].add_task(1234561231)
 
     assert helpers.execute(
-        integration.kcm(),
+        integration.cmk(),
         ["reconcile", "--conf-dir={}"
          .format(os.path.join(temp_dir, "reconcile"))],
         {proc.ENV_PROC_FS: helpers.procfs_dir("ok")}) == b"""{
@@ -163,7 +163,7 @@ def test_kcm_reconcile(monkeypatch):
 """
 
     actual_output = helpers.execute(
-        integration.kcm(),
+        integration.cmk(),
         ["describe", "--conf-dir={}"
             .format(os.path.join(temp_dir, "reconcile"))]
         )

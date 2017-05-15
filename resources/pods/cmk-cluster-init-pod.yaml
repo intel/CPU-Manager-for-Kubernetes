@@ -16,30 +16,18 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: kcm-init-pod
-  name: kcm-init-pod
+    app: cmk-cluster-init-pod
+  annotations:
+    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
+  name: cmk-cluster-init-pod
 spec:
   containers:
   - args:
-    - "/kcm/kcm.py init --conf-dir=/etc/kcm --num-dp-cores=$NUM_DP_CORES --num-cp-cores=$NUM_CP_CORES"
+      # Change this value to pass different options to cluster-init.
+      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3"
     command:
     - "/bin/bash"
     - "-c"
-    env:
-    - name: NUM_DP_CORES
-      # Change this to modify the value passed to `--num-dp-cores` flag.
-      value: '4'
-    - name: NUM_CP_CORES
-      # Change this to modify the value passed to `--num-cp-cores` flag.
-      value: '1'
-    image: kcm:v0.5.0
-    name: kcm-init-pod
-    volumeMounts:
-    - mountPath: "/etc/kcm"
-      name: kcm-conf-dir
+    image: cmk:v0.5.0
+    name: cmk-cluster-init-pod
   restartPolicy: Never
-  volumes:
-  - hostPath:
-      # Change this to modify the KCM config dir in the host file system.
-      path: "/etc/kcm"
-    name: kcm-conf-dir

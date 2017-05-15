@@ -16,44 +16,44 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: kcm-reconile
-  name: kcm-reconcile
+    app: cmk-node-report
+  name: cmk-node-report
 spec:
   template:
     metadata:
       labels:
-        app: kcm-reconcile
+        app: cmk-node-report
     spec:
       containers:
       - args:
-        - /kcm/kcm.py isolate --pool=infra /kcm/kcm.py -- reconcile --interval=$KCM_RECONCILE_SLEEP_TIME --publish
+        - /cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=$CMK_NODE_REPORT_SLEEP_TIME --publish
         command:
         - "/bin/bash"
         - "-c"
         env:
-        - name: KCM_RECONCILE_SLEEP_TIME
+        - name: CMK_NODE_REPORT_SLEEP_TIME
           # Change this to modify the sleep interval between consecutive
-          # kcm reconcile runs. The value is specified in seconds.
+          # cmk node report runs. The value is specified in seconds.
           value: '60'
-        - name: KCM_PROC_FS
+        - name: CMK_PROC_FS
           value: "/host/proc"
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: kcm:v0.5.0
-        name: kcm-reconcile
+        image: cmk:v0.5.0
+        name: cmk-nodereport
         volumeMounts:
         - mountPath: "/host/proc"
           name: host-proc
           readOnly: true
-        - mountPath: "/etc/kcm"
-          name: kcm-conf-dir
+        - mountPath: "/etc/cmk"
+          name: cmk-conf-dir
       volumes:
       - hostPath:
           path: "/proc"
         name: host-proc
       - hostPath:
-          # Change this to modify the KCM config dir in the host file system.
-          path: "/etc/kcm"
-        name: kcm-conf-dir
+          # Change this to modify the CMK config dir in the host file system.
+          path: "/etc/cmk"
+        name: cmk-conf-dir

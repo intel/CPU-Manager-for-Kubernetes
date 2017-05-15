@@ -40,7 +40,7 @@ def nodereport(conf_dir, seconds, publish):
 
             node_report_type = third_party.ThirdPartyResourceType(
                 v1beta,
-                "kcm.intel.com",
+                "cmk.intel.com",
                 "Nodereport")
 
             # third_party throws an exception if the environment variable
@@ -60,7 +60,7 @@ def nodereport(conf_dir, seconds, publish):
 def generate_report(conf_dir):
     report = NodeReport()
     check_describe(report, conf_dir)
-    check_kcm_config(report, conf_dir)
+    check_cmk_config(report, conf_dir)
     for socket in topology.discover().values():
         report.add_socket(socket)
     return report
@@ -73,14 +73,14 @@ def check_describe(report, conf_dir):
         pass
 
 
-def check_kcm_config(report, conf_dir):
+def check_cmk_config(report, conf_dir):
     check_conf = report.add_check("configDirectory")
 
     # Verify we can read the config directory
     try:
         c = config.Config(conf_dir)
     except Exception:
-        check_conf.add_error("Unable to read the KCM configuration directory")
+        check_conf.add_error("Unable to read the CMK configuration directory")
         return  # Nothing more we can check for now
 
     # Ensure pool cpu lists are disjoint

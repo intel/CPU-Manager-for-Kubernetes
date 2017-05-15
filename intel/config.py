@@ -20,8 +20,8 @@ import threading
 import _thread
 
 
-# KCM_LOCK_TIMEOUT is interpreted as seconds.
-ENV_LOCK_TIMEOUT = "KCM_LOCK_TIMEOUT"
+# CMK_LOCK_TIMEOUT is interpreted as seconds.
+ENV_LOCK_TIMEOUT = "CMK_LOCK_TIMEOUT"
 DEFAULT_LOCK_TIMEOUT = 30
 
 

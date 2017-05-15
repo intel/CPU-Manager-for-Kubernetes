@@ -43,7 +43,7 @@ def get_expected_log_error(err_msg, http_response):
             http_response.data)
 
 
-def test_uninstall_remove_node_kcm_oir_failure(caplog):
+def test_uninstall_remove_node_cmk_oir_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason",
                                       "{\"message\":\"fake message\"}")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -51,9 +51,9 @@ def test_uninstall_remove_node_kcm_oir_failure(caplog):
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            uninstall.remove_node_kcm_oir()
+            uninstall.remove_node_cmk_oir()
         patch_path = "/status/capacity/" \
-                     "pod.alpha.kubernetes.io~1opaque-int-resource-kcm"
+                     "pod.alpha.kubernetes.io~1opaque-int-resource-cmk"
         exp_err = "Aborting uninstall: " \
                   "Exception when removing OIR \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
@@ -179,7 +179,7 @@ def test_uninstall_remove_node_label_success(caplog):
                MagicMock(side_effect=fake_api_exception)):
         uninstall.remove_node_label()
         caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
         exp_str = "Removed node label \"{}\".".format(patch_path)
         exp_str2 = "Label \"{}\" does not exist.".format(patch_path)
         assert caplog_tuple[-2][2] == exp_str2
@@ -192,7 +192,7 @@ def test_uninstall_remove_node_label_success2(caplog):
                MagicMock(return_value=0)):
         uninstall.remove_node_label()
         caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
         exp_str = "Removed node label \"{}\".".format(patch_path)
         assert caplog_tuple[-1][2] == exp_str
 
@@ -206,7 +206,7 @@ def test_uninstall_remove_node_label_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_label()
-        patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
         exp_err = "Aborting uninstall: Exception when removing node label" \
                   " \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
@@ -223,12 +223,12 @@ def test_uninstall_remove_node_oir_success(caplog):
 
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(side_effect=fake_api_exception)):
-        uninstall.remove_node_kcm_oir()
+        uninstall.remove_node_cmk_oir()
         caplog_tuple = caplog.record_tuples
         patch_path = '/status/capacity/pod.alpha.kubernetes.' \
-                     'io~1opaque-int-resource-kcm'
+                     'io~1opaque-int-resource-cmk'
         assert \
-            caplog_tuple[-2][2] == "KCM oir \"{}\" does not " \
+            caplog_tuple[-2][2] == "CMK oir \"{}\" does not " \
                                    "exist.".format(patch_path)
         assert \
             caplog_tuple[-1][2] == "Removed node oir " \
@@ -239,10 +239,10 @@ def test_uninstall_remove_node_oir_success(caplog):
 def test_uninstall_remove_node_oir_success2(caplog):
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(return_value=0)):
-        uninstall.remove_node_kcm_oir()
+        uninstall.remove_node_cmk_oir()
         caplog_tuple = caplog.record_tuples
         patch_path = '/status/capacity/pod.alpha.kubernetes.' \
-                     'io~1opaque-int-resource-kcm'
+                     'io~1opaque-int-resource-cmk'
         assert \
             caplog_tuple[-1][2] == "Removed node oir " \
                                    "\"{}\".".format(patch_path)
@@ -257,7 +257,7 @@ def test_check_remove_lock_file_success(monkeypatch, caplog):
          helpers.conf_dir("ok"),
          "{}".format(conf_dir)]
     )
-    # Pid in below path is not in kcm conf dir
+    # Pid in below path is not in cmk conf dir
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
     uninstall.check_remove_conf_dir(conf_dir)
     caplog_tuple = caplog.record_tuples
@@ -278,7 +278,7 @@ def test_check_remove_conf_dir_failure(monkeypatch, caplog):
          helpers.conf_dir("ok"),
          "{}".format(conf_dir)]
     )
-    # Pid in below path is present in kcm conf dir
+    # Pid in below path is present in cmk conf dir
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok_1_running"))
     with pytest.raises(SystemExit):
         uninstall.check_remove_conf_dir(conf_dir)
@@ -295,7 +295,7 @@ def test_check_remove_conf_dir_failure(monkeypatch, caplog):
 
 def test_remove_binary_sucess(caplog):
     temp_dir = tempfile.mkdtemp()
-    fake_binary_path = os.path.join(temp_dir, "kcm")
+    fake_binary_path = os.path.join(temp_dir, "cmk")
     helpers.execute(
         "touch",
         [fake_binary_path]
@@ -307,14 +307,14 @@ def test_remove_binary_sucess(caplog):
             [fake_binary_path]
         )
     caplog_tuple = caplog.record_tuples
-    exp_log = "kcm binary from \"{}\" removed successfully.".format(
+    exp_log = "cmk binary from \"{}\" removed successfully.".format(
         temp_dir)
     assert caplog_tuple[-1][2] == exp_log
 
 
 def test_remove_binary_failure(caplog):
     temp_dir = tempfile.mkdtemp()
-    fake_binary_path = os.path.join(temp_dir, "kcm_wrong_name")
+    fake_binary_path = os.path.join(temp_dir, "cmk_wrong_name")
     helpers.execute(
         "touch",
         [fake_binary_path]
@@ -323,7 +323,7 @@ def test_remove_binary_failure(caplog):
         uninstall.remove_binary(temp_dir)
 
     caplog_tuple = caplog.record_tuples
-    exp_log = "Could not found kcm binary in \"{}\"."\
+    exp_log = "Could not found cmk binary in \"{}\"."\
         .format(temp_dir)
 
     exp_log2 = "Wrong path or file has already been removed."

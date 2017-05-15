@@ -16,6 +16,6 @@ import os
 from intel import util
 
 
-def test_kcm_root():
-    result = util.kcm_root()
+def test_cmk_root():
+    result = util.cmk_root()
     assert os.path.isdir(os.path.join(result, "tests", "data"))

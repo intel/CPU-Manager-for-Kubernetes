@@ -16,10 +16,10 @@ from .. import helpers
 from . import integration
 
 
-def test_kcm_describe_ok():
+def test_cmk_describe_ok():
     args = ["describe", "--conf-dir={}".format(helpers.conf_dir("ok"))]
-    assert helpers.execute(integration.kcm(), args) == b"""{
-  "path": "/kcm/tests/data/config/ok",
+    assert helpers.execute(integration.cmk(), args) == b"""{
+  "path": "/cmk/tests/data/config/ok",
   "pools": {
     "controlplane": {
       "cpuLists": {
@@ -85,11 +85,11 @@ def test_kcm_describe_ok():
 """
 
 
-def test_kcm_describe_minimal():
+def test_cmk_describe_minimal():
     args = ["describe",
             "--conf-dir={}".format(helpers.conf_dir("minimal"))]
-    assert helpers.execute(integration.kcm(), args) == b"""{
-  "path": "/kcm/tests/data/config/minimal",
+    assert helpers.execute(integration.cmk(), args) == b"""{
+  "path": "/cmk/tests/data/config/minimal",
   "pools": {
     "exclusive": {
       "cpuLists": {

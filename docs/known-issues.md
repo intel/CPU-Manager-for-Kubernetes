@@ -18,35 +18,35 @@ limitations under the License.
 
 ## Potential race between Kubernetes scheduler and pool state.
 
-If a `kcm isolate` process terminates abnormally in a way that prevents
+If a `cmk isolate` process terminates abnormally in a way that prevents
 releasing the assigned CPU list (e.g. because it was sent the KILL
 signal), then there is an interval of time between process termination
-and when `kcm reconcile` is able to remove the invalid process ID from
-the KCM configuration directory. During this interval, although the opaque
-integer resource becomes available, the next invocation of `kcm isolate` may
-not be able to safely make an allocation. In this case, `kcm isolate` should
+and when `cmk reconcile` is able to remove the invalid process ID from
+the CMK configuration directory. During this interval, although the opaque
+integer resource becomes available, the next invocation of `cmk isolate` may
+not be able to safely make an allocation. In this case, `cmk isolate` should
 be expected to crash with a nonzero exit status. This appears to the operator
 as a filed pod launch. The scheduler will try to reschedule the pod.
-This condition will persist on the affected node until `kcm reconcile` has a
+This condition will persist on the affected node until `cmk reconcile` has a
 chance to run, at which point it will detect that the saved process ID from
 the reaped container is no longer valid and free the cores for reuse.
 
 ## Potential conflict with process ID reuse by the OS kernel.
 
-If a `kcm isolate` process terminates abnormally in a way that prevents
+If a `cmk isolate` process terminates abnormally in a way that prevents
 releasing the assigned CPU list (e.g. because it was sent the KILL
 signal), then there is an interval of time between process termination
-and when `kcm reconcile` is able to remove the invalid process ID from
-the KCM configuration directory. During this interval, if another
+and when `cmk reconcile` is able to remove the invalid process ID from
+the CMK configuration directory. During this interval, if another
 process is started and the kernel happens to recycle the old PID, then
-`kcm reconcile` will not be able to detect the leaked CPU list.
+`cmk reconcile` will not be able to detect the leaked CPU list.
 This scenario should be very rare in practice.
 
-## `kcm init` flag values for `--num-cp-cores` and `--num-dp-cores` must be positive integers
+## `cmk init` flag values for `--num-cp-cores` and `--num-dp-cores` must be positive integers
 
 This places constratints on the construction of the user container
 command value. Zero is also unsupported.
 
-## The flag value for `--interval` (used in `kcm reconcile` and `kcm node-report`) must be an integer.
+## The flag value for `--interval` (used in `cmk reconcile` and `cmk node-report`) must be an integer.
 
 Fractional seconds are unsupported.

@@ -20,7 +20,7 @@ import psutil
 import signal
 import subprocess
 
-ENV_CPUS_ASSIGNED = "KCM_CPUS_ASSIGNED"
+ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
 
 
 def isolate(conf_dir, pool_name, no_affinity, command, args):
@@ -56,7 +56,7 @@ def isolate(conf_dir, pool_name, no_affinity, command, args):
         # Advertise assigned CPU IDs in the environment.
         os.environ[ENV_CPUS_ASSIGNED] = clist.cpus()
 
-        # We use psutil here (instead of the kcm provided
+        # We use psutil here (instead of the cmk provided
         # process abstraction) as we need to change the affinity of the current
         # process. This, in turn, is done through a system call which does
         # not allow us to reference host PIDs. In this case, it is OK to
