@@ -33,8 +33,8 @@ def test_cmk_isolate_child_env():
             "env | grep CMK"]
 
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
-CMK_PROC_FS=/proc
 CMK_CPUS_ASSIGNED=0
+CMK_PROC_FS=/proc
 """
 
 
