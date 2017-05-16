@@ -19,7 +19,7 @@ import logging
 import os
 import subprocess
 
-ENV_LSCPU_SYSFS = "KCM_DEV_LSCPU_SYSFS"
+ENV_LSCPU_SYSFS = "CMK_DEV_LSCPU_SYSFS"
 
 
 # Returns a dictionary of socket_id (int) to intel.topology.Socket.

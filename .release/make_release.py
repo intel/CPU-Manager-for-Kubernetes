@@ -29,7 +29,7 @@ def validate_commit_msg_get_tag():
     latest_commit_msg = githelpers.get_last_commit_msg("HEAD^0")[0]
     logging.info("Latest commit message is: {}".format(latest_commit_msg))
 
-    # Latest commit should have "KCM release - version vX.Y.Z(-rcV)in commit msg"
+    # Latest commit should have "CMK release - version vX.Y.Z(-rcV)in commit msg"
     if not commit_msg_pattern.fullmatch(latest_commit_msg):
         logging.warning("Aborting: Commit message on HEAD~0 is not release commit")
         exit(0)
@@ -93,7 +93,7 @@ def main():
 
     release_body = {
         "tag_name": release_tag,
-        "name": "KCM release {}".format(release_tag),
+        "name": "CMK release {}".format(release_tag),
         "body": change_log,
         "prerelease": pre_release,
         "target_commitish": githelpers.get_head_sha()

@@ -1,6 +1,6 @@
 .git/*
 .cache/*
 .tox/*
-kcm.egg-info/*
+cmk.egg-info/*
 *.pyc
 */__pycache__/*

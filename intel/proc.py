@@ -15,7 +15,7 @@
 import os
 import logging
 
-ENV_PROC_FS = "KCM_PROC_FS"
+ENV_PROC_FS = "CMK_PROC_FS"
 
 
 def procfs():

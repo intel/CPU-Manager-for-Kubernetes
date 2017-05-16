@@ -16,12 +16,12 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: kcm-discover-pod
-  name: kcm-discover-pod
+    app: cmk-discover-pod
+  name: cmk-discover-pod
 spec:
   containers:
   - args:
-    - "/kcm/kcm.py discover --conf-dir=/etc/kcm"
+    - "/cmk/cmk.py discover --conf-dir=/etc/cmk"
     command:
     - "/bin/bash"
     - "-c"
@@ -30,14 +30,14 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: kcm:v0.5.0
-    name: kcm-discover-pod
+    image: cmk:v0.5.0
+    name: cmk-discover-pod
     volumeMounts:
-    - mountPath: "/etc/kcm"
-      name: kcm-conf-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   restartPolicy: Never
   volumes:
   - hostPath:
-      # Change this to modify the KCM config dir in the host file system.
-      path: "/etc/kcm"
-    name: kcm-conf-dir
+      # Change this to modify the CMK config dir in the host file system.
+      path: "/etc/cmk"
+    name: cmk-conf-dir

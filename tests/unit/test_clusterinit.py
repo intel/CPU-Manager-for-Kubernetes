@@ -23,9 +23,9 @@ from kubernetes import client as k8sclient
 def test_clusterinit_invalid_cmd_list_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
-                                 "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
                                  "4", "2", "")
-    expected_err_msg = ("KCM command should be one of "
+    expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
     assert err.value.args[0] == expected_err_msg
@@ -34,9 +34,9 @@ def test_clusterinit_invalid_cmd_list_failure1():
 def test_clusterinit_invalid_cmd_list_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
-                                 "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
                                  "4", "2", "")
-    expected_err_msg = ("KCM command should be one of "
+    expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
     assert err.value.args[0] == expected_err_msg
@@ -45,9 +45,9 @@ def test_clusterinit_invalid_cmd_list_failure2():
 def test_clusterinit_invalid_cmd_list_failure3():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
-                                 "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
                                  "4", "2", "")
-    expected_err_msg = ("KCM command should be one of "
+    expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
     assert err.value.args[0] == expected_err_msg
@@ -56,7 +56,7 @@ def test_clusterinit_invalid_cmd_list_failure3():
 def test_clusterinit_invalid_cmd_list_failure4():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "discover, init",
-                                 "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
                                  "4", "2", "")
     expected_err_msg = "init command should be run and listed first."
     assert err.value.args[0] == expected_err_msg
@@ -64,8 +64,8 @@ def test_clusterinit_invalid_cmd_list_failure4():
 
 def test_clusterinit_invalid_image_pol():
     with pytest.raises(RuntimeError) as err:
-        clusterinit.cluster_init("fakenode1", False, "init", "kcm", "fakepol1",
-                                 "/etc/kcm", "/opt/bin", "4", "2", "")
+        clusterinit.cluster_init("fakenode1", False, "init", "cmk", "fakepol1",
+                                 "/etc/cmk", "/opt/bin", "4", "2", "")
     expected_err_msg = ('Image pull policy should be one of '
                         '[\'Never\', \'IfNotPresent\', \'Always\']')
     assert err.value.args[0] == expected_err_msg
@@ -73,32 +73,32 @@ def test_clusterinit_invalid_image_pol():
 
 def test_clusterinit_invalid_dp_cores_failure1():
     with pytest.raises(RuntimeError) as err:
-        clusterinit.cluster_init("fakenode1", False, "init", "kcm", "Never",
-                                 "/etc/kcm", "/opt/bin", "-1", "2", "")
+        clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
+                                 "/etc/cmk", "/opt/bin", "-1", "2", "")
     expected_err_msg = "num_dp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_dp_cores_failure2():
     with pytest.raises(RuntimeError) as err:
-        clusterinit.cluster_init("fakenode1", False, "init", "kcm", "Never",
-                                 "/etc/kcm", "/opt/bin", "3.5", "2", "")
+        clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
+                                 "/etc/cmk", "/opt/bin", "3.5", "2", "")
     expected_err_msg = "num_dp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_cp_cores_failure1():
     with pytest.raises(RuntimeError) as err:
-        clusterinit.cluster_init("fakenode1", False, "init", "kcm", "Never",
-                                 "/etc/kcm", "/opt/bin", "1", "2.5", "")
+        clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
+                                 "/etc/cmk", "/opt/bin", "1", "2.5", "")
     expected_err_msg = "num_cp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_cp_cores_failure2():
     with pytest.raises(RuntimeError) as err:
-        clusterinit.cluster_init("fakenode1", False, "init", "kcm", "Never",
-                                 "/etc/kcm", "/opt/bin", "1", "10.5", "")
+        clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
+                                 "/etc/cmk", "/opt/bin", "1", "10.5", "")
     expected_err_msg = "num_cp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -219,7 +219,7 @@ def test_clusterinit_wait_for_pod_phase_error():
 
 def test_clusterinit_node_list_host_list():
     fake_node_list = "fakenode1, fakenode2, fakenode3"
-    node_list = clusterinit.get_kcm_node_list(fake_node_list, False)
+    node_list = clusterinit.get_cmk_node_list(fake_node_list, False)
     assert node_list == ["fakenode1", "fakenode2", "fakenode3"]
 
 
@@ -230,7 +230,7 @@ def test_clusterinit_pass_pull_secrets():
                    MagicMock(return_value=True)):
             clusterinit.cluster_init("fakenode1", False,
                                      "init, discover, install",
-                                     "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
                                      "4", "2", "supersecret")
             called_methods = mock.method_calls
             params = called_methods[0][1]
@@ -248,7 +248,7 @@ def test_clusterinit_dont_pass_pull_secrets():
                    MagicMock(return_value=True)):
             clusterinit.cluster_init("fakenode1", False,
                                      "init, discover, install",
-                                     "kcm", "Never", "/etc/kcm", "/opt/bin",
+                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
                                      "4", "2", "")
             called_methods = mock.method_calls
             params = called_methods[0][1]
@@ -262,22 +262,22 @@ def test_clusterinit_update_pod_with_init_container():
         spec=k8sclient.V1PodSpec(),
         status=k8sclient.V1PodStatus()).to_dict()
     cmd = "cmd"
-    kcm_img = "kcm_img"
-    kcm_img_pol = "policy"
+    cmk_img = "cmk_img"
+    cmk_img_pol = "policy"
     args = "argument"
-    clusterinit.update_pod_with_init_container(pod_passed, cmd, kcm_img,
-                                               kcm_img_pol,
+    clusterinit.update_pod_with_init_container(pod_passed, cmd, cmk_img,
+                                               cmk_img_pol,
                                                args)
     pods = json.loads(pod_passed["metadata"]["annotations"][
                           "pod.beta.kubernetes.io/init-containers"])
     assert len(pods) == 1
     assert pods[0]["name"] == cmd
-    assert pods[0]["image"] == kcm_img
-    assert pods[0]["imagePullPolicy"] == kcm_img_pol
+    assert pods[0]["image"] == cmk_img
+    assert pods[0]["imagePullPolicy"] == cmk_img_pol
     assert args in pods[0]["args"]
 
     second_cmd = "cmd2"
-    second_img = kcm_img
+    second_img = cmk_img
     second_img_pol = "Always"
     second_args = ["arg1", "arg2"]
     clusterinit.update_pod_with_init_container(pod_passed, second_cmd,

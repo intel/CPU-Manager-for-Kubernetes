@@ -14,44 +14,44 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Using the `kcm` command-line tool
+# Using the `cmk` command-line tool
 
 ## Usage
 
 ```
-kcm.
+cmk.
 
 Usage:
-  kcm (-h | --help)
-  kcm --version
-  kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
-                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
+  cmk (-h | --help)
+  cmk --version
+  cmk cluster-init (--host-list=<list>|--all-hosts) [--cmk-cmd-list=<list>]
+                   [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-  kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-  kcm discover [--conf-dir=<dir>]
-  kcm describe [--conf-dir=<dir>]
-  kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
+  cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  cmk discover [--conf-dir=<dir>]
+  cmk describe [--conf-dir=<dir>]
+  cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
               [--no-affinity]
-  kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
+  cmk install [--install-dir=<dir>]
+  cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
   -h --help             Show this screen.
   --version             Show version.
   --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for KCM software.
-  --all-hosts           Prepare all Kubernetes nodes for the KCM software.
-  --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
+                        for CMK software.
+  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
+  --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=<img>       KCM Docker image [default: kcm:v0.5.0].
-  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
+  --cmk-img=<img>       CMK Docker image [default: cmk:v0.5.0].
+  --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
                         [default: IfNotPresent].
-  --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-  --install-dir=<dir>   KCM install directory [default: /opt/bin].
+  --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
+  --install-dir=<dir>   CMK install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
                         If set to 0, will only run once. [default: 0]
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
@@ -63,7 +63,7 @@ Options:
                         restricted Docker registry.
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
-                        for reading the `KCM_CPUS_ASSIGNED` environment
+                        for reading the `CMK_CPUS_ASSIGNED` environment
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
 ```
@@ -72,18 +72,18 @@ Options:
 
 | Environment variable  | Description |
 | :-------------------- | :---------- |
-| `KCM_LOCK_TIMEOUT`    | Maximum duration, in seconds, to hold the kcm configuration directory lock file. (Default: 30) |
-| `KCM_PROC_FS`         | Path to the [procfs] to consult for pid information. `kcm isolate` and `kcm reconcile` require access to the host's process information in `/proc`. |
-| `KCM_LOG_LEVEL`       | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
-| `KCM_DEV_LSCPU_SYSFS` | Path to the system root to be used by `lscpu` for enumerating the cpu topology. NOTE: should only be used for development purposes. |
+| `CMK_LOCK_TIMEOUT`    | Maximum duration, in seconds, to hold the cmk configuration directory lock file. (Default: 30) |
+| `CMK_PROC_FS`         | Path to the [procfs] to consult for pid information. `cmk isolate` and `cmk reconcile` require access to the host's process information in `/proc`. |
+| `CMK_LOG_LEVEL`       | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
+| `CMK_DEV_LSCPU_SYSFS` | Path to the system root to be used by `lscpu` for enumerating the cpu topology. NOTE: should only be used for development purposes. |
 
 ## Subcommands
 
 -------------------------------------------------------------------------------
 
-### `kcm init`
+### `cmk init`
 
-Initializes the kcm configuration directory customized for NFV workloads,
+Initializes the cmk configuration directory customized for NFV workloads,
 including three pools: _infra_, _controlplane_ and _dataplane_. The
 _dataplane_ pool is EXCLUSIVE while the _controlplane_ and _infra_ pools
 are SHARED.
@@ -96,18 +96,18 @@ configuration does not match the requested pool allocations, then the
 command logs at error level and exits with a nonzero status.
 
 For more information about the config format on disk, refer to
-[the `kcm` configuration directory][doc-config].
+[the `cmk` configuration directory][doc-config].
 
 #### Core assignment policy
 
-KCM isolate constrains user tasks to CPUs in the requested pool.
+CMK isolate constrains user tasks to CPUs in the requested pool.
 However, this does not prevent other system tasks from running on reserved CPUs.
 The recommended way to resolve this problem is to use the [`isolcpus`][isolcpus] Linux kernel parameter.
 
-KCM init discovers the value of `isolcpus` by inspecting `/proc/cmdline`.
+CMK init discovers the value of `isolcpus` by inspecting `/proc/cmdline`.
 These isolated CPU IDs are used to construct the dataplane and controlplane pools.
  In this way, the process scheduler will avoid co-scheduling other tasks there.
- If no isolated CPUs are available, KCM will continue to operate but the only guarantee is that pools are assigned in
+ If no isolated CPUs are available, CMK will continue to operate but the only guarantee is that pools are assigned in
  a core granular manner.
 
 The number of _fully isolated cores_ should match the number of requested dataplane plus
@@ -144,7 +144,7 @@ The `lscpu -p` output from this system could be:
 ```
 
 We assign 4 cores to the dataplane pool, 1 core to the controlplane pool and the rest to the infra pool.
-Therefore, 5 physical cores must be isolated. These are the default values for `kcm init`.
+Therefore, 5 physical cores must be isolated. These are the default values for `cmk init`.
 
 On a Ubuntu 16.04 server, `/etc/default/grub` contains:
 
@@ -162,7 +162,7 @@ update-grub
 
 and reboot the system.
 
-After this, running `kcm init --num-dp-cores=4 --num-cp-cores=1` will allocate
+After this, running `cmk init --num-dp-cores=4 --num-cp-cores=1` will allocate
 the first 4 cores (cpu id 0, 8, 1, 9, 2, 10, 3 and 11) for the dataplane pool,
 the next core (cpu id 4, 12) for the controlplane pool and the rest (cpu id 5,13,6,14,7,15) to the infra pool
 
@@ -172,11 +172,11 @@ CPUs may be stranded, i.e. not be utilized, if they are not isolated
  in a core granular manner. For example, consider a system with 4 cpus with id 0, 1, 2, 3
  where 0 and 2 are resident on core 0 and 1 and 3 are resident on core 1. Then having
  `isolcpus=0,1` will result in two stranded cpus where data and control containers may or may not land.
-In this case, KCM will emit warnings such as `WARNING:root:Physical core 1 is partially isolated`.
+In this case, CMK will emit warnings such as `WARNING:root:Physical core 1 is partially isolated`.
 
 Similarily, even fully isolated cores in excess of the number of dataplane
-plus controlplane cores will be stranded i.e. KCM will not assign any
-left over isolated cores to the infra pool. In this case, KCM will emit warnings such as
+plus controlplane cores will be stranded i.e. CMK will not assign any
+left over isolated cores to the infra pool. In this case, CMK will emit warnings such as
 `WARNING:root:Not all isolated cores will be used by data and controlplane.`.
 
 **Args:**
@@ -185,7 +185,7 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory. This
+- `--conf-dir=<dir>` Path to the CMK configuration directory. This
   directory must either not exist or be an empty directory.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
   in the dataplane pool.
@@ -195,33 +195,33 @@ _None_
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
-  kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
+$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
+  cmk init --conf-dir=/etc/cmk --num-dp-cores=4 --num-cp-cores=1
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm discover`
+### `cmk discover`
 
-Advertises the appropriate number of `KCM` [Opaque Integer Resource (OIR)][oir-docs]
+Advertises the appropriate number of `CMK` [Opaque Integer Resource (OIR)][oir-docs]
 slots, node label and node taint to the Kubernetes node. The number of 
 OIR slots advertised is equal to the number of cpu lists under the 
-__dataplane__ pool, as determined by examining the `KCM` configuration directory. 
+__dataplane__ pool, as determined by examining the `CMK` configuration directory.
 For more information about the config format on disk, refer to 
-the [`kcm` configuration directory][doc-config].
+the [`cmk` configuration directory][doc-config].
 
 **Notes:**
-- `kcm discover` is expected to be run as a Kubernetes Pod as it uses
+- `cmk discover` is expected to be run as a Kubernetes Pod as it uses
 [`incluster config`][link-incluster] provided by the
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
 cluster configuration. The [instructions][discover-op-manual] provided in the
 operator's manual can be used to run the discover Pod.
-- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-kcm`
+- The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-cmk`
 OIR. 
-- The node will be labeled with `"kcm.intel.com/kcm-node": "true"` label. 
-- The node will be tainted with `kcm=true:NoSchedule` taint.
-- The `KCM` configuration directory should exist and contain the dataplane 
-pool to run `kcm discover`.
+- The node will be labeled with `"cmk.intel.com/cmk-node": "true"` label.
+- The node will be tainted with `cmk=true:NoSchedule` taint.
+- The `CMK` configuration directory should exist and contain the dataplane
+pool to run `cmk discover`.
 
 **Args:**
 
@@ -229,20 +229,20 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
 
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/kcm:/etc/kcm \
-  kcm discover --conf-dir=/etc/kcm
+$ docker run -it --volume=/etc/cmk:/etc/cmk \
+  cmk discover --conf-dir=/etc/cmk
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm describe`
+### `cmk describe`
 
-Prints a JSON representation of the kcm configuration directory.
+Prints a JSON representation of the cmk configuration directory.
 
 **Args:**
 
@@ -250,14 +250,14 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
 
 **Example:**
 
 ```
-$ docker run -it --volume=/etc/kcm:/etc/kcm kcm describe --conf-dir=/etc/kcm
+$ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
 {
-  "path": "/etc/kcm",
+  "path": "/etc/cmk",
   "pools": {
     "controlplane": {
       "cpuLists": {
@@ -324,11 +324,11 @@ $ docker run -it --volume=/etc/kcm:/etc/kcm kcm describe --conf-dir=/etc/kcm
 
 -------------------------------------------------------------------------------
 
-### `kcm reconcile`
+### `cmk reconcile`
 
-Reconcile removes invalid process IDs from the kcm configuration directory by
+Reconcile removes invalid process IDs from the cmk configuration directory by
 checking them against [procfs]. This is to recover from the case where
-[`kcm isolate`][kcm-isolate] exits before it has a chance to remove its own
+[`cmk isolate`][cmk-isolate] exits before it has a chance to remove its own
 PID from the `tasks` file. This could happen for a number of reasons, including
 receiving the KILL signal while its subprocess is executing.
 
@@ -338,7 +338,7 @@ reconcile is run once and exits.
 
 `--publish` will send the reconciliation report to the Kubernetes API server.
 This enables the operator to get reconciliation reports for all kubelets in one
-place through `kubectl`. This option should only be used when the KCM
+place through `kubectl`. This option should only be used when the CMK
 container is run as a Kubernetes Pod.
 
 For instance:
@@ -346,21 +346,21 @@ For instance:
 ```bash
 $ kubectl get ReconcileReport
 NAME            KIND
-kcm-02-zzwt7w   ReconcileReport.v1.kcm.intel.com
+cmk-02-zzwt7w   ReconcileReport.v1.cmk.intel.com
 ```
 
 ```bash
-$ kubectl get ReconcileReport kcm-02-zzwt7w -o json
+$ kubectl get ReconcileReport cmk-02-zzwt7w -o json
 {
-  "apiVersion": "kcm.intel.com/v1",
+  "apiVersion": "cmk.intel.com/v1",
   "kind": "ReconcileReport",
   "last_updated": "2017-01-12T23:55:08.735918",
   "metadata": {
     "creationTimestamp": "2017-01-12T23:55:08Z",
-    "name": "kcm-02-zzwt7w",
+    "name": "cmk-02-zzwt7w",
     "namespace": "default",
     "resourceVersion": "263029",
-    "selfLink": "/apis/kcm.intel.com/v1/namespaces/default/reconcilereports/kcm-02-zzwt7w",
+    "selfLink": "/apis/cmk.intel.com/v1/namespaces/default/reconcilereports/cmk-02-zzwt7w",
     "uid": "8c4d6173-d922-11e6-a746-42010a800002"
   },
   "report": {
@@ -371,7 +371,7 @@ $ kubectl get ReconcileReport kcm-02-zzwt7w -o json
 ```
 
 
-_**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
+_**NOTE:** This subcommand requires the `CMK_PROC_FS` environment variable
 to be set._
 
 **Args:**
@@ -380,7 +380,7 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server
 - `--interval=<seconds>` Number of seconds to wait between rerunning. If set
   to 0, will only run once.
@@ -389,44 +389,44 @@ _None_
 
 ```shell
 $ docker run -it \
-  --volume=/etc/kcm:/etc/kcm \
+  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
-  -e "KCM_PROC_FS=/host/proc" \
-  kcm reconcile --interval=60 --conf-dir=/etc/kcm
+  -e "CMK_PROC_FS=/host/proc" \
+  cmk reconcile --interval=60 --conf-dir=/etc/cmk
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm isolate`
+### `cmk isolate`
 
 Constrains a command to the CPUs corresponding to an available CPU list
 in a supplied pool.
 
 If the requested pool is exclusive, the command may fail if there are no
 unallocated CPU lists in the pool. An unallocated CPU list is one where the
-`tasks` file is empty; see [the `kcm` configuration format][doc-config] for
+`tasks` file is empty; see [the `cmk` configuration format][doc-config] for
 details.)
 
 If the requested pool is non-exclusive, any CPU list in that pool may be
 chosen, regardless of current allocations.
 
-`kcm isolate` writes its own PID into the selected `tasks` file before
+`cmk isolate` writes its own PID into the selected `tasks` file before
 executing the command in a sub-shell. When the subprocess exits, the program
-removes the PID from the `tasks` file before exiting. If the `kcm
+removes the PID from the `tasks` file before exiting. If the `cmk
 isolate` process exits abnormally (or receives the KILL signal) then the
-`tasks` file may not be cleaned up. The [`kcm reconcile`][kcm-reconcile]
+`tasks` file may not be cleaned up. The [`cmk reconcile`][cmk-reconcile]
 subcommand is designed to resolve this problem, and must be run
-frequently on any host where `kcm isolate` is used.
+frequently on any host where `cmk isolate` is used.
 
-`kcm isolate` sets the `KCM_CPUS_ASSIGNED`  variable in the child process'
+`cmk isolate` sets the `CMK_CPUS_ASSIGNED`  variable in the child process'
 environment. The value is the assigned CPU list from the requested pool,
 formatted as a Linux [CPU list][cpu-list] string.
 
-Core affinity is achieved by first setting the CPU mask of the `kcm`
+Core affinity is achieved by first setting the CPU mask of the `cmk`
 process before executing the command. This step can be turned off by
 supplying the `--no-affinity` flag.
 
-_**NOTE:** This subcommand requires the `KCM_PROC_FS` environment variable
+_**NOTE:** This subcommand requires the `CMK_PROC_FS` environment variable
 to be set._
 
 **Args:**
@@ -436,11 +436,11 @@ to be set._
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
 - `--pool=<pool>`    Pool name: either _infra_, _controlplane_ or _dataplane_.
 - `--no-affinity`    Do not set cpu affinity before forking the child
                      command. In this mode the user program is responsible
-                     for reading the `KCM_CPUS_ASSIGNED` environment
+                     for reading the `CMK_CPUS_ASSIGNED` environment
                      variable and moving a subset of its own processes and/or
                      tasks to the assigned CPUs.
 
@@ -448,22 +448,22 @@ to be set._
 
 ```shell
 $ docker run -it \
-  --volume=/opt/bin/kcm:/host/opt/bin/kcm \
-  --volume=/etc/kcm:/etc/kcm \
+  --volume=/opt/bin/cmk:/host/opt/bin/cmk \
+  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
-  -e "KCM_PROC_FS=/host/proc" \
-  centos /host/opt/bin/kcm isolate --pool=infra sleep -- inf
+  -e "CMK_PROC_FS=/host/proc" \
+  centos /host/opt/bin/cmk isolate --pool=infra sleep -- inf
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm install`
+### `cmk install`
 
-Builds a zero-dependency `kcm` executable in the installation directory.
+Builds a zero-dependency `cmk` executable in the installation directory.
 
-Use install to place `kcm` on the host filesystem. Subsequent containers
+Use install to place `cmk` on the host filesystem. Subsequent containers
 can isolate themselves by mounting the install directory from the host and
-then calling [`kcm isolate`][kcm-isolate].
+then calling [`cmk isolate`][cmk-isolate].
 
 **Args:**
 
@@ -471,7 +471,7 @@ _None_
 
 **Flags:**
 
-- `--install-dir=<dir>` KCM install directory.
+- `--install-dir=<dir>` CMK install directory.
 
 **Example:**
 
@@ -481,18 +481,18 @@ which is both writable and on the path._
 ```shell
 $ docker run -it \
   --volume=/opt/bin:/opt/bin:rw \
-  kcm install --install-dir=/opt/bin
+  cmk install --install-dir=/opt/bin
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm node-report`
+### `cmk node-report`
 
-Outputs a JSON report on node-level KCM configuration.
+Outputs a JSON report on node-level CMK configuration.
 
 `--publish` will send the node report to the Kubernetes API server.
 This enables the operator to get node reports for all kubelets in one
-place through `kubectl`. This option should only be used when the KCM
+place through `kubectl`. This option should only be used when the CMK
 container is run as a Kubernetes Pod.
 
 `--interval=<seconds>` will turn the node-report command into a long lived
@@ -505,7 +505,7 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server.
 - `--interval=<seconds>` Number of seconds to wait between rerunning. If set
   to 0, will only run once.
@@ -516,10 +516,10 @@ _Generate a node report:_
 
 ```shell
 $ docker run -it \
-  --volume=/etc/kcm:/etc/kcm \
+  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
-  -e "KCM_PROC_FS=/host/proc" \
-  kcm node-report --conf-dir=/etc/kcm --interval=60
+  -e "CMK_PROC_FS=/host/proc" \
+  cmk node-report --conf-dir=/etc/cmk --interval=60
 ```
 
 _Get node reports from the API server using Kubectl:_
@@ -527,21 +527,21 @@ _Get node reports from the API server using Kubectl:_
 ```bash
 $ kubectl get NodeReport
 NAME            KIND
-kcm-02-zzwt7w   NodeReport.v1.kcm.intel.com
+cmk-02-zzwt7w   NodeReport.v1.cmk.intel.com
 ```
 
 ```bash
-$ kubectl get NodeReport kcm-02-zzwt7w -o json
+$ kubectl get NodeReport cmk-02-zzwt7w -o json
 {
-  "apiVersion": "kcm.intel.com/v1",
+  "apiVersion": "cmk.intel.com/v1",
   "kind": "NodeReport",
   "last_updated": "2017-01-12T23:55:08.735918",
   "metadata": {
     "creationTimestamp": "2017-01-12T23:55:08Z",
-    "name": "kcm-02-zzwt7w",
+    "name": "cmk-02-zzwt7w",
     "namespace": "default",
     "resourceVersion": "263029",
-    "selfLink": "/apis/kcm.intel.com/v1/namespaces/default/nodereports/kcm-02-zzwt7w",
+    "selfLink": "/apis/cmk.intel.com/v1/namespaces/default/nodereports/cmk-02-zzwt7w",
     "uid": "8c4d6173-d922-11e6-a746-42010a800002"
   },
   "report": {
@@ -554,7 +554,7 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
       }
     },
     "description": {
-      "path": "/etc/kcm",
+      "path": "/etc/cmk",
       "pools": {
         "exclusive": {
           "cpuLists": {
@@ -697,24 +697,24 @@ $ kubectl get NodeReport kcm-02-zzwt7w -o json
 
 -------------------------------------------------------------------------------
 
-### `kcm cluster-init`
+### `cmk cluster-init`
 
-Initializes a Kubernetes cluster for the `KCM` software. It runs `KCM`
-subcommands, passed as comma-seperated values to `--kcm-cmd-list`, as
+Initializes a Kubernetes cluster for the `CMK` software. It runs `CMK`
+subcommands, passed as comma-seperated values to `--cmk-cmd-list`, as
 Kubernetes Pods. By default, it runs all the subcommands and uses all the 
 default options. 
 
 **Notes:**
-- `kcm cluster-init` is expected to be run as a Kubernetes Pod as it uses
+- `cmk cluster-init` is expected to be run as a Kubernetes Pod as it uses
 [`incluster config`][link-incluster] provided by the
 [Kubernetes python client][k8s-python-client] to get the required Kubernetes
 cluster configuration. The [instructions][cluster-init-op-manual] provided
 in the operator's manual can be used to run the discover Pod.
-- The KCM subcommands, as specified by the value passed for `--kcm-cmd-list`
+- The CMK subcommands, as specified by the value passed for `--cmk-cmd-list`
 are expected to be one of `init`, `discover`, `install`, `reconcile`, `nodereport`.
 If `init` subcommand is specified, it expected to be the first command
-in `--kcm-cmd-list`.
-- `--kcm-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
+in `--cmk-cmd-list`.
+- `--cmk-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
 
 **Args:**
 
@@ -723,15 +723,15 @@ _None_
 **Flags:**
 
 - `--host-list=<list>` Comma seperated list of Kubernetes nodes to prepare
-  for KCM software. Either this flag or `--all-hosts` flag must be used.
-- `--all-hosts` Prepare all Kubernetes nodes for the KCM software. Either
+  for CMK software. Either this flag or `--all-hosts` flag must be used.
+- `--all-hosts` Prepare all Kubernetes nodes for the CMK software. Either
   this flag or `--host-list=<list>` flag must be used.
-- `--kcm-cmd-list=<list>` Comma seperated list of KCM sub-commands to run on
+- `--cmk-cmd-list=<list>` Comma seperated list of CMK sub-commands to run on
   each host [default: init,reconcile,install,discover].
-- `--kcm-img=<img>` KCM Docker image [default: kcm].
-- `--kcm-img-pol=<pol>`   Image pull policy for the KCM Docker image
+- `--cmk-img=<img>` CMK Docker image [default: cmk].
+- `--cmk-img-pol=<pol>`   Image pull policy for the CMK Docker image
   [default: IfNotPresent].
-- `--conf-dir=<dir>` Path to the KCM configuration directory. This
+- `--conf-dir=<dir>` Path to the CMK configuration directory. This
   directory must either not exist or be an empty directory.
 - `--num-dp-cores=<num>` Number of (physical) processor cores to include
   in the dataplane pool.
@@ -743,34 +743,34 @@ _None_
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
-  kcm cluster-init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1
+$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
+  cmk cluster-init --conf-dir=/etc/cmk --num-dp-cores=4 --num-cp-cores=1
 ```
 
 -------------------------------------------------------------------------------
 
-### `kcm uninstall`
+### `cmk uninstall`
 
-Removes `kcm` from a node. Uninstall process reverts `kcm cluster-init`:
- - deletes `kcm-reconcile-nodereport-pod-{node}` if present
+Removes `cmk` from a node. Uninstall process reverts `cmk cluster-init`:
+ - deletes `cmk-reconcile-nodereport-pod-{node}` if present
  - removes `NodeReport` from Kubernetes ThirdPartyResources if present
  - removes `ReconcileReport` from Kubernetes ThirdPartyResources if present
- - removes kcm node label if present
- - removes kcm node taint if present
- - removes kcm node OIR if present
- - removes `--conf-dir=<dir>` if present and no processes are running that use `kcm isolate`
- - removes kcm binary from `--install-dir=<dir>`, if binary is not present then throws an error
+ - removes cmk node label if present
+ - removes cmk node taint if present
+ - removes cmk node OIR if present
+ - removes `--conf-dir=<dir>` if present and no processes are running that use `cmk isolate`
+ - removes cmk binary from `--install-dir=<dir>`, if binary is not present then throws an error
 
 
 **Notes:**
 As described above "if present" indicates whether there isn't anything to delete/remove,
-uninstall process will not fail and proceed to the next step. This allows `kcm uninstall` command
-to fully purge inconsistent environment i.e. of some failures in `kcm cluster-init`
+uninstall process will not fail and proceed to the next step. This allows `cmk uninstall` command
+to fully purge inconsistent environment i.e. of some failures in `cmk cluster-init`
 
-Removing `--conf-dir=<dir>` requires no processes present on system that use `kcm isolate`
-(with entry in configuration directory). Please stop/remove them otherwise `kcm uninstall` will 
+Removing `--conf-dir=<dir>` requires no processes present on system that use `cmk isolate`
+(with entry in configuration directory). Please stop/remove them otherwise `cmk uninstall` will
 throw an error in that step and uninstall will fail. 
-For this reason `kcm uninstall` cannot be run through `kcm isolate`.
+For this reason `cmk uninstall` cannot be run through `cmk isolate`.
 
 **Args:**
 
@@ -778,16 +778,16 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the KCM configuration directory.
-- `--install-dir=<dir>` KCM installation directory.
+- `--conf-dir=<dir>` Path to the CMK configuration directory.
+- `--install-dir=<dir>` CMK installation directory.
 
 **Example:**
 
 ```sh
 $ docker run -it \
---volume=/etc/kcm:/etc/kcm:rw \
+--volume=/etc/cmk:/etc/cmk:rw \
 --volume=/opt/bin:/opt/bin:rw \
-  kcm uninstall
+  cmk uninstall
 ```
 
 -------------------------------------------------------------------------------
@@ -795,13 +795,13 @@ $ docker run -it \
 
 [cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-config]: config.md
-[kcm-isolate]: #kcm-isolate
-[kcm-reconcile]: #kcm-reconcile
+[cmk-isolate]: #cmk-isolate
+[cmk-reconcile]: #cmk-reconcile
 [lscpu]: http://man7.org/linux/man-pages/man1/lscpu.1.html
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
 [link-incluster]: https://github.com/kubernetes-incubator/client-python/blob/master/kubernetes/config/incluster_config.py#L85
 [k8s-python-client]: https://github.com/kubernetes-incubator/client-python
-[discover-op-manual]: operator.md#advertising-kcm-opaque-integer-resource-oir-slots
-[cluster-init-op-manual]: operator.md#prepare-kcm-nodes-by-running-kcm-cluster-init
+[discover-op-manual]: operator.md#advertising-cmk-opaque-integer-resource-oir-slots
+[cluster-init-op-manual]: operator.md#prepare-cmk-nodes-by-running-cmk-cluster-init
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
 [isolcpus]: https://github.com/torvalds/linux/blob/master/Documentation/admin-guide/kernel-parameters.txt#L1669

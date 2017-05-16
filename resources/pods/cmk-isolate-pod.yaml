@@ -16,79 +16,79 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    app: kcm-isolate-pod
+    app: cmk-isolate-pod
   annotations:
-    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"kcm", "value":"true"}]'
-  name: kcm-isolate-pod
+    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
+  name: cmk-isolate-pod
 spec:
   containers:
   - args:
-    - "/opt/bin/kcm isolate --conf-dir=/etc/kcm --pool=dataplane echo -- Hello World DP!!!"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane echo -- Hello World DP!!!"
     command:
     - "/bin/bash"
     - "-c"
     env:
-    - name: KCM_PROC_FS
+    - name: CMK_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.5.0
-    name: kcm-isolate-dp
+    image: cmk:v0.5.0
+    name: cmk-isolate-dp
     resources:
       requests:
-        pod.alpha.kubernetes.io/opaque-int-resource-kcm: '1'
+        pod.alpha.kubernetes.io/opaque-int-resource-cmk: '1'
     volumeMounts:
     - mountPath: "/host/proc"
       name: host-proc
       readOnly: true
     - mountPath: "/opt/bin"
-      name: kcm-install-dir
-    - mountPath: "/etc/kcm"
-      name: kcm-conf-dir
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   - args:
-    - "/opt/bin/kcm isolate --conf-dir=/etc/kcm --pool=controlplane echo -- Hello World CP!!!"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=controlplane echo -- Hello World CP!!!"
     command:
     - "/bin/bash"
     - "-c"
     env:
-    - name: KCM_PROC_FS
+    - name: CMK_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.5.0
-    name: kcm-isolate-cp
+    image: cmk:v0.5.0
+    name: cmk-isolate-cp
     volumeMounts:
     - mountPath: "/host/proc"
       name: host-proc
       readOnly: true
     - mountPath: "/opt/bin"
-      name: kcm-install-dir
-    - mountPath: "/etc/kcm"
-      name: kcm-conf-dir
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   - args:
-    - "/opt/bin/kcm isolate --conf-dir=/etc/kcm --pool=infra echo -- Hello World Infra!!!"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
     command:
     - "/bin/bash"
     - "-c"
     env:
-    - name: KCM_PROC_FS
+    - name: CMK_PROC_FS
       value: "/host/proc"
-    image: kcm:v0.5.0
-    name: kcm-isolate-infra
+    image: cmk:v0.5.0
+    name: cmk-isolate-infra
     volumeMounts:
     - mountPath: "/host/proc"
       name: host-proc
       readOnly: true
     - mountPath: "/opt/bin"
-      name: kcm-install-dir
-    - mountPath: "/etc/kcm"
-      name: kcm-conf-dir
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   restartPolicy: Never
   volumes:
   - hostPath:
-      # Change this to modify the KCM installation dir in the host file system.
+      # Change this to modify the CMK installation dir in the host file system.
       path: "/opt/bin"
-    name: kcm-install-dir
+    name: cmk-install-dir
   - hostPath:
       path: "/proc"
     name: host-proc
   - hostPath:
-      # Change this to modify the KCM config dir in the host file system.
-      path: "/etc/kcm"
-    name: kcm-conf-dir
+      # Change this to modify the CMK config dir in the host file system.
+      path: "/etc/cmk"
+    name: cmk-conf-dir

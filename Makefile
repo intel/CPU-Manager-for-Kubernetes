@@ -23,10 +23,10 @@ version=v0.5.0
 jenkins: docker
 
 docker:
-	docker build --no-cache -t kcm:$(version) .
+	docker build --no-cache -t cmk:$(version) .
 	@echo ""
 	@echo "To run the docker image, run command:"
-	@echo "docker run -it kcm:$(version) ..."
+	@echo "docker run -it cmk:$(version) ..."
 
 # Output neatly formatted HTML docs to `docs/html`.
 #
@@ -40,12 +40,12 @@ docs:
 	pip install grip
 	mkdir -p docs/html/docs
 	cp -R docs/images docs/html/docs/
-	grip README.md --export docs/html/index.html --title="KCM"
-	grip docs/build.md --export docs/html/docs/build.html --title="Building kcm"
-	grip docs/cli.md --export docs/html/docs/cli.html --title="Using the kcm command-line tool"
-	grip docs/config.md --export docs/html/docs/config.html --title="The kcm configuration directory"
-	grip docs/operator.md --export docs/html/docs/operator.html --title="kcm operator manual"
-	grip docs/user.md --export docs/html/docs/user.html --title="kcm user manual"
+	grip README.md --export docs/html/index.html --title="CMK"
+	grip docs/build.md --export docs/html/docs/build.html --title="Building cmk"
+	grip docs/cli.md --export docs/html/docs/cli.html --title="Using the cmk command-line tool"
+	grip docs/config.md --export docs/html/docs/config.html --title="The cmk configuration directory"
+	grip docs/operator.md --export docs/html/docs/operator.html --title="cmk operator manual"
+	grip docs/user.md --export docs/html/docs/user.html --title="cmk user manual"
 	sed -i"" "s/\.md/\.html/g" docs/html/index.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/build.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/cli.html

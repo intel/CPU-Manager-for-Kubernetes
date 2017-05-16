@@ -22,8 +22,8 @@ Usage:
   .release/prepare_release.py --help
 
 Information:
-  This script based on KCM_RELEASE_VER variable prepares kcm release
-  KCM_RELEASE_VER variable should follow pattern vX.Y.Z[-rcV] where
+  This script based on CMK_RELEASE_VER variable prepares cmk release
+  CMK_RELEASE_VER variable should follow pattern vX.Y.Z[-rcV] where
     X,Y,Z       number between 0 and 9          (required)
     -rc         release candidate indicator     (optional)
     V           number between 0 and 99         (required only when \"-rc\" is present)
@@ -34,10 +34,10 @@ Information:
    - "master" branch
    - up to date with origin/master
    - clean
-  Make sure that there is no local branch named "kcm-release-KCM_RELEASE_VER"
-  Make sure that there is no remote branch named "kcm-release-KCM_RELEASE_VER"
-  Make sure that there is no tag KCM_RELEASE_VER present (locally or remotely)
-  Make sure that there is no release with tag KCM_RELEASE_VER present
+  Make sure that there is no local branch named "cmk-release-CMK_RELEASE_VER"
+  Make sure that there is no remote branch named "cmk-release-CMK_RELEASE_VER"
+  Make sure that there is no tag CMK_RELEASE_VER present (locally or remotely)
+  Make sure that there is no release with tag CMK_RELEASE_VER present
 
   ======= IMPORTANT NOTE =======
   After RP with release is reviewed, use "Rebase and merge" in Github PR webpage.
@@ -88,13 +88,13 @@ def main():
     githelpers.execute_git_cmd("remote update --prune")
 
     try:
-        release_tag = os.environ["KCM_RELEASE_VER"]
+        release_tag = os.environ["CMK_RELEASE_VER"]
     except KeyError:
-        logging.error("Missing environment variable KCM_RELEASE_VER")
+        logging.error("Missing environment variable CMK_RELEASE_VER")
         exit(1)
 
     if not githelpers.is_tag_valid(release_tag):
-        logging.error("Aborting: Tag \"KCM_RELEASE_VER={}\" is not valid tag".format(release_tag))
+        logging.error("Aborting: Tag \"CMK_RELEASE_VER={}\" is not valid tag".format(release_tag))
         exit(1)
     if githelpers.is_tag_present(release_tag):
         logging.error("Aborting: Tag \"{}\" is already present".format(release_tag))

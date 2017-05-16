@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Releasing KCM
+# Releasing CMK
 General flow is:
  - run `prepare_release.py` script
  - create PR, get review
@@ -35,7 +35,7 @@ If you want to release manually, please read also
 
 ---
 The example commands given here assume:
-  - The current version of KCM is `v0.1.0`.
+  - The current version of CMK is `v0.1.0`.
   - The version you want to release is `v0.2.0`.
   - Your upstream git remote is named `origin`.
 
@@ -44,7 +44,7 @@ The example commands given here assume:
   - Your `master` branch is up to date with remote `origin/master`.
   - There are no un-staged files.
   
-1. Chose release tag value according to pattern `vX.Y.Z[-rcV]` and set is as environment variable `KCM_RELEASE_VER`:
+1. Chose release tag value according to pattern `vX.Y.Z[-rcV]` and set is as environment variable `CMK_RELEASE_VER`:
   - `X` - single digit [0-9] (required)
   - `Y` - single digit [0-9] (required)
   - `Z` - single digit [0-9] (required)
@@ -55,9 +55,9 @@ The example commands given here assume:
  
 1. Run `prepare_release.py` script from main repository directory:
 ```sh
-KCM_RELEASE_VER=v0.2.0 .release/prepare_release.py
+CMK_RELEASE_VER=v0.2.0 .release/prepare_release.py
 # or
-export KCM_RELEASE_VER=v0.2.0 
+export CMK_RELEASE_VER=v0.2.0
 .release/prepare_release.py
 ```
 You can execute `.release/prepare_release.py --help` to get more information.
@@ -67,7 +67,7 @@ You can execute `.release/prepare_release.py --help` to get more information.
 
 ####**VERY IMPORTANT NOTE** - Read before you release
 You need to use "Rebase and merge" in order to preserve latest commit message from release branch
-(`kcm-release-v0.2.0`). The Jenkins CI/CD part of automation based on commit message prepared by `prepare_release.py` script will trigger creation of tag, creation of release and change log generation
+(`cmk-release-v0.2.0`). The Jenkins CI/CD part of automation based on commit message prepared by `prepare_release.py` script will trigger creation of tag, creation of release and change log generation
 
 Additionally, tag and release are created once PR from release branch gets onto master branch, if in the meantime someone makes some changes to master branch (i.e. new feature from other PR is merged) those changes will **not be** included into the release. 
 
@@ -80,7 +80,7 @@ If Jenkins CI/CD is present and configured with the "release job" - no user inte
 "Release job" will spawn VM based on `Vagrantfile` from `.release` directory, setup all credentials inside the VM for repository and run `.release/make_release.py` script from the repository.
 
 The script will look whether latest commit message on `master` branch matches:
-`KCM release - version v0.2.0.` Upon failure - no release will be generated.
+`CMK release - version v0.2.0.` Upon failure - no release will be generated.
 
 If the commit message matches above pattern, the script will:
  - generate tag and push tag to repository
@@ -92,7 +92,7 @@ If the commit message matches above pattern, the script will:
 If there is no Jenkins CI/CD present you can manually create release.  The advantage of manual release process is that you can create releases not only from `master` branch but also from custom branches. 
 
 Prerequisites:
-1. Make latest commit on branch you want to release match pattern i.e. `KCM release - version v0.2.0-rc3.`, (`v0.2.0-rc3` will become tag value)
+1. Make latest commit on branch you want to release match pattern i.e. `CMK release - version v0.2.0-rc3.`, (`v0.2.0-rc3` will become tag value)
 1. Make sure that changes you want to release are pushed to `origin` (any branch) .
 1. Make sure that branch you are on ("release branch") is clean - no un-staged files.
 
@@ -102,12 +102,12 @@ Manual release steps
 1.  Setup `GITHUB_TOKEN` environment variable `export GITHUB_TOKEN=<your-token>`
 1. Execute
 ```sh
-cd /kcm
+cd /cmk
 .release/make_release.py	
 ```
 
 **NOTE**
-Running Vagrant locally syncs your repository directory into `/kcm` using by default Vagrant provider method  The steps above assume that VirtualBox FS is used, which means that all changes to git repository done on local host are reflected inside VM and vice versa.
+Running Vagrant locally syncs your repository directory into `/cmk` using by default Vagrant provider method  The steps above assume that VirtualBox FS is used, which means that all changes to git repository done on local host are reflected inside VM and vice versa.
 
 
 ## Details
@@ -117,14 +117,14 @@ Running Vagrant locally syncs your repository directory into `/kcm` using by def
  - check whether script is run from main repository directory
  - check whether current branch is `master` and if it's "clean"
  - fetch origin
- - check whether `KCM_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
- - check whether there is no `kcm-release-v0.5.0` branch neither locally nor remotely
+ - check whether `CMK_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
+ - check whether there is no `cmk-release-v0.5.0` branch neither locally nor remotely
  - get previous version string from `Makefile` (`version=v0.5.0`) and check
 
 If all above checks pass, script will:
- - create local branch `kcm-release-v0.5.0`
+ - create local branch `cmk-release-v0.5.0`
  - replace old release string (`v0.5.0`) with new one (`v0.5.0`) in all repo files
- - commit changes with message `KCM release - version v0.5.0.`
+ - commit changes with message `CMK release - version v0.5.0.`
  - push branch to origin
  - checkout to `master` branch.
 
@@ -132,7 +132,7 @@ If all above checks pass, script will:
 After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
 **What will `make_release.py` do :**
-- check latest commit message for `KCM release - version v0.5.0.` string
+- check latest commit message for `CMK release - version v0.5.0.` string
 - `v0.5.0` will become tag value
 - generate change log
 - create release with change log based on tag found in commit message

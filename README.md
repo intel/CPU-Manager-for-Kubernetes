@@ -35,44 +35,44 @@ constraining workloads to specific CPUs.
 | CPU list       | A group of logical CPUs, identified by ID as reported by the operating system. CPU lists conform to the Linux cpuset [CPU list format][cpu-list]. |
 | Task list      | A list of Linux process IDs. |
 | Isolation      | Steps required to set up a process environment so that it runs only on a desired subset of the available CPUs. |
-| Reconciliation | The process of resolving state between the KCM configuration directory and the Linux [procfs][procfs]. |
+| Reconciliation | The process of resolving state between the CMK configuration directory and the Linux [procfs][procfs]. |
 
 ## Usage summary
 
 ```
-kcm.
+cmk.
 
 Usage:
-  kcm (-h | --help)
-  kcm --version
-  kcm cluster-init (--host-list=<list>|--all-hosts) [--kcm-cmd-list=<list>]
-                   [--kcm-img=<img>] [--kcm-img-pol=<pol>] [--conf-dir=<dir>]
+  cmk (-h | --help)
+  cmk --version
+  cmk cluster-init (--host-list=<list>|--all-hosts) [--cmk-cmd-list=<list>]
+                   [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-  kcm init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-  kcm discover [--conf-dir=<dir>]
-  kcm describe [--conf-dir=<dir>]
-  kcm reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
+  cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+  cmk discover [--conf-dir=<dir>]
+  cmk describe [--conf-dir=<dir>]
+  cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
               [--no-affinity]
-  kcm install [--install-dir=<dir>]
-  kcm node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  kcm uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
+  cmk install [--install-dir=<dir>]
+  cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
   -h --help             Show this screen.
   --version             Show version.
   --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for KCM software.
-  --all-hosts           Prepare all Kubernetes nodes for the KCM software.
-  --kcm-cmd-list=<list> Comma seperated list of KCM sub-commands to run on
+                        for CMK software.
+  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
+  --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=<img>       KCM Docker image [default: kcm:v0.5.0].
-  --kcm-img-pol=<pol>   Image pull policy for the KCM Docker image
+  --cmk-img=<img>       CMK Docker image [default: cmk:v0.5.0].
+  --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
                         [default: IfNotPresent].
-  --conf-dir=<dir>      KCM configuration directory [default: /etc/kcm].
-  --install-dir=<dir>   KCM install directory [default: /opt/bin].
+  --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
+  --install-dir=<dir>   CMK install directory [default: /opt/bin].
   --interval=<seconds>  Number of seconds to wait between rerunning.
                         If set to 0, will only run once. [default: 0]
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
@@ -84,21 +84,21 @@ Options:
                         restricted Docker registry.
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
-                        for reading the `KCM_CPUS_ASSIGNED` environment
+                        for reading the `CMK_CPUS_ASSIGNED` environment
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
 ```
 
 _For detailed usage information about each subcommand, see
-[Using the kcm command-line tool][doc-cli]._
+[Using the cmk command-line tool][doc-cli]._
 
 ## Further Reading
 
-- [Building kcm][doc-build]
+- [Building cmk][doc-build]
 - [Operator manual][doc-operator]
 - [User manual][doc-user]
-- [Using the kcm command-line tool][doc-cli]
-- [The kcm configuration directory][doc-config]
+- [Using the cmk command-line tool][doc-cli]
+- [The cmk configuration directory][doc-config]
 - [End to end tests][doc-e2e]
 - [Making release] [release]
 

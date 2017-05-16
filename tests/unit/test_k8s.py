@@ -29,7 +29,7 @@ def test_k8s_node_list_all():
     ]
     with patch('intel.k8s.get_node_list',
                MagicMock(return_value=fake_node_list_resp)):
-        node_list = clusterinit.get_kcm_node_list(None, True)
+        node_list = clusterinit.get_cmk_node_list(None, True)
         assert node_list == ["fakenode1", "fakenode2", "fakenode3"]
 
 

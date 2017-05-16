@@ -27,8 +27,8 @@ from . import discover
 
 
 def uninstall(install_dir, conf_dir):
-    delete_kcm_pod("kcm-init-install-discover-pod")
-    delete_kcm_pod("kcm-reconcile-nodereport-pod")
+    delete_cmk_pod("cmk-init-install-discover-pod")
+    delete_cmk_pod("cmk-reconcile-nodereport-pod")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -36,19 +36,19 @@ def uninstall(install_dir, conf_dir):
 
     remove_node_label()
     remove_node_taint()
-    remove_node_kcm_oir()
+    remove_node_cmk_oir()
 
     remove_binary(install_dir)
 
 
 def remove_binary(install_dir):
-    remove_file = os.path.join(install_dir, "kcm")
+    remove_file = os.path.join(install_dir, "cmk")
     try:
         os.remove(remove_file)
-        logging.info("kcm binary from \"{}\" removed successfully.".format(
+        logging.info("cmk binary from \"{}\" removed successfully.".format(
             install_dir))
     except FileNotFoundError as err:
-        logging.warning("Could not found kcm binary in "
+        logging.warning("Could not found cmk binary in "
                         "\"{}\".".format(install_dir))
         logging.warning("Wrong path or file has already been removed.")
         sys.exit(0)
@@ -62,7 +62,7 @@ def remove_report(report_type):
     v1beta = k8sclient.ExtensionsV1beta1Api()
     node_report_type = third_party.ThirdPartyResourceType(
         v1beta,
-        "kcm.intel.com",
+        "cmk.intel.com",
         report_type)
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
 
@@ -81,7 +81,7 @@ def remove_report(report_type):
         report_type, os.getenv("NODE_NAME")))
 
 
-def delete_kcm_pod(pod_base_name, namespace="default"):
+def delete_cmk_pod(pod_base_name, namespace="default"):
     k8sconfig.load_incluster_config()
     v1api = k8sclient.CoreV1Api()
     pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
@@ -111,7 +111,7 @@ def check_remove_conf_dir(conf_dir):
         conf = config.Config(conf_dir)
     except Exception as err:
         logging.error(
-            "Aborting uninstall: Unable to read the KCM configuration "
+            "Aborting uninstall: Unable to read the CMK configuration "
             "directory at \"{}\": {}.".format(conf_dir, err))
         sys.exit(1)
 
@@ -137,12 +137,12 @@ def check_remove_conf_dir(conf_dir):
                     retries -= 1
                     break
 
-                # Remove kcm pools if pending_pools is empty
+                # Remove cmk pools if pending_pools is empty
                 if len(pending_pools) == 0:
                     shutil.rmtree(os.path.join(conf_dir, "pools"))
 
             if len(pending_pools) == 0:
-                # Remove kcm lock file with rest of dir after "with" scope
+                # Remove cmk lock file with rest of dir after "with" scope
                 # that has lock
                 os.remove(os.path.join(conf_dir, "lock"))
                 logging.info(
@@ -175,7 +175,7 @@ def get_pool_tasks(c, pool_name):
 
 def remove_node_label():
     logging.info("Removing node label.")
-    patch_path = '/metadata/labels/kcm.intel.com~1kcm-node'
+    patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
     patch_body = [{
         "op": "remove",
         "path": patch_path
@@ -210,7 +210,7 @@ def remove_node_taint():
         node_taints = node_resp["metadata"]["annotations"][node_taint_key]
         node_taints_list = ast.literal_eval(node_taints)
         node_taints_list = \
-            [taint for taint in node_taints_list if taint["key"] != "kcm"]
+            [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
     patch_path = '/metadata/annotations/scheduler.alpha.kubernetes.io~1taints'
     patch_body = [{
@@ -226,12 +226,12 @@ def remove_node_taint():
             "Aborting uninstall: Exception when removing taint \"{}\": "
             "{}".format(patch_path, err))
         sys.exit(1)
-    logging.info("Removed node taint with key\"{}\".".format("kcm"))
+    logging.info("Removed node taint with key\"{}\".".format("cmk"))
 
 
-def remove_node_kcm_oir():
+def remove_node_cmk_oir():
     patch_path = ('/status/capacity/pod.alpha.kubernetes.io~1opaque-int-'
-                  'resource-kcm')
+                  'resource-cmk')
     logging.info("Removing node oir \"{}\".".format(patch_path))
     patch_body = [{
         "op": "remove",
@@ -246,5 +246,5 @@ def remove_node_kcm_oir():
                 "Aborting uninstall: Exception when removing OIR \"{}\": "
                 "{}".format(patch_path, err))
             sys.exit(1)
-        logging.warning("KCM oir \"{}\" does not exist.".format(patch_path))
+        logging.warning("CMK oir \"{}\" does not exist.".format(patch_path))
     logging.info("Removed node oir \"{}\".".format(patch_path))

@@ -23,9 +23,9 @@ test_env = {
 }
 
 
-def test_kcm_nodereport_ok():
+def test_cmk_nodereport_ok():
     assert helpers.execute(
-        integration.kcm(),
+        integration.cmk(),
         ["node-report", "--conf-dir={}".format(helpers.conf_dir("ok"))],
         test_env).decode() == """{
   "checks": {
@@ -35,7 +35,7 @@ def test_kcm_nodereport_ok():
     }
   },
   "description": {
-    "path": "/kcm/tests/data/config/ok",
+    "path": "/cmk/tests/data/config/ok",
     "pools": {
       "controlplane": {
         "cpuLists": {
@@ -215,9 +215,9 @@ def test_kcm_nodereport_ok():
 """
 
 
-def test_kcm_nodereport_minimal():
+def test_cmk_nodereport_minimal():
     assert helpers.execute(
-        integration.kcm(),
+        integration.cmk(),
         ["node-report", "--conf-dir={}".format(helpers.conf_dir("minimal"))],
         test_env).decode() == """{
   "checks": {
@@ -229,7 +229,7 @@ def test_kcm_nodereport_minimal():
     }
   },
   "description": {
-    "path": "/kcm/tests/data/config/minimal",
+    "path": "/cmk/tests/data/config/minimal",
     "pools": {
       "exclusive": {
         "cpuLists": {

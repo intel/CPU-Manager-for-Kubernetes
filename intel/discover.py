@@ -21,22 +21,22 @@ import os
 import sys
 
 
-# discover reads the KCM configuration file, patches kubernetes nodes with
-# appropriate number of KCM Opaque Integer Resource (OIR) slots and applies
-# the appropriate KCM node labels and taints.
+# discover reads the CMK configuration file, patches kubernetes nodes with
+# appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
+# the appropriate CMK node labels and taints.
 def discover(conf_dir):
-    # Patch the node with the appropriate KCM OIR.
-    logging.debug("Patching the node with the appropriate KCM OIR.")
+    # Patch the node with the appropriate CMK OIR.
+    logging.debug("Patching the node with the appropriate CMK OIR.")
     add_node_oir(conf_dir)
-    # Add appropriate KCM label to the node.
-    logging.debug("Adding appropriate KCM label to the node.")
+    # Add appropriate CMK label to the node.
+    logging.debug("Adding appropriate CMK label to the node.")
     add_node_label()
-    # Add appropriate KCM taint to the node.
-    logging.debug("Adding appropriate KCM taint to the node.")
+    # Add appropriate CMK taint to the node.
+    logging.debug("Adding appropriate CMK taint to the node.")
     add_node_taint()
 
 
-# add_node_oir patches the node with the appropriate KCM OIR.
+# add_node_oir patches the node with the appropriate CMK OIR.
 def add_node_oir(conf_dir):
     c = config.Config(conf_dir)
     with c.lock():
@@ -47,7 +47,7 @@ def add_node_oir(conf_dir):
         num_slots = len(c.pool("dataplane").cpu_lists())
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
-                  "resource-kcm")
+                  "resource-cmk")
     patch_body = [{
         "op": "add",
         "path": patch_path,
@@ -64,7 +64,7 @@ def add_node_oir(conf_dir):
 
 
 def add_node_label():
-    patch_path = "/metadata/labels/kcm.intel.com~1kcm-node"
+    patch_path = "/metadata/labels/cmk.intel.com~1cmk-node"
     patch_body = [{
         "op": "add",
         "path": patch_path,
@@ -96,11 +96,11 @@ def add_node_taint():
         if node_taints:
             node_taints_list = json.loads(node_taints)
 
-    # Filter existing "kcm" taint, if it exists.
-    node_taints_list = [t for t in node_taints_list if t["key"] != "kcm"]
+    # Filter existing "cmk" taint, if it exists.
+    node_taints_list = [t for t in node_taints_list if t["key"] != "cmk"]
 
     node_taints_list.append({
-        "key": "kcm",
+        "key": "cmk",
         "value": "true",
         "effect": "NoSchedule"
     })
@@ -124,7 +124,7 @@ def add_node_taint():
         sys.exit(1)
 
 
-# patch_k8s_node_status patches the kubernetes node with KCM OIR with
+# patch_k8s_node_status patches the kubernetes node with CMK OIR with
 # value num_slots.
 def patch_k8s_node_status(patch_body):
     k8sconfig.load_incluster_config()

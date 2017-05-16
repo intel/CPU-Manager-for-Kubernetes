@@ -14,20 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# The `kcm` configuration directory
+# The `cmk` configuration directory
 
-KCM checkpoints state in a directory structure on disk. The checkpoint
+CMK checkpoints state in a directory structure on disk. The checkpoint
 describes all configured "pools" and their options, the "CPU lists" for
 those pools, and the "tasks" currently assigned to each CPU list. The
 directory format is described below.
 
-## KCM filesystem configuration format
+## CMK filesystem configuration format
 
 _Example:_
 
 ```
 etc
-└── kcm
+└── cmk
     ├── lock
     └── pools
         ├── controlplane
@@ -54,35 +54,35 @@ _Where:_
 
 | Path                                    | Meaning |
 | :-------------------------------------- | :------ |
-| `/etc/kcm/lock`                         | A lock file to protect against conflicting concurrent modification. |
-| `/etc/kcm/pools/<pool>`                 | Directories, one per pool. |
-| `/etc/kcm/pools/<pool>/exclusive`       | Determines whether each CPU list in the pool can be shared (value 0) or not (value 1). Shared CPU lists can accomodate multiple tasks simultaneously, while exclusive CPU lists may only be allocated to one task at a time. |
-| `/etc/kcm/pools/<pool>/<cpulist>`       | Directories whose names conform to the Linux cpuset [CPU list format](cpu-list). |
-| `/etc/kcm/pools/<pool>/<cpulist>/tasks` | A file containing a comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated. |
+| `/etc/cmk/lock`                         | A lock file to protect against conflicting concurrent modification. |
+| `/etc/cmk/pools/<pool>`                 | Directories, one per pool. |
+| `/etc/cmk/pools/<pool>/exclusive`       | Determines whether each CPU list in the pool can be shared (value 0) or not (value 1). Shared CPU lists can accomodate multiple tasks simultaneously, while exclusive CPU lists may only be allocated to one task at a time. |
+| `/etc/cmk/pools/<pool>/<cpulist>`       | Directories whose names conform to the Linux cpuset [CPU list format](cpu-list). |
+| `/etc/cmk/pools/<pool>/<cpulist>/tasks` | A file containing a comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated. |
 
 ## Creating a new configuration
 
-KCM can set up its own initial state. See [`kcm init`][kcm-init] doc for more
+CMK can set up its own initial state. See [`cmk init`][cmk-init] doc for more
 information.
 
 ## Configuration changes over time
 
-`kcm` updates the configuration as follows:
+`cmk` updates the configuration as follows:
 
 - The operator creates the initial configuration on each host, either manually
-  or by using the [`kcm init`][kcm-init] helper program.
-- When tasks are launched via [`kcm isolate`][kcm-isolate], an available
+  or by using the [`cmk init`][cmk-init] helper program.
+- When tasks are launched via [`cmk isolate`][cmk-isolate], an available
   CPU list for the requested pool is chosen. That CPU list's `tasks`
-  file is updated to include the [`kcm isolate`][kcm-isolate] process ID.
-- After a task launched via [`kcm isolate`][kcm-isolate] dies, the
+  file is updated to include the [`cmk isolate`][cmk-isolate] process ID.
+- After a task launched via [`cmk isolate`][cmk-isolate] dies, the
   associated CPU list's `tasks` file is updated to remove the
-  [`kcm isolate`][kcm-isolate] process ID.
-- [`kcm reconcile`][kcm-reconcile] asks the operating system about all
+  [`cmk isolate`][cmk-isolate] process ID.
+- [`cmk reconcile`][cmk-reconcile] asks the operating system about all
   process IDs in all pools. Process IDs that are no longer valid are removed
-  from the `tasks` file. [`kcm reconcile`][kcm-reconcile] should be configured to execute
+  from the `tasks` file. [`cmk reconcile`][cmk-reconcile] should be configured to execute
   periodically on each host).
 
 [cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
-[kcm-init]: cli.md#kcm-init
-[kcm-isolate]: cli.md#kcm-isolate
-[kcm-reconcile]: cli.md#kcm-reconcile
+[cmk-init]: cli.md#cmk-init
+[cmk-isolate]: cli.md#cmk-isolate
+[cmk-reconcile]: cli.md#cmk-reconcile

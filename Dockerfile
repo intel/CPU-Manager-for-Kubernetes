@@ -17,16 +17,16 @@ FROM python:3.4.6
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-ADD . /kcm
-WORKDIR /kcm
+ADD . /cmk
+WORKDIR /cmk
 
-RUN chmod +x /kcm/kcm.py
+RUN chmod +x /cmk/cmk.py
 
 RUN tox -e lint
 RUN tox -e unit
 RUN tox -e integration
 RUN tox -e coverage
 
-RUN /kcm/kcm.py --help && echo ""
+RUN /cmk/cmk.py --help && echo ""
 
-ENTRYPOINT [ "/kcm/kcm.py" ]
+ENTRYPOINT [ "/cmk/cmk.py" ]

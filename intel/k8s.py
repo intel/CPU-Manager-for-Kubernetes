@@ -38,15 +38,15 @@ def get_pod_template():
                 },
                 {
                     "hostPath": {
-                        "path": "/etc/kcm"
+                        "path": "/etc/cmk"
                     },
-                    "name": "kcm-conf-dir"
+                    "name": "cmk-conf-dir"
                 },
                 {
                     "hostPath": {
                         "path": "/opt/bin"
                     },
-                    "name": "kcm-install-dir"
+                    "name": "cmk-install-dir"
                 }
             ]
         }
@@ -71,7 +71,7 @@ def get_container_template():
         "command": ["/bin/bash", "-c"],
         "env": [
             {
-                "name": "KCM_PROC_FS",
+                "name": "CMK_PROC_FS",
                 "value": "/host/proc"
             },
             {
@@ -92,12 +92,12 @@ def get_container_template():
                 "readOnly": True
             },
             {
-                "mountPath": "/etc/kcm",
-                "name": "kcm-conf-dir"
+                "mountPath": "/etc/cmk",
+                "name": "cmk-conf-dir"
             },
             {
                 "mountPath": "/opt/bin",
-                "name": "kcm-install-dir"
+                "name": "cmk-install-dir"
             }
         ],
         "imagePullPolicy": "Never"

@@ -30,34 +30,34 @@ proc_env_ok = {
 }
 
 
-def test_kcm_init():
+def test_cmk_init():
     args = ["init",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
-    helpers.execute(integration.kcm(), args, proc_env_ok)
+    helpers.execute(integration.cmk(), args, proc_env_ok)
 
 
-def test_kcm_init_exists():
+def test_cmk_init_exists():
     args = ["init",
             "--conf-dir={}".format(helpers.conf_dir("minimal"))]
 
     with pytest.raises(subprocess.CalledProcessError):
-        helpers.execute(integration.kcm(), args, proc_env_ok)
+        helpers.execute(integration.cmk(), args, proc_env_ok)
 
 
-def test_kcm_init_wrong_assignment():
+def test_cmk_init_wrong_assignment():
     args = ["init",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(helpers.conf_dir("ok"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
-        helpers.execute(integration.kcm(), args, proc_env_ok)
+        helpers.execute(integration.cmk(), args, proc_env_ok)
 
     assert "ERROR:root:4 dataplane cores (1 requested)" in str(e.value.output)
 
 
-def test_kcm_init_insufficient_isolated_cores():
+def test_cmk_init_insufficient_isolated_cores():
     proc_env_few_isolated = {
         proc.ENV_PROC_FS: helpers.procfs_dir("insufficient_isolated_cores"),
         topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
@@ -67,7 +67,7 @@ def test_kcm_init_insufficient_isolated_cores():
         os.path.join(tempfile.mkdtemp(), "init"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
-        helpers.execute(integration.kcm(), args, proc_env_few_isolated)
+        helpers.execute(integration.cmk(), args, proc_env_few_isolated)
 
     assert (
         "ERROR:root:Cannot use isolated cores for "
@@ -75,7 +75,7 @@ def test_kcm_init_insufficient_isolated_cores():
         str(e.value.output)
 
 
-def test_kcm_init_isolated_cores_mismatch():
+def test_cmk_init_isolated_cores_mismatch():
     proc_env_isolated_mismatch = {
         proc.ENV_PROC_FS: helpers.procfs_dir("isolated_core_mismatch"),
         topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
@@ -87,13 +87,13 @@ def test_kcm_init_isolated_cores_mismatch():
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
-        integration.kcm(), args, proc_env_isolated_mismatch)
+        integration.cmk(), args, proc_env_isolated_mismatch)
 
     assert ("WARNING:root:Not all isolated cores will be used "
             "by data and control plane") in str(output)
 
 
-def test_kcm_init_partial_isolation():
+def test_cmk_init_partial_isolation():
     proc_env_partially_isolated = {
         proc.ENV_PROC_FS: helpers.procfs_dir("partially_isolated_cores"),
         topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
@@ -105,26 +105,26 @@ def test_kcm_init_partial_isolation():
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
-        integration.kcm(), args, proc_env_partially_isolated)
+        integration.cmk(), args, proc_env_partially_isolated)
 
     assert "WARNING:root:Physical core 1 is partially isolated" in str(output)
     assert "WARNING:root:Physical core 2 is partially isolated" in str(output)
 
 
-def test_kcm_init_insufficient_cores():
+def test_cmk_init_insufficient_cores():
     args = ["init",
             "--num-dp-cores=10",
             "--num-cp-cores=5",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
-        helpers.execute(integration.kcm(), args, proc_env_ok)
+        helpers.execute(integration.cmk(), args, proc_env_ok)
 
     assert ("ERROR:root:10 cores requested for dataplane. "
             "Only 8 cores available") in str(e.value.output)
 
 
-def test_kcm_init_isolcpus():
+def test_cmk_init_isolcpus():
     proc_env_partially_isolated = {
         proc.ENV_PROC_FS: helpers.procfs_dir("correctly_isolated_cores"),
         topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
@@ -134,7 +134,7 @@ def test_kcm_init_isolcpus():
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
-        integration.kcm(), args, proc_env_partially_isolated)
+        integration.cmk(), args, proc_env_partially_isolated)
 
     assert "INFO:root:Isolated logical cores: 0,1,2,3,4,8,9,10,11,12" \
            in str(output)

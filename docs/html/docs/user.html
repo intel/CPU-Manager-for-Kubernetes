@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>kcm user manual</title>
+  <title>cmk user manual</title>
   <link rel="icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEACABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAKCgr/FRUX/xYWGP8YGBr/GRkb/xsbHP8dHR7/Hh4f/x4eIP8fHyD/ICAh/yMjJP8kJCX/JiYo/ygoKv8pKSr/LCwu/y0tLv80NDT/QUFC/0ZGR/9MTE7/UFBR/1JSUv9bW1v/XFxc/2BgYP9hYWP/aGhp/2xsbP9ycnL/d3d3/3l5e/98fHz/f3+A/2dn/P9z3a//cNX8/4CAgP+Xl5f/nZ2e/56en/+fn5//n5+h/6amp/+rq6v/rKys/7CvsP+zs7T/uLi5/7u7u/+8vLz/wMDA/8fHx//Kysr/zc3N/9HR0f/d3d3/3t7e/+Xl5f/q6ur/6+vr/+3t7f/z8/P/9fX1//b29v/39/f/+Pj4//n5+f/6+vr/+/v7//z8/P/9/f3//v7+//////8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/NCYmJiYmJiYmJiYmJiYmNCZKSkpKSkpKSkpKSkpKSiYmSkpKRisdRkMbMklKSkomJkpKSSEiNUhEEQwpSUpKJiZKSi8LHhhAPAwBDDZKSiYmSkoWACA7SEc6HAEaSkomJkpKBxI/SkpKSj4ICkpKJiZKSgUTR0pKSkpGDwZKSiYmSkoTED1KSkpKOQQVSkomJkpKKgowMy4sNycIMUpKJiZKSkEZDgkDAgsNH0VKSiYmSkpKQigUBgkXLUhKSkomJkpKSkpKSkpKSkpKSkpKJiYmJiYmJiYmJiYmJiYmJiYmIyUkNDQ0NDQ0NDQ0NDQmOCYmJiYmJiYmJiYmJiYmOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" />
   <link rel="stylesheet" href="/__/grip/static/octicons/octicons.css" />
   <style>
@@ -49,57 +49,57 @@
               
                 <h3>
                   <span class="octicon octicon-book"></span>
-                  kcm user manual
+                  cmk user manual
                 </h3>
               
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 
 
 <h1>
-<a id="user-content-kcm-user-manual" class="anchor" href="#kcm-user-manual" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm</code> user manual</h1>
+<a id="user-content-cmk-user-manual" class="anchor" href="#cmk-user-manual" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>cmk</code> user manual</h1>
 
 <p>This doc is for application owners who need to deploy containers with
 core affinity requirements on Kubernetes.</p>
 
 <p>Here we assume that the cluster is already properly configured. For
-information on how to set up the cluster with <code>kcm</code> enabled, see the
-<a href="operator.html"><code>kcm</code> operator manual</a>.</p>
+information on how to set up the cluster with <code>cmk</code> enabled, see the
+<a href="operator.html"><code>cmk</code> operator manual</a>.</p>
 
 <h2>
 <a id="user-content-pod-configuration" class="anchor" href="#pod-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pod configuration</h2>
 
-<p>The only KCM CLI subcommand users (pod authors) need to know about is
-<a href="cli.html#kcm-isolate">kcm isolate</a>. The <code>isolate</code> subcommand consults shared state
+<p>The only CMK CLI subcommand users (pod authors) need to know about is
+<a href="cli.html#cmk-isolate">cmk isolate</a>. The <code>isolate</code> subcommand consults shared state
 on the host file system to acquire and bookkeep an assigned subset of CPUs
 a command should run on.</p>
 
-<p><strong>ALERT:</strong> It's easy to accidentally break out of <code>kcm isolate</code> with a malformed
+<p><strong>ALERT:</strong> It's easy to accidentally break out of <code>cmk isolate</code> with a malformed
 shell command in user pod specs. For example:
-<code>kcm isolate echo foo &amp;&amp; sleep 100</code> isolates <em>only the execution of <code>echo</code></em>!
-The assigned CPUs are wrongly freed early when <code>kcm</code> returns. To avoid this
+<code>cmk isolate echo foo &amp;&amp; sleep 100</code> isolates <em>only the execution of <code>echo</code></em>!
+The assigned CPUs are wrongly freed early when <code>cmk</code> returns. To avoid this
 situation, avoid forking in the shell command, or alternately isolate a shell
 and wrap your complex command:
-<code>kcm isolate --pool=&lt;pool&gt; /bin/bash -- -c "foo &amp;&amp; bar || baz"</code></p>
+<code>cmk isolate --pool=&lt;pool&gt; /bin/bash -- -c "foo &amp;&amp; bar || baz"</code></p>
 
 <p><a href="images/user-container.svg" target="_blank"><img src="images/user-container.svg" alt="User container diagram" style="max-width:100%;"></a></p>
 
 <p>The figure illustrates a few important points:</p>
 
 <ul>
-<li>The <a href="config.html">KCM configuration directory</a> must be mounted into the
+<li>The <a href="config.html">CMK configuration directory</a> must be mounted into the
 container at a path that matches the value of <code>--config-dir</code>.</li>
 <li>The host <a href="http://man7.org/linux/man-pages/man5/proc.5.html">procfs</a> must be mounted into the container at a path that matches
-the value of the <code>KCM_PROC_FS</code> environment variable. Since bind-mounting
+the value of the <code>CMK_PROC_FS</code> environment variable. Since bind-mounting
 over the top of the procfs at <code>/proc</code> from inside the pid namespace would
 cause problems, we mount it at <code>/host/proc</code> in the examples throughout these
 docs.</li>
-<li>The operator guide recommends providing the <code>kcm</code> binary on the host
+<li>The operator guide recommends providing the <code>cmk</code> binary on the host
 filesystem so it can be mounted and used from user containers without forcing
-them to build <code>kcm</code> into their images. By default these docs assume the
-binary is available on the host filesystem at <code>/opt/bin/kcm</code>.</li>
+them to build <code>cmk</code> into their images. By default these docs assume the
+binary is available on the host filesystem at <code>/opt/bin/cmk</code>.</li>
 </ul>
 
-<p>For a complete example, see the <a href="../resources/pods/kcm-isolate-pod.yaml">kcm isolate pod template</a>.</p>
+<p>For a complete example, see the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk isolate pod template</a>.</p>
 
               </article>
             </div>

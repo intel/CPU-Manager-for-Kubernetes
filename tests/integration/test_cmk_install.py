@@ -18,18 +18,18 @@ import os
 import tempfile
 
 
-def test_kcm_install():
-    # Install kcm to a temporary directory.
+def test_cmk_install():
+    # Install cmk to a temporary directory.
     install_dir = tempfile.mkdtemp()
-    helpers.execute(integration.kcm(),
+    helpers.execute(integration.cmk(),
                     ["install",
                      "--install-dir={}".format(install_dir)])
-    installed_kcm = os.path.join(install_dir, "kcm")
+    installed_cmk = os.path.join(install_dir, "cmk")
 
-    # Check installed kcm executable output against the original script.
-    assert (helpers.execute(installed_kcm, ["--help"]) ==
-            helpers.execute(integration.kcm(), ["--help"]))
-    assert (helpers.execute(installed_kcm, ["--version"]) ==
-            helpers.execute(integration.kcm(), ["--version"]))
+    # Check installed cmk executable output against the original script.
+    assert (helpers.execute(installed_cmk, ["--help"]) ==
+            helpers.execute(integration.cmk(), ["--help"]))
+    assert (helpers.execute(installed_cmk, ["--version"]) ==
+            helpers.execute(integration.cmk(), ["--version"]))
 
-    helpers.execute("rm", [installed_kcm])
+    helpers.execute("rm", [installed_cmk])

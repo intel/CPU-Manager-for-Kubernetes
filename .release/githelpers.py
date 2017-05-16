@@ -22,8 +22,8 @@ import requests
 
 
 version_pattern = re.compile('v\d\.\d\.\d(-rc\d(\d)?)?')
-release_branch_base_name = "kcm-release"
-release_msg = "KCM release - version"
+release_branch_base_name = "cmk-release"
+release_msg = "CMK release - version"
 
 def execute_git_cmd(cmd):
     git_command = " ".join(["git", cmd])
@@ -89,7 +89,7 @@ def get_tags():
 
 
 def create_and_push_tag(tag):
-    execute_git_cmd("tag -a {} -m \"KCM {}\"".format(tag, tag))
+    execute_git_cmd("tag -a {} -m \"CMK {}\"".format(tag, tag))
     execute_git_cmd("push origin --tags")
 
 
