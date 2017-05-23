@@ -33,13 +33,8 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
 
     sockets = topology.discover()
 
-    if len(sockets) != 1:
-        logging.error("Only single socket systems are supported for now. "
-                      "Found %d sockets" % len(sockets))
-        sys.exit(1)
-
     # List of intel.topology.Core objects.
-    cores = list(sockets[0].cores.values())
+    cores = list(sockets[0].cores.values()) + list(sockets[1].cores.values())
 
     check_isolated_cores(cores, num_dp_cores, num_cp_cores)
 
