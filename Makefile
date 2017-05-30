@@ -46,9 +46,11 @@ docs:
 	grip docs/config.md --export docs/html/docs/config.html --title="The cmk configuration directory"
 	grip docs/operator.md --export docs/html/docs/operator.html --title="cmk operator manual"
 	grip docs/user.md --export docs/html/docs/user.html --title="cmk user manual"
+	grip docs/architecture.md --export docs/html/docs/architecture.html --title="cmk architecture"
 	sed -i"" "s/\.md/\.html/g" docs/html/index.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/build.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/cli.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/config.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/operator.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/user.html
+	sed -i"" "s/\.md/\.html/g" docs/html/docs/architecture.html
