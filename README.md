@@ -94,13 +94,15 @@ _For detailed usage information about each subcommand, see
 
 ## Further Reading
 
+- [Architecture][arch]
 - [Building cmk][doc-build]
 - [Operator manual][doc-operator]
 - [User manual][doc-user]
 - [Using the cmk command-line tool][doc-cli]
 - [The cmk configuration directory][doc-config]
-- [Making release][release]
+- [Releasing][release]
 
+[arch]: docs/architecture.md
 [cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-build]: docs/build.md
 [doc-cli]: docs/cli.md
