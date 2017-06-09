@@ -107,8 +107,12 @@ def get_container_template():
 
 def get_node_status(config, name=None):
     k8s_api = client_from_config(config=config)
-    node = k8s_api.read_node_status(name)
-    print(node)
+    node = k8s_api.read_node_status(name).to_dict()
+    conditions = node["status"]["conditions"]
+    for condition in conditions:
+        if condition["type"] == "Ready" and condition["status"] == "True":
+            return True
+    return False
 
     
 

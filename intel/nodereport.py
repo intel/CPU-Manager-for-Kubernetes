@@ -50,9 +50,9 @@ def nodereport(conf_dir, seconds, publish):
             node_report.body["report"] = report.as_dict()
             node_report.save()
 
-        k8s.get_node_status(None, node_name)
+        nodeStatus = k8s.get_node_status(None, node_name)
 
-        if should_exit:
+        if should_exit and not nodeStatus:
             break
 
         logging.info(
