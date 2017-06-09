@@ -28,6 +28,7 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
+                   [--serviceaccount=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
@@ -39,33 +40,34 @@ Usage:
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for CMK software.
-  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
-  --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
-                        each host
-                        [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>       CMK Docker image [default: cmk:v1.0.1].
-  --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
-                        [default: IfNotPresent].
-  --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
-  --install-dir=<dir>   CMK install directory [default: /opt/bin].
-  --interval=<seconds>  Number of seconds to wait between rerunning.
-                        If set to 0, will only run once. [default: 0]
-  --num-dp-cores=<num>  Number of data plane cores [default: 4].
-  --num-cp-cores=<num>  Number of control plane cores [default: 1].
-  --pool=<pool>         Pool name: either infra, controlplane or dataplane.
-  --publish             Whether to publish reports to the Kubernetes
-                        API server.
-  --pull-secret=<name>  Name of secret used for pulling Docker images from
-                        restricted Docker registry.
-  --no-affinity         Do not set cpu affinity before forking the child
-                        command. In this mode the user program is responsible
-                        for reading the `CMK_CPUS_ASSIGNED` environment
-                        variable and moving a subset of its own processes
-                        and/or tasks to the assigned CPUs.
+  -h --help               Show this screen.
+  --version               Show version.
+  --host-list=<list>      Comma seperated list of Kubernetes nodes to prepare
+                          for CMK software.
+  --all-hosts             Prepare all Kubernetes nodes for the CMK software.
+  --cmk-cmd-list=<list>   Comma seperated list of CMK sub-commands to run on
+                          each host
+                          [default: init,reconcile,install,discover,nodereport].
+  --cmk-img=<img>         CMK Docker image [default: cmk:v1.0.1].
+  --cmk-img-pol=<pol>     Image pull policy for the CMK Docker image
+                          [default: IfNotPresent].
+  --conf-dir=<dir>        CMK configuration directory [default: /etc/cmk].
+  --install-dir=<dir>     CMK install directory [default: /opt/bin].
+  --interval=<seconds>    Number of seconds to wait between rerunning.
+                          If set to 0, will only run once. [default: 0]
+  --num-dp-cores=<num>    Number of data plane cores [default: 4].
+  --num-cp-cores=<num>    Number of control plane cores [default: 1].
+  --pool=<pool>           Pool name: either infra, controlplane or dataplane.
+  --publish               Whether to publish reports to the Kubernetes
+                          API server.
+  --pull-secret=<name>    Name of secret used for pulling Docker images from
+                          restricted Docker registry.
+  --serviceaccount=<name> ServiceAccount name to pass [default: cmk-serviceaccount].
+  --no-affinity           Do not set cpu affinity before forking the child
+                          command. In this mode the user program is responsible
+                          for reading the `CMK_CPUS_ASSIGNED` environment
+                          variable and moving a subset of its own processes
+                          and/or tasks to the assigned CPUs.
 ```
 
 ## Global configuration
@@ -204,10 +206,10 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
 ### `cmk discover`
 
 Advertises the appropriate number of `CMK` [Opaque Integer Resource (OIR)][oir-docs]
-slots, node label and node taint to the Kubernetes node. The number of 
-OIR slots advertised is equal to the number of cpu lists under the 
+slots, node label and node taint to the Kubernetes node. The number of
+OIR slots advertised is equal to the number of cpu lists under the
 __dataplane__ pool, as determined by examining the `CMK` configuration directory.
-For more information about the config format on disk, refer to 
+For more information about the config format on disk, refer to
 the [`cmk` configuration directory][doc-config].
 
 **Notes:**
@@ -217,7 +219,7 @@ the [`cmk` configuration directory][doc-config].
 cluster configuration. The [instructions][discover-op-manual] provided in the
 operator's manual can be used to run the discover Pod.
 - The node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-cmk`
-OIR. 
+OIR.
 - The node will be labeled with `"cmk.intel.com/cmk-node": "true"` label.
 - The node will be tainted with `cmk=true:NoSchedule` taint.
 - The `CMK` configuration directory should exist and contain the dataplane
@@ -701,8 +703,8 @@ $ kubectl get NodeReport cmk-02-zzwt7w -o json
 
 Initializes a Kubernetes cluster for the `CMK` software. It runs `CMK`
 subcommands, passed as comma-seperated values to `--cmk-cmd-list`, as
-Kubernetes Pods. By default, it runs all the subcommands and uses all the 
-default options. 
+Kubernetes Pods. By default, it runs all the subcommands and uses all the
+default options.
 
 **Notes:**
 - `cmk cluster-init` is expected to be run as a Kubernetes Pod as it uses
@@ -769,7 +771,7 @@ to fully purge inconsistent environment i.e. of some failures in `cmk cluster-in
 
 Removing `--conf-dir=<dir>` requires no processes present on system that use `cmk isolate`
 (with entry in configuration directory). Please stop/remove them otherwise `cmk uninstall` will
-throw an error in that step and uninstall will fail. 
+throw an error in that step and uninstall will fail.
 For this reason `cmk uninstall` cannot be run through `cmk isolate`.
 
 **Args:**

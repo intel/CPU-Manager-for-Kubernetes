@@ -57,7 +57,7 @@ Options:
                           API server.
   --pull-secret=<name>    Name of secret used for pulling Docker images from
                           restricted Docker registry.
-  --serviceaccount=<name> ServiceAccount name to pass [default: cmk-sa].
+  --serviceaccount=<name> ServiceAccount name to pass [default: cmk-serviceaccount].
   --no-affinity           Do not set cpu affinity before forking the child
                           command. In this mode the user program is responsible
                           for reading the `CMK_CPUS_ASSIGNED` environment
