@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc, third_party, topology, k8s
+from . import config, proc, third_party, topology
 import itertools
 import json
 from kubernetes import config as k8sconfig, client as k8sclient
@@ -36,6 +36,7 @@ def nodereport(conf_dir, seconds, publish):
 
         if publish and report is not None:
             logging.debug("Publishing node report to Kubernetes API server")
+            k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
             node_report_type = third_party.ThirdPartyResourceType(
