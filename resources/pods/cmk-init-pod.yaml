@@ -19,6 +19,7 @@ metadata:
     app: cmk-init-pod
   name: cmk-init-pod
 spec:
+  serviceAccountName: cmk-serviceaccount
   containers:
   - args:
     - "/cmk/cmk.py init --conf-dir=/etc/cmk --num-dp-cores=$NUM_DP_CORES --num-cp-cores=$NUM_CP_CORES"
@@ -26,6 +27,8 @@ spec:
     - "/bin/bash"
     - "-c"
     env:
+    - name: CMK_PROC_FS
+      value: '/proc'
     - name: NUM_DP_CORES
       # Change this to modify the value passed to `--num-dp-cores` flag.
       value: '4'

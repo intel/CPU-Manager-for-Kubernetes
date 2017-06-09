@@ -19,6 +19,7 @@ metadata:
     app: cmk-discover-pod
   name: cmk-discover-pod
 spec:
+  serviceAccountName: cmk-serviceaccount
   containers:
   - args:
     - "/cmk/cmk.py discover --conf-dir=/etc/cmk"

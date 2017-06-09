@@ -1,0 +1,12 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: CMK-third-party-resource-controller
+rules:
+- apiGroups: ["cmk.intel.com"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["extensions"]
+  resources: ["thirdpartyresources", "thirdpartyresources.extensions"]
+  verbs: ["*"]

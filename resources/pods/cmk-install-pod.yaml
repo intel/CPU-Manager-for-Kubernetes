@@ -19,6 +19,7 @@ metadata:
     app: cmk-install-pod
   name: cmk-install-pod
 spec:
+  serviceAccountName: cmk-serviceaccount
   containers:
   - args:
     - "/cmk/cmk.py install --install-dir=/opt/bin"
