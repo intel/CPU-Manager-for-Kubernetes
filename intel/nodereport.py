@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc, third_party, topology
+from . import config, proc, third_party, topology, k8s
 import itertools
 import json
 from kubernetes import config as k8sconfig, client as k8sclient
