@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc, third_party, topology
+from . import config, proc, third_party, topology, k8s
 import itertools
 import json
 from kubernetes import config as k8sconfig, client as k8sclient
@@ -28,6 +28,7 @@ def nodereport(conf_dir, seconds, publish):
         seconds = int(seconds)
     should_exit = (seconds <= 0)
 
+    node_name = os.getenv("NODE_NAME")
     while True:
         report = generate_report(conf_dir)
 
@@ -35,7 +36,6 @@ def nodereport(conf_dir, seconds, publish):
 
         if publish and report is not None:
             logging.debug("Publishing node report to Kubernetes API server")
-            k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
             node_report_type = third_party.ThirdPartyResourceType(
@@ -45,9 +45,11 @@ def nodereport(conf_dir, seconds, publish):
 
             # third_party throws an exception if the environment variable
             # is not set.
-            node_report = node_report_type.create(os.getenv("NODE_NAME"))
+            node_report = node_report_type.create(node_name)
             node_report.body["report"] = report.as_dict()
             node_report.save()
+
+        k8s.get_node_status(None, node_name)
 
         if should_exit:
             break
