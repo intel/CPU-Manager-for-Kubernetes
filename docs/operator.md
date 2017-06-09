@@ -30,8 +30,20 @@ _Related:_
 ## System requirements.
 Kubernetes >= v1.5.0
 
-## Setting up the cluster.
+### Kubernetes preparation
+All of template manifests provided with CMK are using serviceaccount which is defined in
+[`cmk-serviceaccount`][cmk-serviceaccount] manifest. Before first CMK run, operator should use it to
+define `cmk-serviceaccount`. This step isn't obligatory on Kubernetes 1.5 but it's strongly recomended. Kubernetes 1.6
+requires it because of RBAC authorization method which will use it to deliver API access from inside of CMK pod(s).
 
+#### Kubernetes 1.6
+From Kubernetes 1.6 [RBAC][RBAC] has became default authorization method. Operator needs to prepare additional
+[ClusterRole][ClusterRole] and [ClusterRoleBindings][ClusterRoleBindings] to be able spawn CMK on this version of
+Kubernetes. CMK is providing their definitions in [`cmk-rbac-rules`][cmk-rbac-rules] manifest. In this case operator
+must also use provided serviceaccount manifest as well.
+
+## Setting up the cluster.
+https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.
 
 Notes: 
@@ -373,3 +385,8 @@ can help to fine-grain the deletion for specific node.
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
 [cluster-init-op-manual]: #prepare-cmk-nodes-by-running-cmk-cluster-init
 [indvidual-pods-op-manual]: #prepare-cmk-nodes-by-running-each-cmk-subcommand-as-a-pod
+[cmk-serviceaccount]: ../resources/authorization/cmk-serviceaccount.yaml
+[RBAC]: https://kubernetes.io/docs/admin/authorization/rbac/
+[ClusterRole]: https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole
+[ClusterRoleBindings]: https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
+[cmk-rbac-rules]: ../resources/authorization/cmk-rbac-rules.yaml
