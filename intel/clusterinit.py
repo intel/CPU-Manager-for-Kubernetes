@@ -78,7 +78,6 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
              install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
              pull_secret, serviceaccount):
-    logging.info("SA: {}".format(serviceaccount))
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
