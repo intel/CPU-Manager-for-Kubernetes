@@ -148,6 +148,7 @@ def run_on_node(pod, ds, spec, cmk_node_list, cmd):
         if pod is not None:
             pod["spec"] = spec
             update_entity_with_node_details(pod, ds, node_name, cmd)
+            logging.debug(pod)
             response = k8s.create_pod(None, pod)
             logging.debug("Response while creating pod for {} command(s): {}".
                           format(cmd, response))
@@ -155,6 +156,7 @@ def run_on_node(pod, ds, spec, cmk_node_list, cmd):
         elif ds is not None:
             ds["spec"] = spec
             update_entity_with_node_details(pod, ds, node_name, cmd)
+            logging.debug(ds)
             response = k8s.create_ds(None, ds)
             logging.debug("Response while creating pod for {} command(s): "
                           "{}".format(cmd, response))
@@ -280,8 +282,8 @@ def update_spec(spec, restart_pol, conf_dir, install_dir):
     spec["volumes"][2]["hostPath"]["path"] = install_dir
 
 
-def update_entity_with_node_details(pod, ds, node_name, cmd_list):
-    entity_name = "cmk-{}-{}".format("-".join(cmd_list), node_name)
+def update_entity_with_node_details(pod, ds, node_name, cmd):
+    entity_name = "cmk-{}-{}".format(cmd, node_name)
     if pod is None and ds is not None:
         ds["spec"]["nodeName"] = node_name
         ds["metadata"]["labels"]["app"] = entity_name
