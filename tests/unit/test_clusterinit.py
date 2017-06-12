@@ -131,7 +131,7 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
             clusterinit.run_pods(None, ["init"], "fake_img",
                                  "Never", "fake-conf-dir", "fake-install-dir",
                                  "2", "2", ["fakenode"], "")
-        exp_err = "Exception when creating pod for ['init'] command(s)"
+        exp_err = "Exception when creating entity for init command"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
@@ -146,7 +146,7 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
                                  "2", ["fakenode"], "")
-        exp_err = "Exception when creating pod for ['discover'] command(s)"
+        exp_err = "Exception when creating entity for discover command"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
@@ -161,7 +161,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
             clusterinit.run_pods(None, ["install"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
                                  "2", ["fakenode"], "")
-        exp_err = "Exception when creating pod for ['install'] command(s)"
+        exp_err = "Exception when creating entity for install command"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
@@ -170,13 +170,13 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "")
-        exp_err = "Exception when creating pod for ['reconcile'] command(s)"
+            clusterinit.run_deamonsets(["reconcile"], "fake_img", "Never",
+                                       "fake-conf-dir", "fake-install-dir",
+                                       ["fakenode"], "")
+        exp_err = "Exception when creating entity for reconcile command"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err
@@ -185,13 +185,13 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "")
-        exp_err = "Exception when creating pod for ['nodereport'] command(s)"
+            clusterinit.run_deamonsets(["nodereport"], "fake_img", "Never",
+                                       "fake-conf-dir", "fake-install-dir",
+                                       ["fakenode"], "")
+        exp_err = "Exception when creating entity for nodereport command"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[1][2] == exp_log_err

@@ -23,9 +23,9 @@ WORKDIR /cmk
 RUN chmod +x /cmk/cmk.py
 
 RUN tox -e lint
-#RUN tox -e unit
-#RUN tox -e integration
-#RUN tox -e coverage
+RUN tox -e unit
+RUN tox -e integration
+RUN tox -e coverage
 
 RUN /cmk/cmk.py --help && echo ""
 
