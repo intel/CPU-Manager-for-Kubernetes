@@ -75,8 +75,9 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     # Run the pods based on the cmk_cmd_init_list and cmk_cmd_list with
     # provided options.
     if cmk_cmd_init_list:
-        run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
+        run_pods(cmk_cmd_list, cmk_cmd_init_list, cmk_img, cmk_img_pol,
+                 conf_dir, install_dir, num_dp_cores, num_cp_cores,
+                 cmk_node_list,
                  pull_secret)
 
     if cmk_cmd_ds_list:
@@ -84,8 +85,9 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                        install_dir, cmk_node_list, pull_secret)
 
     if cmk_cmd_list:
-        run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
+        run_pods(cmk_cmd_list, cmk_cmd_init_list, cmk_img, cmk_img_pol,
+                 conf_dir, install_dir, num_dp_cores, num_cp_cores,
+                 cmk_node_list,
                  pull_secret)
 
 
