@@ -145,15 +145,16 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
 def run_on_node(pod, ds, spec, cmk_node_list, cmd):
     for node_name in cmk_node_list:
-        update_entity_with_node_details(pod, ds, node_name, cmd)
         if pod is not None:
             pod["spec"] = spec
+            update_entity_with_node_details(pod, ds, node_name, cmd)
             response = k8s.create_pod(None, pod)
             logging.debug("Response while creating pod for {} command(s): {}".
                           format(cmd, response))
             continue
         elif ds is not None:
             ds["spec"] = spec
+            update_entity_with_node_details(pod, ds, node_name, cmd)
             response = k8s.create_ds(None, ds)
             logging.debug("Response while creating pod for {} command(s): "
                           "{}".format(cmd, response))
