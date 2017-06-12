@@ -91,7 +91,8 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 
 def run_deamonsets(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir,
                    install_dir, cmk_node_list, pull_secret):
-    logging.info("Creating cmk deamonset for {} commands...".format(cmk_cmd_ds_list))
+    logging.info("Creating cmk deamonset for {} commands...".
+                 format(cmk_cmd_ds_list))
     run_cmd_ds(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir, install_dir,
                cmk_node_list, pull_secret)
 
@@ -141,8 +142,8 @@ def run_on_node(pod, ds, cmk_node_list, cmd):
         update_entity_with_node_details(pod, ds, node_name, cmd)
         if pod is not None:
             response = k8s.create_pod(None, pod)
-            logging.debug("Response while creating pod for {} command(s): "
-                              "{}".format(cmd, response))
+            logging.debug("Response while creating pod for {} command(s): {}".
+                          format(cmd, response))
             continue
         elif ds is not None:
             response = k8s.create_ds(None, ds)
@@ -162,22 +163,24 @@ def run_entity(pod, ds, pull_secret, cmk_node_list, cmd):
     try:
         run_on_node(pod, ds, cmk_node_list, cmd)
     except K8sApiException as err:
-        logging.error("Exception when creating entity for {} command(s): "
-                              "{}".format(cmd, err))
+        logging.error("Exception when creating entity for {} command(s): {}".
+                      format(cmd, err))
         sys.exit(1)
 
 
 def run_cmd_ds(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, cmk_node_list, pull_secret):
+               install_dir, cmk_node_list, pull_secret):
     ds = k8s.get_ds_template()
     spec = k8s.get_pod_spec()
     for cmd in cmk_cmd_ds_list:
         update_spec(spec, "Never", conf_dir, install_dir)
         args = ""
         if cmd == "reconcile":
-            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=5 --publish"  # noqa: E501
+            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py --" \
+                   "reconcile --interval=5 --publish"
         elif cmd == "nodereport":
-            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=5 --publish"  # noqa: E501
+            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py --" \
+                   "node-report --interval=5 --publish"
         update_spec_with_container(spec, cmd, cmk_img, cmk_img_pol, args)
         ds["spec"] = spec
         run_entity(None, ds, pull_secret, cmk_node_list, cmd)
@@ -207,7 +210,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                 # Otherwise, it should be run as init-container.
                 if len(cmd_init_list) == 1:
                     update_spec_with_container(spec, cmd, cmk_img,
-                                              cmk_img_pol, args)
+                                               cmk_img_pol, args)
                 else:
                     update_pod_with_init_container(pod, cmd, cmk_img,
                                                    cmk_img_pol, args)
@@ -217,10 +220,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                 elif cmd == "install":
                     args = "/cmk/cmk.py install"
                 update_spec_with_container(spec, cmd, cmk_img, cmk_img_pol,
-                                          args)
+                                           args)
             pod["spec"] = spec
             run_entity(pod, None, pull_secret, cmk_node_list, cmd)
-
 
 
 # get_cmk_node_list() returns a list of nodes based on either host_list or

@@ -82,6 +82,7 @@ def ds_client_from_config(config):
         client = k8sclient.ApiClient(config=config)
         return k8sclient.ExtensionsV1beta1Api(api_client=client)
 
+
 def client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
