@@ -24,35 +24,63 @@ def get_pod_template():
             "annotations": {
             }
         },
-        "spec": {
-            "nodeName": "NODENAME",
-            "containers": [
-            ],
-            "restartPolicy": "Never",
-            "volumes": [
-                {
-                    "hostPath": {
-                        "path": "/proc"
-                    },
-                    "name": "host-proc"
-                },
-                {
-                    "hostPath": {
-                        "path": "/etc/cmk"
-                    },
-                    "name": "cmk-conf-dir"
-                },
-                {
-                    "hostPath": {
-                        "path": "/opt/bin"
-                    },
-                    "name": "cmk-install-dir"
-                }
-            ]
-        }
+        "spec": {},
     }
     return pod_template
 
+
+def get_ds_template():
+    ds_template = {
+        "apiVersion": "extensions/v1beta1",
+        "kind": "DaemonSet",
+        "metadata": {
+            "labels": {
+                "app": "DSNAME"
+            },
+            "name": "DSNAME",
+        },
+        "spec": {},
+    }
+    return ds_template
+
+
+def get_pod_spec():
+    pod_spec = {
+        "nodeName": "NODENAME",
+        "containers": [
+        ],
+        "restartPolicy": "Never",
+        "volumes": [
+            {
+                "hostPath": {
+                    "path": "/proc"
+                },
+                "name": "host-proc"
+            },
+            {
+                "hostPath": {
+                    "path": "/etc/cmk"
+                },
+                "name": "cmk-conf-dir"
+            },
+            {
+                "hostPath": {
+                    "path": "/opt/bin"
+                },
+                "name": "cmk-install-dir"
+            }
+        ]
+    }
+    return pod_spec
+
+
+def ds_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.ExtensionsV1beta1Api()
+    else:
+        client = k8sclient.ApiClient(config=config)
+        return k8sclient.ExtensionsV1beta1Api(api_client=client)
 
 def client_from_config(config):
     if config is None:
@@ -126,6 +154,13 @@ def get_pod_list(config):
 def create_pod(config, podspec, ns_name="default"):
     k8s_api = client_from_config(config)
     return k8s_api.create_namespaced_pod(ns_name, podspec)
+
+
+# create_ds() sends a request to the Kubernetes API server to create a
+# DeamonSet based on ds.
+def create_ds(config, ds, ns_name="default"):
+    k8s_api = ds_client_from_config(config)
+    return k8s_api.create_namespaced_daemon_set(ns_name, ds)
 
 
 # Create list of schedulable nodes.

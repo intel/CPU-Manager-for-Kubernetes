@@ -55,8 +55,22 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     # Split the cmk_cmd_list based on whether the cmd should be run as
     # one-shot job or long-running daemons.
     cmd_init_list = ["init", "discover", "install"]
-    cmk_cmd_init_list = [cmd for cmd in cmk_cmd_list if cmd in cmd_init_list]
-    cmk_cmd_list = [cmd for cmd in cmk_cmd_list if cmd not in cmd_init_list]
+    cmd_ds_list = ["reconcile", "nodereport"]
+
+    cmk_cmd_init_list = []
+    cmk_cmd_ds_list = []
+    cmk_cmd_list = []
+
+    for cmd in cmk_cmd_list:
+        if cmd in cmd_init_list:
+            cmk_cmd_init_list.append(cmd)
+            continue
+        if cmd in cmd_ds_list:
+            cmk_cmd_ds_list.append(cmd)
+            continue
+        else:
+            cmk_cmd_list.append(cmd)
+            continue
 
     # Run the pods based on the cmk_cmd_init_list and cmk_cmd_list with
     # provided options.
@@ -64,10 +78,22 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
                  pull_secret)
+
+    if cmk_cmd_ds_list:
+        run_deamonsets(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir,
+                       install_dir, cmk_node_list, pull_secret)
+
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
                  pull_secret)
+
+
+def run_deamonsets(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir,
+                   install_dir, cmk_node_list, pull_secret):
+    logging.info("Creating cmk deamonset for {} commands...".format(cmk_cmd_ds_list))
+    run_cmd_ds(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir, install_dir,
+               cmk_node_list, pull_secret)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -110,26 +136,67 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             sys.exit(1)
 
 
+def run_on_node(pod, ds, cmk_node_list, cmd):
+    for node_name in cmk_node_list:
+        update_entity_with_node_details(pod, ds, node_name, cmd)
+        if pod is not None:
+            response = k8s.create_pod(None, pod)
+            logging.debug("Response while creating pod for {} command(s): "
+                              "{}".format(cmd, response))
+            continue
+        elif ds is not None:
+            response = k8s.create_ds(None, ds)
+            logging.debug("Response while creating pod for {} command(s): "
+                          "{}".format(cmd, response))
+            continue
+        else:
+            logging.warning("Empty command has been submitted")
+            continue
+
+
+def run_entity(pod, ds, pull_secret, cmk_node_list, cmd):
+    spec = k8s.get_pod_spec()
+    if pull_secret:
+        update_spec_with_pull_secret(spec, pull_secret)
+
+    try:
+        run_on_node(pod, ds, cmk_node_list, cmd)
+    except K8sApiException as err:
+        logging.error("Exception when creating entity for {} command(s): "
+                              "{}".format(cmd, err))
+        sys.exit(1)
+
+
+def run_cmd_ds(cmk_cmd_ds_list, cmk_img, cmk_img_pol, conf_dir,
+                 install_dir, cmk_node_list, pull_secret):
+    ds = k8s.get_ds_template()
+    spec = k8s.get_pod_spec()
+    for cmd in cmk_cmd_ds_list:
+        update_spec(spec, "Never", conf_dir, install_dir)
+        args = ""
+        if cmd == "reconcile":
+            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=5 --publish"  # noqa: E501
+        elif cmd == "nodereport":
+            args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=5 --publish"  # noqa: E501
+        update_spec_with_container(spec, cmd, cmk_img, cmk_img_pol, args)
+        ds["spec"] = spec
+        run_entity(None, ds, pull_secret, cmk_node_list, cmd)
+
+
 # run_cmd_pods() makes the appropriate changes to pod templates and runs the
 # pod on each node provided by cmk_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
                  pull_secret):
     pod = k8s.get_pod_template()
-    if pull_secret:
-        update_pod_with_pull_secret(pod, pull_secret)
-    if cmd_list:
-        update_pod(pod, "Always", conf_dir, install_dir)
-        for cmd in cmd_list:
-            args = ""
-            if cmd == "reconcile":
-                args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=5 --publish"  # noqa: E501
-            elif cmd == "nodereport":
-                args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=5 --publish"  # noqa: E501
+    spec = k8s.get_pod_spec()
 
-            update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args)
-    elif cmd_init_list:
-        update_pod(pod, "Never", conf_dir, install_dir)
+    for cmd in cmd_list:
+        logging.warning("Command {} is not supported".format(cmd))
+        continue
+
+    if cmd_init_list:
+        update_spec(spec, "Never", conf_dir, install_dir)
         for cmd in cmd_init_list:
             args = ""
             if cmd == "init":
@@ -139,7 +206,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.
                 if len(cmd_init_list) == 1:
-                    update_pod_with_container(pod, cmd, cmk_img,
+                    update_spec_with_container(spec, cmd, cmk_img,
                                               cmk_img_pol, args)
                 else:
                     update_pod_with_init_container(pod, cmd, cmk_img,
@@ -149,32 +216,11 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                     args = "/cmk/cmk.py discover"
                 elif cmd == "install":
                     args = "/cmk/cmk.py install"
-                update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol,
+                update_spec_with_container(spec, cmd, cmk_img, cmk_img_pol,
                                           args)
+            pod["spec"] = spec
+            run_entity(pod, None, pull_secret, cmk_node_list, cmd)
 
-    for node_name in cmk_node_list:
-        if cmd_list:
-            update_pod_with_node_details(pod, node_name, cmd_list)
-        elif cmd_init_list:
-            update_pod_with_node_details(pod, node_name, cmd_init_list)
-
-        try:
-            cr_pod_resp = k8s.create_pod(None, pod)
-            if cmd_list:
-                logging.debug("Response while creating pod for {} command(s): "
-                              "{}".format(cmd_list, cr_pod_resp))
-            elif cmd_init_list:
-                logging.debug("Response while creating pod for {} command(s): "
-                              "{}".format(cmd_init_list, cr_pod_resp))
-        except K8sApiException as err:
-            if cmd_list:
-                logging.error("Exception when creating pod for {} command(s): "
-                              "{}".format(cmd_list, err))
-            elif cmd_init_list:
-                logging.error("Exception when creating pod for {} command(s): "
-                              "{}".format(cmd_init_list, err))
-            logging.error("Aborting cluster-init ...")
-            sys.exit(1)
 
 
 # get_cmk_node_list() returns a list of nodes based on either host_list or
@@ -220,32 +266,37 @@ def wait_for_pod_phase(pod_name, phase_name):
 
 
 # update_pod() updates the pod template with the provided options.
-def update_pod(pod, restart_pol, conf_dir, install_dir):
-    pod["spec"]["restartPolicy"] = restart_pol
-    pod["spec"]["volumes"][1]["hostPath"]["path"] = conf_dir
-    pod["spec"]["volumes"][2]["hostPath"]["path"] = install_dir
+def update_spec(spec, restart_pol, conf_dir, install_dir):
+    spec["restartPolicy"] = restart_pol
+    spec["volumes"][1]["hostPath"]["path"] = conf_dir
+    spec["volumes"][2]["hostPath"]["path"] = install_dir
 
 
-def update_pod_with_node_details(pod, node_name, cmd_list):
-    pod["spec"]["nodeName"] = node_name
-    pod_name = "cmk-{}-pod-{}".format("-".join(cmd_list), node_name)
-    pod["metadata"]["name"] = pod_name
+def update_entity_with_node_details(pod, ds, node_name, cmd_list):
+    entity_name = "cmk-{}-{}".format("-".join(cmd_list), node_name)
+    if pod is None and ds is not None:
+        ds["spec"]["nodeName"] = node_name
+        ds["metadata"]["labels"]["app"] = entity_name
+        ds["metadata"]["name"] = entity_name
+    elif pod is not None and ds is None:
+        pod["spec"]["nodeName"] = node_name
+        pod["metadata"]["name"] = entity_name
 
 
-def update_pod_with_pull_secret(pod, pull_secret):
-    pod["spec"]["imagePullSecrets"] = [{"name": pull_secret}]
+def update_spec_with_pull_secret(spec, pull_secret):
+    spec["imagePullSecrets"] = [{"name": pull_secret}]
 
 
 # update_pod_with_container() updates the pod template with a container using
 # the provided options.
-def update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args):
+def update_spec_with_container(spec, cmd, cmk_img, cmk_img_pol, args):
     container_template = k8s.get_container_template()
     container_template["image"] = cmk_img
     container_template["imagePullPolicy"] = cmk_img_pol
     container_template["args"][0] = args
     # Each container name should be distinct within a Pod.
     container_template["name"] = cmd
-    pod["spec"]["containers"].append(container_template)
+    spec["containers"].append(container_template)
 
 
 # update_pod_with_init_container() updates the pod template with a init
