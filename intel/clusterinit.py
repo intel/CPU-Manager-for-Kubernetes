@@ -95,7 +95,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         logging.info("Waiting for cmk pod running {} cmds to enter {} state."
                      .format(cmd_init_list, pod_phase_name))
     elif cmd_list:
-        pod_name_prefix = "cmk-{}-pod-".format("-".join(cmd_list))
+        pod_name_prefix = "cmk-{}-ds-".format("-".join(cmd_list))
         pod_phase_name = "Running"
         logging.info("Waiting for cmk pod running {} cmds to enter {} state."
                      .format(cmd_list, pod_phase_name))
@@ -155,15 +155,17 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     for node_name in cmk_node_list:
         if cmd_list:
             update_pod_with_node_details(pod, node_name, cmd_list)
+            pod = k8s.convert_pod_to_ds(pod)
         elif cmd_init_list:
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
-            cr_pod_resp = k8s.create_pod(None, pod)
             if cmd_list:
+                cr_pod_resp = k8s.create_ds(None, pod)
                 logging.debug("Response while creating pod for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
+                cr_pod_resp = k8s.create_pod(None, pod)
                 logging.debug("Response while creating pod for {} command(s): "
                               "{}".format(cmd_init_list, cr_pod_resp))
         except K8sApiException as err:
@@ -210,7 +212,7 @@ def wait_for_pod_phase(pod_name, phase_name):
             sys.exit(1)
 
         for pod in pod_list_resp["items"]:
-            if pod["metadata"]["name"] == pod_name:
+            if pod_name in pod["metadata"]["name"]:
                 if pod["status"]["phase"] == phase_name:
                     wait = False
                     break

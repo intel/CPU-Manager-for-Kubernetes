@@ -54,6 +54,27 @@ def get_pod_template():
     return pod_template
 
 
+def convert_pod_to_ds(pod_template):
+    ds_template = {
+        "apiVersion": "extensions/v1beta1",
+        "kind": "DaemonSet",
+        "metadata": {
+            "name": pod_template["metadata"]["name"].replace("pod", "ds")
+        },
+        "spec": {
+            "template": {
+                "metadata": {
+                    "labels": {
+                        "app": pod_template["metadata"]["name"].replace("pod", "ds")
+                    }
+                },
+                "spec": pod_template["spec"]
+            }
+        }
+    }
+    return ds_template
+
+
 def client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
@@ -61,6 +82,15 @@ def client_from_config(config):
     else:
         client = k8sclient.ApiClient(config=config)
         return k8sclient.CoreV1Api(api_client=client)
+
+
+def ds_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.ExtensionsV1beta1Api()
+    else:
+        client = k8sclient.ApiClient(config=config)
+        return k8sclient.ExtensionsV1beta1Api(api_client=client)
 
 
 def get_container_template():
@@ -126,6 +156,13 @@ def get_pod_list(config):
 def create_pod(config, podspec, ns_name="default"):
     k8s_api = client_from_config(config)
     return k8s_api.create_namespaced_pod(ns_name, podspec)
+
+
+# create_ds() sends a request to the Kubernetes API server to create a
+# ds based on podspec.
+def create_ds(config, podspec, ns_name="default"):
+    k8s_api = ds_client_from_config(config)
+    return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
 
 
 # Create list of schedulable nodes.
