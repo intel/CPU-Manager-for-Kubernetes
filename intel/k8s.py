@@ -113,6 +113,28 @@ def get_pod_template():
     return pod_template
 
 
+def ds_from(pod):
+    ds_template = {
+        "apiVersion": "extensions/v1beta1",
+        "kind": "DaemonSet",
+        "metadata": {
+            "name": pod["metadata"]["name"].replace("pod", "ds")
+        },
+        "spec": {
+            "template": {
+                "metadata": {
+                    "labels": {
+                        "app":
+                            pod["metadata"]["name"].replace("pod", "ds")
+                    }
+                },
+                "spec": pod["spec"]
+            }
+        }
+    }
+    return ds_template
+
+
 def client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
@@ -120,6 +142,15 @@ def client_from_config(config):
     else:
         client = k8sclient.ApiClient(config=config)
         return k8sclient.CoreV1Api(api_client=client)
+
+
+def extensions_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.ExtensionsV1beta1Api()
+    else:
+        client = k8sclient.ApiClient(config=config)
+        return k8sclient.ExtensionsV1beta1Api(api_client=client)
 
 
 def get_container_template():
@@ -187,6 +218,13 @@ def create_pod(config, podspec, ns_name="default"):
     return k8s_api.create_namespaced_pod(ns_name, podspec)
 
 
+# create_ds() sends a request to the Kubernetes API server to create a
+# ds based on podspec.
+def create_ds(config, podspec, ns_name="default"):
+    k8s_api = extensions_client_from_config(config)
+    return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
+
+
 # Create list of schedulable nodes.
 def get_compute_nodes(config, label_selector=None):
     compute_nodes = []
@@ -243,3 +281,27 @@ def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
     k8s_api.delete_namespaced_pod(name, ns_name, body)
+
+
+# Delete ds from namespace.
+# Due to problem with orphan_dependents flag and changes
+# in cascade deletion in k8s, first delete the ds, then the pod
+# https://github.com/kubernetes-incubator/client-python/issues/162
+# https://github.com/kubernetes/kubernetes/issues/44046
+def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
+    k8s_api_ext = extensions_client_from_config(config)
+    k8s_api_core = client_from_config(config)
+
+    k8s_api_ext.delete_namespaced_daemon_set(ds_name,
+                                             ns_name,
+                                             body,
+                                             grace_period_seconds=0,
+                                             orphan_dependents=False)
+
+    # Pod in ds has fixed label so we use label selector
+    data = k8s_api_core.list_namespaced_pod(
+        ns_name, label_selector="app={}".format(ds_name)).to_dict()
+    # There should be only one pod
+    for pod in data["items"]:
+        delete_pod(None, pod["metadata"]["name"], ns_name)
+    return
