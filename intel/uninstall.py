@@ -28,7 +28,7 @@ from . import k8s
 
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
-    delete_cmk_pod("cmk-reconcile-nodereport-pod")
+    delete_cmk_pod("cmk-reconcile-nodereport-ds")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -84,7 +84,13 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
     logging.info("Removing \"{}\" pod".format(pod_name))
 
     try:
-        k8s.delete_pod(None, pod_name, namespace)
+        if "-ds-" in pod_name:
+            # Pod is part of DaemonSet - remove ds otherwise ds
+            # controller will restart pod
+            logging.info("Pod is part of DaemonSet")
+            k8s.delete_ds(None, pod_name, namespace)
+        else:
+            k8s.delete_pod(None, pod_name, namespace)
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
             logging.error(
@@ -108,7 +114,7 @@ def check_remove_conf_dir(conf_dir):
         sys.exit(1)
 
     try:
-        retries = 5
+        retries = 10
         # Check if there are no "kmc isolate" processes running before removing
         # configuration directory, timeout is 5 seconds
         while retries:

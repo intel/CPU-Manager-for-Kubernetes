@@ -165,16 +165,6 @@ def create_ds(config, podspec, ns_name="default"):
     return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
 
 
-def delete_pod(config, pod_name, ns_name="default"):
-    k8s_api = core_client_from_config(config)
-    return k8s_api.delete_namespaced_pod(pod_name,ns_name)
-
-
-def delete_ds(config, ds_name, ns_name="default"):
-    k8s_api = ext_client_from_config(config)
-    return k8s_api.delete_namespaced_daemon_set(ds_name, ns_name)
-
-
 # Create list of schedulable nodes.
 def get_compute_nodes(config, label_selector=None):
     compute_nodes = []
@@ -231,3 +221,22 @@ def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = core_client_from_config(config)
     k8s_api.delete_namespaced_pod(name, ns_name, body)
+
+
+# Delete ds from namespace.
+# Due to problem with orphan_dependents flag and changed in cascade deletion in k8s
+# First delete the ds, then the pod
+def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
+    k8s_api_ext = ext_client_from_config(config)
+    k8s_api_core = core_client_from_config(config)
+
+    k8s_api_ext.delete_namespaced_daemon_set(ds_name, ns_name, body,
+                                                grace_period_seconds=0,
+                                                orphan_dependents=False)
+
+    # Pod in ds has fixed label so we use label selector
+    data = k8s_api_core.list_namespaced_pod(ns_name, label_selector="app={}".format(ds_name)).to_dict()
+    # There should be only one pod
+    for pod in data["items"]:
+        delete_pod(None, pod["metadata"]["name"], ns_name)
+    return
