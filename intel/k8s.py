@@ -65,7 +65,9 @@ def convert_pod_to_ds(pod_template):
             "template": {
                 "metadata": {
                     "labels": {
-                        "app": pod_template["metadata"]["name"].replace("pod", "ds")
+                        "app":
+                            pod_template["metadata"]["name"].replace("pod",
+                                                                     "ds")
                     }
                 },
                 "spec": pod_template["spec"]
@@ -224,18 +226,21 @@ def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
 
 
 # Delete ds from namespace.
-# Due to problem with orphan_dependents flag and changed in cascade deletion in k8s
-# First delete the ds, then the pod
+# Due to problem with orphan_dependents flag and changes
+# in cascade deletion in k8s, first delete the ds, then the pod
 def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
     k8s_api_ext = ext_client_from_config(config)
     k8s_api_core = core_client_from_config(config)
 
-    k8s_api_ext.delete_namespaced_daemon_set(ds_name, ns_name, body,
-                                                grace_period_seconds=0,
-                                                orphan_dependents=False)
+    k8s_api_ext.delete_namespaced_daemon_set(ds_name,
+                                             ns_name,
+                                             body,
+                                             grace_period_seconds=0,
+                                             orphan_dependents=False)
 
     # Pod in ds has fixed label so we use label selector
-    data = k8s_api_core.list_namespaced_pod(ns_name, label_selector="app={}".format(ds_name)).to_dict()
+    data = k8s_api_core.list_namespaced_pod(
+        ns_name, label_selector="app={}".format(ds_name)).to_dict()
     # There should be only one pod
     for pod in data["items"]:
         delete_pod(None, pod["metadata"]["name"], ns_name)

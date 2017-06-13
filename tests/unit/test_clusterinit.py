@@ -170,7 +170,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
@@ -185,7 +185,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
@@ -225,7 +225,8 @@ def test_clusterinit_node_list_host_list():
 
 def test_clusterinit_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.core_client_from_config', MagicMock(return_value=mock)):
+    with patch('intel.k8s.core_client_from_config',
+               MagicMock(return_value=mock)):
         with patch('intel.clusterinit.wait_for_pod_phase',
                    MagicMock(return_value=True)):
             clusterinit.cluster_init("fakenode1", False,
@@ -243,7 +244,8 @@ def test_clusterinit_pass_pull_secrets():
 
 def test_clusterinit_dont_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.core_client_from_config', MagicMock(return_value=mock)):
+    with patch('intel.k8s.core_client_from_config',
+               MagicMock(return_value=mock)):
         with patch('intel.clusterinit.wait_for_pod_phase',
                    MagicMock(return_value=True)):
             clusterinit.cluster_init("fakenode1", False,
