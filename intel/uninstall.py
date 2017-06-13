@@ -19,7 +19,6 @@ import os
 import shutil
 import sys
 from time import sleep
-from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 from . import config, third_party
 from . import reconcile
@@ -59,10 +58,8 @@ def remove_report(report_type):
     logging.info(
         "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
-    k8sconfig.load_incluster_config()
-    v1beta = k8sclient.ExtensionsV1beta1Api()
     node_report_type = third_party.ThirdPartyResourceType(
-        v1beta,
+        k8s.ext_client_from_config(None),
         "cmk.intel.com",
         report_type)
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
