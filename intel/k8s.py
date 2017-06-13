@@ -75,7 +75,7 @@ def convert_pod_to_ds(pod_template):
     return ds_template
 
 
-def client_from_config(config):
+def core_client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
         return k8sclient.CoreV1Api()
@@ -84,7 +84,7 @@ def client_from_config(config):
         return k8sclient.CoreV1Api(api_client=client)
 
 
-def ds_client_from_config(config):
+def ext_client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
         return k8sclient.ExtensionsV1beta1Api()
@@ -137,7 +137,7 @@ def get_container_template():
 
 # get_node_list() returns the node list in the current Kubernetes cluster.
 def get_node_list(config, label_selector=None):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     if label_selector:
         nodes = k8s_api.list_node(label_selector=label_selector).to_dict()
     else:
@@ -147,22 +147,32 @@ def get_node_list(config, label_selector=None):
 
 # get_pod_list() returns the pod list in the current Kubernetes cluster.
 def get_pod_list(config):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     return k8s_api.list_pod_for_all_namespaces().to_dict()
 
 
 # create_pod() sends a request to the Kubernetes API server to create a
 # pod based on podspec.
 def create_pod(config, podspec, ns_name="default"):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     return k8s_api.create_namespaced_pod(ns_name, podspec)
 
 
 # create_ds() sends a request to the Kubernetes API server to create a
 # ds based on podspec.
 def create_ds(config, podspec, ns_name="default"):
-    k8s_api = ds_client_from_config(config)
+    k8s_api = ext_client_from_config(config)
     return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
+
+
+def delete_pod(config, pod_name, ns_name="default"):
+    k8s_api = core_client_from_config(config)
+    return k8s_api.delete_namespaced_pod(pod_name,ns_name)
+
+
+def delete_ds(config, ds_name, ns_name="default"):
+    k8s_api = ext_client_from_config(config)
+    return k8s_api.delete_namespaced_daemon_set(ds_name, ns_name)
 
 
 # Create list of schedulable nodes.
@@ -183,7 +193,7 @@ def set_node_label(config, node, label, label_value):
         "path": "/metadata/labels/%s" % label,
         "value": label_value,
     }]
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     k8s_api.patch_node(node, patch_body)
 
 
@@ -193,7 +203,7 @@ def unset_node_label(config, node, label):
         "op": "remove",
         "path": "/metadata/labels/%s" % label,
     }]
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     k8s_api.patch_node(node, patch_body)
 
 
@@ -201,23 +211,23 @@ def unset_node_label(config, node, label):
 def create_namespace(config, ns_name):
     metadata = {'name': ns_name}
     namespace = V1Namespace(metadata=metadata)
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     k8s_api.create_namespace(namespace)
 
 
 # Get available namespaces.
 def get_namespaces(config):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     return k8s_api.list_namespace().to_dict()
 
 
 # Delete namespace by name.
 def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     k8s_api.delete_namespace(ns_name, delete_options)
 
 
 # Delete pod from namespace.
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
-    k8s_api = client_from_config(config)
+    k8s_api = core_client_from_config(config)
     k8s_api.delete_namespaced_pod(name, ns_name, body)
