@@ -87,7 +87,7 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
         if "-ds-" in pod_name:
             # Pod is part of DaemonSet - remove ds otherwise ds
             # controller will restart pod
-            logging.info("Pod is part of DaemonSet")
+            logging.info("Pod \"{}\"... is part of DaemonSet".format(pod_name))
             k8s.delete_ds(None, pod_name, namespace)
         else:
             k8s.delete_pod(None, pod_name, namespace)

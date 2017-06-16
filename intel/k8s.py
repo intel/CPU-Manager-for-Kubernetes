@@ -54,23 +54,22 @@ def get_pod_template():
     return pod_template
 
 
-def convert_pod_to_ds(pod_template):
+def ds_from(pod):
     ds_template = {
         "apiVersion": "extensions/v1beta1",
         "kind": "DaemonSet",
         "metadata": {
-            "name": pod_template["metadata"]["name"].replace("pod", "ds")
+            "name": pod["metadata"]["name"].replace("pod", "ds")
         },
         "spec": {
             "template": {
                 "metadata": {
                     "labels": {
                         "app":
-                            pod_template["metadata"]["name"].replace("pod",
-                                                                     "ds")
+                            pod["metadata"]["name"].replace("pod", "ds")
                     }
                 },
-                "spec": pod_template["spec"]
+                "spec": pod["spec"]
             }
         }
     }
@@ -228,6 +227,8 @@ def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
 # Delete ds from namespace.
 # Due to problem with orphan_dependents flag and changes
 # in cascade deletion in k8s, first delete the ds, then the pod
+# https://github.com/kubernetes-incubator/client-python/issues/162
+# https://github.com/kubernetes/kubernetes/issues/44046
 def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
     k8s_api_ext = ext_client_from_config(config)
     k8s_api_core = core_client_from_config(config)

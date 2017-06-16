@@ -155,7 +155,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     for node_name in cmk_node_list:
         if cmd_list:
             update_pod_with_node_details(pod, node_name, cmd_list)
-            pod = k8s.convert_pod_to_ds(pod)
+            pod = k8s.ds_from(pod=pod)
         elif cmd_init_list:
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
@@ -212,7 +212,8 @@ def wait_for_pod_phase(pod_name, phase_name):
             sys.exit(1)
 
         for pod in pod_list_resp["items"]:
-            if pod_name in pod["metadata"]["name"]:
+            if ("metadata" in pod) and ("name" in pod["metadata"]) \
+                    and pod_name in pod["metadata"]["name"]:
                 if pod["status"]["phase"] == phase_name:
                     wait = False
                     break
