@@ -225,7 +225,7 @@ def test_clusterinit_node_list_host_list():
 
 def test_clusterinit_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.core_client_from_config',
+    with patch('intel.k8s.client_from_config',
                MagicMock(return_value=mock)):
         with patch('intel.clusterinit.wait_for_pod_phase',
                    MagicMock(return_value=True)):
@@ -244,7 +244,7 @@ def test_clusterinit_pass_pull_secrets():
 
 def test_clusterinit_dont_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.core_client_from_config',
+    with patch('intel.k8s.client_from_config',
                MagicMock(return_value=mock)):
         with patch('intel.clusterinit.wait_for_pod_phase',
                    MagicMock(return_value=True)):

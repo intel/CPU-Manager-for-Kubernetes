@@ -59,7 +59,7 @@ def remove_report(report_type):
         "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
     node_report_type = third_party.ThirdPartyResourceType(
-        k8s.ext_client_from_config(None),
+        k8s.extensions_client_from_config(None),
         "cmk.intel.com",
         report_type)
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
