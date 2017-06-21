@@ -113,5 +113,5 @@ Please refer to the [`cmk reconcile` documentation][cmk-reconcile].
 [cmk-reconcile]: cli.md#cmk-reconcile
 [doc-config]: config.md
 [doc-cli]: cli.md
-[doc-operator]: docs/operator.md
-[doc-user]: docs/user.md
+[doc-operator]: operator.md
+[doc-user]: user.md
