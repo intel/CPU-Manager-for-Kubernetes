@@ -374,8 +374,6 @@ def test_delete_cmk_pod_success(caplog):
                MagicMock(side_effect=fake_api_exception)):
         uninstall.delete_cmk_pod(pod_base_name)
         caplog_tuple = caplog.record_tuples
-        print(caplog_tuple)
-        print('simon')
         assert \
             caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
                 pod_base_name, str(os.getenv("NODE_NAME")))
@@ -393,8 +391,6 @@ def test_delete_cmk_pod_success2(caplog):
                MagicMock(side_effect=fake_api_exception)):
         uninstall.delete_cmk_pod(pod_base_name)
         caplog_tuple = caplog.record_tuples
-        print(caplog_tuple)
-        print('simon')
         assert \
             caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
                 pod_base_name, str(os.getenv("NODE_NAME")))
