@@ -19,16 +19,16 @@ import os
 import shutil
 import sys
 from time import sleep
-from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 from . import config, third_party
 from . import reconcile
 from . import discover
+from . import k8s
 
 
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
-    delete_cmk_pod("cmk-reconcile-nodereport-pod")
+    delete_cmk_pod("cmk-reconcile-nodereport-ds")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -58,10 +58,8 @@ def remove_report(report_type):
     logging.info(
         "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
-    k8sconfig.load_incluster_config()
-    v1beta = k8sclient.ExtensionsV1beta1Api()
     node_report_type = third_party.ThirdPartyResourceType(
-        v1beta,
+        k8s.extensions_client_from_config(None),
         "cmk.intel.com",
         report_type)
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
@@ -82,17 +80,17 @@ def remove_report(report_type):
 
 
 def delete_cmk_pod(pod_base_name, namespace="default"):
-    k8sconfig.load_incluster_config()
-    v1api = k8sclient.CoreV1Api()
     pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
-    logging.info("Removing \"{}\" pod".format(pod_name))
+    logging.info("Removing \"{}\"".format(pod_name))
 
     try:
-        v1api.delete_namespaced_pod(
-            name=pod_name,
-            namespace=namespace,
-            body=k8sclient.V1DeleteOptions(),
-            grace_period_seconds=0)
+        if "-ds-" in pod_name:
+            # Pod is part of DaemonSet - remove ds otherwise ds
+            # controller will restart pod
+            logging.info("\"{}\" is DaemonSet".format(pod_name))
+            k8s.delete_ds(None, pod_name, namespace)
+        else:
+            k8s.delete_pod(None, pod_name, namespace)
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
             logging.error(
@@ -100,8 +98,8 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
                 "{}".format(pod_name, err))
             sys.exit(1)
 
-        logging.warning("\"{}\" pod does not exist".format(pod_name))
-    logging.info("\"{}\" pod deleted".format(pod_name))
+        logging.warning("\"{}\" does not exist".format(pod_name))
+    logging.info("\"{}\" deleted".format(pod_name))
 
 
 def check_remove_conf_dir(conf_dir):
@@ -116,7 +114,7 @@ def check_remove_conf_dir(conf_dir):
         sys.exit(1)
 
     try:
-        retries = 5
+        retries = 10
         # Check if there are no "kmc isolate" processes running before removing
         # configuration directory, timeout is 5 seconds
         while retries:

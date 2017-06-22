@@ -178,7 +178,7 @@ def test_k8s_get_namespaces():
         assert len(called_methods[0][2]) == 0
 
 
-def test_k8s_client_from_config():
+def test_k8s_core_client_from_config():
     with pytest.raises(ConfigException) as err:
         k8s.client_from_config(None)
         # Client from in-cluster configuration should throws error if it's not
