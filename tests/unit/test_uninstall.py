@@ -329,3 +329,75 @@ def test_remove_binary_failure(caplog):
     exp_log2 = "Wrong path or file has already been removed."
     assert caplog_tuple[-2][2] == exp_log
     assert caplog_tuple[-1][2] == exp_log2
+
+
+def test_delete_cmk_pod_failure(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"WrongReason\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    pod_base_name = "cmk-some-cmd-pod"
+    with patch('intel.k8s.delete_pod',
+               MagicMock(side_effect=fake_api_exception)):
+        with pytest.raises(SystemExit):
+            uninstall.delete_cmk_pod(pod_base_name)
+        caplog_tuple = caplog.record_tuples
+        exp_err = "Aborting uninstall: " \
+                  "Exception when removing pod \"{}-{}\""\
+            .format(pod_base_name, str(os.getenv("NODE_NAME")))
+        exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
+        assert caplog_tuple[-1][2] == exp_log_err
+
+
+def test_delete_cmk_pod_failure2(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"WrongReason\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    pod_base_name = "cmk-some-cmd-ds"
+    with patch('intel.k8s.delete_ds',
+               MagicMock(side_effect=fake_api_exception)):
+        with pytest.raises(SystemExit):
+            uninstall.delete_cmk_pod(pod_base_name)
+        caplog_tuple = caplog.record_tuples
+        exp_err = "Aborting uninstall: " \
+                  "Exception when removing pod \"{}-{}\""\
+            .format(pod_base_name, str(os.getenv("NODE_NAME")))
+        exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
+        assert caplog_tuple[-1][2] == exp_log_err
+
+
+def test_delete_cmk_pod_success(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"NotFound\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    pod_base_name = "cmk-some-cmd-ds"
+    with patch('intel.k8s.delete_ds',
+               MagicMock(side_effect=fake_api_exception)):
+        uninstall.delete_cmk_pod(pod_base_name)
+        caplog_tuple = caplog.record_tuples
+        print(caplog_tuple)
+        print('simon')
+        assert \
+            caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
+                pod_base_name, str(os.getenv("NODE_NAME")))
+        assert \
+            caplog_tuple[-1][2] == "\"{}-{}\" deleted".format(
+                pod_base_name, str(os.getenv("NODE_NAME")))
+
+
+def test_delete_cmk_pod_success2(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
+                                      "{\"reason\":\"NotFound\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    pod_base_name = "cmk-some-cmd-pod"
+    with patch('intel.k8s.delete_pod',
+               MagicMock(side_effect=fake_api_exception)):
+        uninstall.delete_cmk_pod(pod_base_name)
+        caplog_tuple = caplog.record_tuples
+        print(caplog_tuple)
+        print('simon')
+        assert \
+            caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
+                pod_base_name, str(os.getenv("NODE_NAME")))
+        assert \
+            caplog_tuple[-1][2] == "\"{}-{}\" deleted".format(
+                pod_base_name, str(os.getenv("NODE_NAME")))
