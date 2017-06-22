@@ -70,6 +70,8 @@
 # any objections. The United Nations Convention on Contracts for the
 # International Sale of Goods (1980) is specifically excluded and will not
 # apply to the Software.
+import logging
+
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
