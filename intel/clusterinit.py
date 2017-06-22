@@ -24,7 +24,7 @@ from intel import k8s
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_dp_cores, num_cp_cores,
                  pull_secret, serviceaccount):
-    logging.info("CA: {}".format(serviceaccount))
+    logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
 
