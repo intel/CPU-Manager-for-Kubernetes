@@ -303,5 +303,6 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
         ns_name, label_selector="app={}".format(ds_name)).to_dict()
     # There should be only one pod
     for pod in data["items"]:
+        logging.debug("Removing pod \"{}\"".format(pod["metadata"]["name"]))
         delete_pod(None, pod["metadata"]["name"], ns_name)
     return
