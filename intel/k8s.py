@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
@@ -244,5 +245,6 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
         ns_name, label_selector="app={}".format(ds_name)).to_dict()
     # There should be only one pod
     for pod in data["items"]:
+        logging.debug("Removing pod \"{}\"".format(pod["metadata"]["name"]))
         delete_pod(None, pod["metadata"]["name"], ns_name)
     return

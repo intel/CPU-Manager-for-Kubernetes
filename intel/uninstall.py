@@ -81,13 +81,13 @@ def remove_report(report_type):
 
 def delete_cmk_pod(pod_base_name, namespace="default"):
     pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
-    logging.info("Removing \"{}\" pod".format(pod_name))
+    logging.info("Removing \"{}\"".format(pod_name))
 
     try:
         if "-ds-" in pod_name:
             # Pod is part of DaemonSet - remove ds otherwise ds
             # controller will restart pod
-            logging.info("Pod \"{}\"... is part of DaemonSet".format(pod_name))
+            logging.info("\"{}\" is DaemonSet".format(pod_name))
             k8s.delete_ds(None, pod_name, namespace)
         else:
             k8s.delete_pod(None, pod_name, namespace)
@@ -98,8 +98,8 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
                 "{}".format(pod_name, err))
             sys.exit(1)
 
-        logging.warning("\"{}\" pod does not exist".format(pod_name))
-    logging.info("\"{}\" pod deleted".format(pod_name))
+        logging.warning("\"{}\" does not exist".format(pod_name))
+    logging.info("\"{}\" deleted".format(pod_name))
 
 
 def check_remove_conf_dir(conf_dir):

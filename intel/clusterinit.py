@@ -162,7 +162,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         try:
             if cmd_list:
                 cr_pod_resp = k8s.create_ds(None, pod)
-                logging.debug("Response while creating pod for {} command(s): "
+                logging.debug("Response while creating ds for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
                 cr_pod_resp = k8s.create_pod(None, pod)
