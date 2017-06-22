@@ -35,8 +35,8 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
 
     # List of intel.topology.Core objects.
     cores = []
-    for _, socket in sockets.items():
-        cores = list(socket.cores.values())
+    for socket in sockets.values():
+        cores += list(socket.cores.values())
 
     check_isolated_cores(cores, num_dp_cores, num_cp_cores)
 
