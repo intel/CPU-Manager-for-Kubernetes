@@ -41,10 +41,11 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
     check_isolated_cores(cores, num_dp_cores, num_cp_cores)
 
     # Align dp+cp cores to isolated cores if possible
-    isolated_cores = [c for c in cores if c.is_isolated()]
-    shared_cores = [c for c in cores if not c.is_isolated()]
+    isolated_cores = sockets.get_isolated_cores()
+    shared_cores = sockets.get_shared_cores()
+    cores = sockets.get_cores()
 
-    if isolated_cores:
+    if sockets.has_isolated_cores():
         logging.info("Isolated physical cores: {}".format(
             ",".join([str(c.core_id) for c in isolated_cores])))
         assign(isolated_cores, "dataplane", count=num_dp_cores)
@@ -103,8 +104,10 @@ def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
         sys.exit(1)
 
 
-def check_isolated_cores(cores, num_dp_cores, num_cp_cores):
-    isolated_cores = [c for c in cores if c.is_isolated()]
+def check_isolated_cores(sockets, num_dp_cores, num_cp_cores):
+    isolated_cores = sockets.get_isolated_cores()
+    cores = sockets.get_cores()
+    # isolated_cores = [c for c in cores if c.is_isolated()]
     num_isolated_cores = len(isolated_cores)
 
     for core in cores:

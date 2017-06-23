@@ -31,6 +31,38 @@ def discover():
     return parse(lscpu(), isol)
 
 
+class Sockets:
+    def __init__(self, sockets):
+        self.sockets = sockets
+
+    def has_isolated_cores(self):
+        for socket in self.sockets.values():
+            if socket.has_isolated_cores():
+                return True
+        return False
+
+    def get_socket(self, id):
+        return self.sockets[id]
+
+    def get_isolated_cores(self):
+        cores = {}
+        for socket in self.sockets.values():
+            cores[socket.socket_id] = socket.get_isolated()
+        return cores
+
+    def get_cores(self):
+        cores = []
+        for socket in self.sockets.values():
+            cores[socket.socket_id] = socket.get_cores()
+        return cores
+
+    def get_shared_cores(self):
+        cores = []
+        for socket in self.sockets.values():
+            cores[socket.socket_id] = socket.get_shared_cores()
+        return cores
+
+
 class Socket:
     def __init__(self, socket_id, cores=None):
         if not cores:
@@ -38,6 +70,21 @@ class Socket:
         self.socket_id = socket_id
         self.cores = OrderedDict(
             sorted(cores.items(), key=lambda pair: pair[1].core_id))
+
+    def has_isolated_cores(self):
+        for core in self.cores.values():
+            if core.is_isolated():
+                return True
+        return False
+
+    def get_cores(self):
+        return [core for core in self.cores.values()]
+
+    def get_isolated_cores(self):
+        return [core for core in self.cores.values() if core.is_isolated()]
+
+    def get_shared_cores(self):
+        return [core for core in self.cores.values() if not core.is_isolated()]
 
     def as_dict(self, include_pool=True):
         return {
@@ -131,7 +178,7 @@ def parse(lscpu_output, isolated_cpus=None):
                 cpu.isolated = True
             core.cpus[cpu_id] = cpu
 
-    return sockets
+    return Sockets(sockets)
 
 
 def lscpu():
