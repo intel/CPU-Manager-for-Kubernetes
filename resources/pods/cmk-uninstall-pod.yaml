@@ -37,7 +37,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: cmk:v0.5.0
+    image: cmk:v1.0.0
     name: cmk-uninstall-pod
     volumeMounts:
     - mountPath: "/etc/cmk"

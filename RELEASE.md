@@ -118,13 +118,13 @@ Running Vagrant locally syncs your repository directory into `/cmk` using by def
  - check whether current branch is `master` and if it's "clean"
  - fetch origin
  - check whether `CMK_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
- - check whether there is no `cmk-release-v0.5.0` branch neither locally nor remotely
- - get previous version string from `Makefile` (`version=v0.5.0`) and check
+ - check whether there is no `cmk-release-v1.0.0` branch neither locally nor remotely
+ - get previous version string from `Makefile` (`version=v1.0.0`) and check
 
 If all above checks pass, script will:
- - create local branch `cmk-release-v0.5.0`
- - replace old release string (`v0.5.0`) with new one (`v0.5.0`) in all repo files
- - commit changes with message `CMK release - version v0.5.0.`
+ - create local branch `cmk-release-v1.0.0`
+ - replace old release string (`v1.0.0`) with new one (`v1.0.0`) in all repo files
+ - commit changes with message `CMK release - version v1.0.0.`
  - push branch to origin
  - checkout to `master` branch.
 
@@ -132,7 +132,7 @@ If all above checks pass, script will:
 After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
 **What will `make_release.py` do :**
-- check latest commit message for `CMK release - version v0.5.0.` string
-- `v0.5.0` will become tag value
+- check latest commit message for `CMK release - version v1.0.0.` string
+- `v1.0.0` will become tag value
 - generate change log
 - create release with change log based on tag found in commit message

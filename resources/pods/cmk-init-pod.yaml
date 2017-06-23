@@ -32,7 +32,7 @@ spec:
     - name: NUM_CP_CORES
       # Change this to modify the value passed to `--num-cp-cores` flag.
       value: '1'
-    image: cmk:v0.5.0
+    image: cmk:v1.0.0
     name: cmk-init-pod
     volumeMounts:
     - mountPath: "/etc/cmk"
