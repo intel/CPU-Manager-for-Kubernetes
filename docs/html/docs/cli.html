@@ -54,13 +54,10 @@
               
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 
-
 <h1>
 <a id="user-content-using-the-kcm-command-line-tool" class="anchor" href="#using-the-kcm-command-line-tool" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using the <code>kcm</code> command-line tool</h1>
-
 <h2>
 <a id="user-content-usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
-
 <pre><code>kcm.
 
 Usage:
@@ -89,7 +86,7 @@ Options:
   --kcm-cmd-list=&lt;list&gt; Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.5.0].
+  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.6.0].
   --kcm-img-pol=&lt;pol&gt;   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=&lt;dir&gt;      KCM configuration directory [default: /etc/kcm].
@@ -109,10 +106,8 @@ Options:
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
 </code></pre>
-
 <h2>
 <a id="user-content-global-configuration" class="anchor" href="#global-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Global configuration</h2>
-
 <table>
 <thead>
 <tr>
@@ -139,56 +134,41 @@ Options:
 </tr>
 </tbody>
 </table>
-
 <h2>
 <a id="user-content-subcommands" class="anchor" href="#subcommands" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Subcommands</h2>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-init" class="anchor" href="#kcm-init" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm init</code>
 </h3>
-
 <p>Initializes the kcm configuration directory customized for NFV workloads,
 including three pools: <em>infra</em>, <em>controlplane</em> and <em>dataplane</em>. The
 <em>dataplane</em> pool is EXCLUSIVE while the <em>controlplane</em> and <em>infra</em> pools
 are SHARED.</p>
-
 <p>Processor topology is discovered using <a href="http://man7.org/linux/man-pages/man1/lscpu.1.html"><code>lscpu</code></a>.</p>
-
 <p>This command succeeds if the config directory is already written. If
 that is the case, logs are output saying so. If the existing
 configuration does not match the requested pool allocations, then the
 command logs at error level and exits with a nonzero status.</p>
-
 <p>For more information about the config format on disk, refer to
 <a href="config.html">the <code>kcm</code> configuration directory</a>.</p>
-
 <h4>
 <a id="user-content-core-assignment-policy" class="anchor" href="#core-assignment-policy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Core assignment policy</h4>
-
 <p>KCM isolate constrains user tasks to CPUs in the requested pool.
 However, this does not prevent other system tasks from running on reserved CPUs.
 The recommended way to resolve this problem is to use the <a href="https://github.com/torvalds/linux/blob/master/Documentation/admin-guide/kernel-parameters.txt#L1669"><code>isolcpus</code></a> Linux kernel parameter.</p>
-
 <p>KCM init discovers the value of <code>isolcpus</code> by inspecting <code>/proc/cmdline</code>.
 These isolated CPU IDs are used to construct the dataplane and controlplane pools.
- In this way, the process scheduler will avoid co-scheduling other tasks there.
- If no isolated CPUs are available, KCM will continue to operate but the only guarantee is that pools are assigned in
- a core granular manner.</p>
-
+In this way, the process scheduler will avoid co-scheduling other tasks there.
+If no isolated CPUs are available, KCM will continue to operate but the only guarantee is that pools are assigned in
+a core granular manner.</p>
 <p>The number of <em>fully isolated cores</em> should match the number of requested dataplane plus
 controlplane cores. A core is fully isolated if all the logical cpu ids for the core are
 in the <code>isolcpus</code> list.</p>
-
 <h5>
 <a id="user-content-example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example</h5>
-
 <p>An example working setup could be as follows. On a single socket system with 8 cores
 and 16 cpus, the cpu ids 0, 8 are resident on core 0, cpu ids 1, 9 are resident on core 1 and so on.</p>
-
 <p>The <code>lscpu -p</code> output from this system could be:</p>
-
 <pre><code># The following is the parsable format, which can be fed to other
 # programs. Each different item in every column has an unique ID
 # starting from zero.
@@ -210,48 +190,34 @@ and 16 cpus, the cpu ids 0, 8 are resident on core 0, cpu ids 1, 9 are resident 
 14,6,0,0,,6,6,6,0
 15,7,0,0,,7,7,7,0
 </code></pre>
-
 <p>We assign 4 cores to the dataplane pool, 1 core to the controlplane pool and the rest to the infra pool.
 Therefore, 5 physical cores must be isolated. These are the default values for <code>kcm init</code>.</p>
-
 <p>On a Ubuntu 16.04 server, <code>/etc/default/grub</code> contains:</p>
-
 <pre><code>GRUB_CMDLINE_LINUX_DEFAULT="net.ifnames=0 isolcpus=0,1,2,3,4,8,9,10,11,12"
 </code></pre>
-
 <p>The <code>isolcpus</code> list contains the cpu ids for the first 5 cores on the system.
 To verify the topology on other systems and get the cpu ids, use <code>lscpu</code> or <code>hwloc-ls</code>.
 After changing the file above, run the following:</p>
-
 <pre><code>update-grub
 </code></pre>
-
 <p>and reboot the system.</p>
-
 <p>After this, running <code>kcm init --num-dp-cores=4 --num-cp-cores=1</code> will allocate
 the first 4 cores (cpu id 0, 8, 1, 9, 2, 10, 3 and 11) for the dataplane pool,
 the next core (cpu id 4, 12) for the controlplane pool and the rest (cpu id 5,13,6,14,7,15) to the infra pool</p>
-
 <h5>
 <a id="user-content-caveats" class="anchor" href="#caveats" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Caveats</h5>
-
 <p>CPUs may be stranded, i.e. not be utilized, if they are not isolated
- in a core granular manner. For example, consider a system with 4 cpus with id 0, 1, 2, 3
- where 0 and 2 are resident on core 0 and 1 and 3 are resident on core 1. Then having
- <code>isolcpus=0,1</code> will result in two stranded cpus where data and control containers may or may not land.
+in a core granular manner. For example, consider a system with 4 cpus with id 0, 1, 2, 3
+where 0 and 2 are resident on core 0 and 1 and 3 are resident on core 1. Then having
+<code>isolcpus=0,1</code> will result in two stranded cpus where data and control containers may or may not land.
 In this case, KCM will emit warnings such as <code>WARNING:root:Physical core 1 is partially isolated</code>.</p>
-
 <p>Similarily, even fully isolated cores in excess of the number of dataplane
 plus controlplane cores will be stranded i.e. KCM will not assign any
 left over isolated cores to the infra pool. In this case, KCM will emit warnings such as
 <code>WARNING:root:Not all isolated cores will be used by data and controlplane.</code>.</p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory. This
@@ -263,27 +229,20 @@ in the dataplane pool.</li>
 <code>--num-dp-cores=&lt;num&gt;</code> Number of (physical) processor cores to include
 in the controlplane pool.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
   kcm init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-discover" class="anchor" href="#kcm-discover" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm discover</code>
 </h3>
-
 <p>Advertises the appropriate number of <code>KCM</code> <a href="http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature">Opaque Integer Resource (OIR)</a>
-slots, node label and node taint to the Kubernetes node. The number of 
-OIR slots advertised is equal to the number of cpu lists under the 
-<strong>dataplane</strong> pool, as determined by examining the <code>KCM</code> configuration directory. 
-For more information about the config format on disk, refer to 
+slots, node label and node taint to the Kubernetes node. The number of
+OIR slots advertised is equal to the number of cpu lists under the
+<strong>dataplane</strong> pool, as determined by examining the <code>KCM</code> configuration directory.
+For more information about the config format on disk, refer to
 the <a href="config.html"><code>kcm</code> configuration directory</a>.</p>
-
 <p><strong>Notes:</strong></p>
-
 <ul>
 <li>
 <code>kcm discover</code> is expected to be run as a Kubernetes Pod as it uses
@@ -292,50 +251,35 @@ the <a href="config.html"><code>kcm</code> configuration directory</a>.</p>
 cluster configuration. The <a href="operator.html#advertising-kcm-opaque-integer-resource-oir-slots">instructions</a> provided in the
 operator's manual can be used to run the discover Pod.</li>
 <li>The node will be patched with <code>pod.alpha.kubernetes.io/opaque-int-resource-kcm</code>
-OIR. </li>
-<li>The node will be labeled with <code>"kcm.intel.com/kcm-node": "true"</code> label. </li>
+OIR.</li>
+<li>The node will be labeled with <code>"kcm.intel.com/kcm-node": "true"</code> label.</li>
 <li>The node will be tainted with <code>kcm=true:NoSchedule</code> taint.</li>
-<li>The <code>KCM</code> configuration directory should exist and contain the dataplane 
+<li>The <code>KCM</code> configuration directory should exist and contain the dataplane
 pool to run <code>kcm discover</code>.</li>
 </ul>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it --volume=/etc/kcm:/etc/kcm \
   kcm discover --conf-dir=/etc/kcm</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-describe" class="anchor" href="#kcm-describe" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm describe</code>
 </h3>
-
 <p>Prints a JSON representation of the kcm configuration directory.</p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <pre><code>$ docker run -it --volume=/etc/kcm:/etc/kcm kcm describe --conf-dir=/etc/kcm
 {
   "path": "/etc/kcm",
@@ -402,34 +346,26 @@ pool to run <code>kcm discover</code>.</li>
   }
 }
 </code></pre>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-reconcile" class="anchor" href="#kcm-reconcile" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm reconcile</code>
 </h3>
-
 <p>Reconcile removes invalid process IDs from the kcm configuration directory by
 checking them against <a href="http://man7.org/linux/man-pages/man5/proc.5.html">procfs</a>. This is to recover from the case where
 <a href="#kcm-isolate"><code>kcm isolate</code></a> exits before it has a chance to remove its own
 PID from the <code>tasks</code> file. This could happen for a number of reasons, including
 receiving the KILL signal while its subprocess is executing.</p>
-
 <p><code>--interval=&lt;seconds&gt;</code> will turn the reconciliation command into a long lived
 process which runs reconciliation every <code>&lt;seconds&gt;</code>. If run with <code>--interval=0</code>,
 reconcile is run once and exits.</p>
-
 <p><code>--publish</code> will send the reconciliation report to the Kubernetes API server.
 This enables the operator to get reconciliation reports for all kubelets in one
 place through <code>kubectl</code>. This option should only be used when the KCM
 container is run as a Kubernetes Pod.</p>
-
 <p>For instance:</p>
-
 <div class="highlight highlight-source-shell"><pre>$ kubectl get ReconcileReport
 NAME            KIND
 kcm-02-zzwt7w   ReconcileReport.v1.kcm.intel.com</pre></div>
-
 <div class="highlight highlight-source-shell"><pre>$ kubectl get ReconcileReport kcm-02-zzwt7w -o json
 {
   <span class="pl-s"><span class="pl-pds">"</span>apiVersion<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>kcm.intel.com/v1<span class="pl-pds">"</span></span>,
@@ -448,16 +384,11 @@ kcm-02-zzwt7w   ReconcileReport.v1.kcm.intel.com</pre></div>
     <span class="pl-s"><span class="pl-pds">"</span>reclaimedCpuLists<span class="pl-pds">"</span></span>: []
   }
 }</pre></div>
-
 <p><em><strong>NOTE:</strong> This subcommand requires the <code>KCM_PROC_FS</code> environment variable
 to be set.</em></p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
@@ -467,62 +398,46 @@ to be set.</em></p>
 <code>--interval=&lt;seconds&gt;</code> Number of seconds to wait between rerunning. If set
 to 0, will only run once.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e <span class="pl-s"><span class="pl-pds">"</span>KCM_PROC_FS=/host/proc<span class="pl-pds">"</span></span> \
   kcm reconcile --interval=60 --conf-dir=/etc/kcm</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-isolate" class="anchor" href="#kcm-isolate" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm isolate</code>
 </h3>
-
 <p>Constrains a command to the CPUs corresponding to an available CPU list
 in a supplied pool.</p>
-
 <p>If the requested pool is exclusive, the command may fail if there are no
 unallocated CPU lists in the pool. An unallocated CPU list is one where the
 <code>tasks</code> file is empty; see <a href="config.html">the <code>kcm</code> configuration format</a> for
 details.)</p>
-
 <p>If the requested pool is non-exclusive, any CPU list in that pool may be
 chosen, regardless of current allocations.</p>
-
 <p><code>kcm isolate</code> writes its own PID into the selected <code>tasks</code> file before
 executing the command in a sub-shell. When the subprocess exits, the program
-removes the PID from the <code>tasks</code> file before exiting. If the <code>kcm
-isolate</code> process exits abnormally (or receives the KILL signal) then the
+removes the PID from the <code>tasks</code> file before exiting. If the <code>kcm isolate</code> process exits abnormally (or receives the KILL signal) then the
 <code>tasks</code> file may not be cleaned up. The <a href="#kcm-reconcile"><code>kcm reconcile</code></a>
 subcommand is designed to resolve this problem, and must be run
 frequently on any host where <code>kcm isolate</code> is used.</p>
-
 <p><code>kcm isolate</code> sets the <code>KCM_CPUS_ASSIGNED</code>  variable in the child process'
 environment. The value is the assigned CPU list from the requested pool,
 formatted as a Linux <a href="http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS">CPU list</a> string.</p>
-
 <p>Core affinity is achieved by first setting the CPU mask of the <code>kcm</code>
 process before executing the command. This step can be turned off by
 supplying the <code>--no-affinity</code> flag.</p>
-
 <p><em><strong>NOTE:</strong> This subcommand requires the <code>KCM_PROC_FS</code> environment variable
 to be set.</em></p>
-
 <p><strong>Args:</strong></p>
-
 <ul>
 <li>
 <code>&lt;command&gt;</code> Command to isolate.</li>
 <li>
 <code>&lt;args&gt; ...</code> Command arguments.</li>
 </ul>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
@@ -530,76 +445,54 @@ to be set.</em></p>
 <code>--pool=&lt;pool&gt;</code>    Pool name: either <em>infra</em>, <em>controlplane</em> or <em>dataplane</em>.</li>
 <li>
 <code>--no-affinity</code>    Do not set cpu affinity before forking the child
-                 command. In this mode the user program is responsible
-                 for reading the <code>KCM_CPUS_ASSIGNED</code> environment
-                 variable and moving a subset of its own processes and/or
-                 tasks to the assigned CPUs.</li>
+command. In this mode the user program is responsible
+for reading the <code>KCM_CPUS_ASSIGNED</code> environment
+variable and moving a subset of its own processes and/or
+tasks to the assigned CPUs.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it \
   --volume=/opt/bin/kcm:/host/opt/bin/kcm \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e <span class="pl-s"><span class="pl-pds">"</span>KCM_PROC_FS=/host/proc<span class="pl-pds">"</span></span> \
   centos /host/opt/bin/kcm isolate --pool=infra sleep -- inf</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-install" class="anchor" href="#kcm-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm install</code>
 </h3>
-
 <p>Builds a zero-dependency <code>kcm</code> executable in the installation directory.</p>
-
 <p>Use install to place <code>kcm</code> on the host filesystem. Subsequent containers
 can isolate themselves by mounting the install directory from the host and
 then calling <a href="#kcm-isolate"><code>kcm isolate</code></a>.</p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--install-dir=&lt;dir&gt;</code> KCM install directory.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <p><em><strong>NOTE:</strong> On CoreOS, /usr is readonly so here we use /opt/bin instead,
 which is both writable and on the path.</em></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it \
   --volume=/opt/bin:/opt/bin:rw \
   kcm install --install-dir=/opt/bin</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-node-report" class="anchor" href="#kcm-node-report" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm node-report</code>
 </h3>
-
 <p>Outputs a JSON report on node-level KCM configuration.</p>
-
 <p><code>--publish</code> will send the node report to the Kubernetes API server.
 This enables the operator to get node reports for all kubelets in one
 place through <code>kubectl</code>. This option should only be used when the KCM
 container is run as a Kubernetes Pod.</p>
-
 <p><code>--interval=&lt;seconds&gt;</code> will turn the node-report command into a long lived
 process which runs node-report every <code>&lt;seconds&gt;</code>. If run with <code>--interval=0</code>,
 node-report is run once and exits.</p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
@@ -609,23 +502,17 @@ node-report is run once and exits.</p>
 <code>--interval=&lt;seconds&gt;</code> Number of seconds to wait between rerunning. If set
 to 0, will only run once.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <p><em>Generate a node report:</em></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it \
   --volume=/etc/kcm:/etc/kcm \
   --volume=/proc:/host/proc:ro \
   -e <span class="pl-s"><span class="pl-pds">"</span>KCM_PROC_FS=/host/proc<span class="pl-pds">"</span></span> \
   kcm node-report --conf-dir=/etc/kcm --interval=60</pre></div>
-
 <p><em>Get node reports from the API server using Kubectl:</em></p>
-
 <div class="highlight highlight-source-shell"><pre>$ kubectl get NodeReport
 NAME            KIND
 kcm-02-zzwt7w   NodeReport.v1.kcm.intel.com</pre></div>
-
 <div class="highlight highlight-source-shell"><pre>$ kubectl get NodeReport kcm-02-zzwt7w -o json
 {
   <span class="pl-s"><span class="pl-pds">"</span>apiVersion<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>kcm.intel.com/v1<span class="pl-pds">"</span></span>,
@@ -788,20 +675,15 @@ kcm-02-zzwt7w   NodeReport.v1.kcm.intel.com</pre></div>
     }
   }
 }</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-cluster-init" class="anchor" href="#kcm-cluster-init" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm cluster-init</code>
 </h3>
-
 <p>Initializes a Kubernetes cluster for the <code>KCM</code> software. It runs <code>KCM</code>
 subcommands, passed as comma-seperated values to <code>--kcm-cmd-list</code>, as
-Kubernetes Pods. By default, it runs all the subcommands and uses all the 
-default options. </p>
-
+Kubernetes Pods. By default, it runs all the subcommands and uses all the
+default options.</p>
 <p><strong>Notes:</strong></p>
-
 <ul>
 <li>
 <code>kcm cluster-init</code> is expected to be run as a Kubernetes Pod as it uses
@@ -816,13 +698,9 @@ in <code>--kcm-cmd-list</code>.</li>
 <li>
 <code>--kcm-img-pol</code> should be one of <code>Never</code>, <code>IfNotPresent</code>, <code>Always</code>.</li>
 </ul>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--host-list=&lt;list&gt;</code> Comma seperated list of Kubernetes nodes to prepare
@@ -851,20 +729,14 @@ in the controlplane pool.</li>
 <code>--pull-secret=&lt;name&gt;</code>  Name of secret used for pulling Docker images from
 restricted Docker registry.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it --volume=/etc/kcm:/etc/kcm:rw \
   kcm cluster-init --conf-dir=/etc/kcm --num-dp-cores=4 --num-cp-cores=1</pre></div>
-
 <hr>
-
 <h3>
 <a id="user-content-kcm-uninstall" class="anchor" href="#kcm-uninstall" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm uninstall</code>
 </h3>
-
 <p>Removes <code>kcm</code> from a node. Uninstall process reverts <code>kcm cluster-init</code>:</p>
-
 <ul>
 <li>deletes <code>kcm-reconcile-nodereport-pod-{node}</code> if present</li>
 <li>removes <code>NodeReport</code> from Kubernetes ThirdPartyResources if present</li>
@@ -876,37 +748,28 @@ restricted Docker registry.</li>
 </li>
 <li>removes kcm binary from <code>--install-dir=&lt;dir&gt;</code>, if binary is not present then throws an error</li>
 </ul>
-
 <p><strong>Notes:</strong>
 As described above "if present" indicates whether there isn't anything to delete/remove,
 uninstall process will not fail and proceed to the next step. This allows <code>kcm uninstall</code> command
 to fully purge inconsistent environment i.e. of some failures in <code>kcm cluster-init</code></p>
-
 <p>Removing <code>--conf-dir=&lt;dir&gt;</code> requires no processes present on system that use <code>kcm isolate</code>
-(with entry in configuration directory). Please stop/remove them otherwise <code>kcm uninstall</code> will 
-throw an error in that step and uninstall will fail. 
+(with entry in configuration directory). Please stop/remove them otherwise <code>kcm uninstall</code> will
+throw an error in that step and uninstall will fail.
 For this reason <code>kcm uninstall</code> cannot be run through <code>kcm isolate</code>.</p>
-
 <p><strong>Args:</strong></p>
-
 <p><em>None</em></p>
-
 <p><strong>Flags:</strong></p>
-
 <ul>
 <li>
 <code>--conf-dir=&lt;dir&gt;</code> Path to the KCM configuration directory.</li>
 <li>
 <code>--install-dir=&lt;dir&gt;</code> KCM installation directory.</li>
 </ul>
-
 <p><strong>Example:</strong></p>
-
 <div class="highlight highlight-source-shell"><pre>$ docker run -it \
 --volume=/etc/kcm:/etc/kcm:rw \
 --volume=/opt/bin:/opt/bin:rw \
   kcm uninstall</pre></div>
-
 <hr>
 
               </article>

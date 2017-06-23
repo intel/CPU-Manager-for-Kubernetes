@@ -54,25 +54,19 @@
               
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 
-
 <h1>
 <a id="user-content-kcm-user-manual" class="anchor" href="#kcm-user-manual" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>kcm</code> user manual</h1>
-
 <p>This doc is for application owners who need to deploy containers with
 core affinity requirements on Kubernetes.</p>
-
 <p>Here we assume that the cluster is already properly configured. For
 information on how to set up the cluster with <code>kcm</code> enabled, see the
 <a href="operator.html"><code>kcm</code> operator manual</a>.</p>
-
 <h2>
 <a id="user-content-pod-configuration" class="anchor" href="#pod-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pod configuration</h2>
-
 <p>The only KCM CLI subcommand users (pod authors) need to know about is
 <a href="cli.html#kcm-isolate">kcm isolate</a>. The <code>isolate</code> subcommand consults shared state
 on the host file system to acquire and bookkeep an assigned subset of CPUs
 a command should run on.</p>
-
 <p><strong>ALERT:</strong> It's easy to accidentally break out of <code>kcm isolate</code> with a malformed
 shell command in user pod specs. For example:
 <code>kcm isolate echo foo &amp;&amp; sleep 100</code> isolates <em>only the execution of <code>echo</code></em>!
@@ -80,11 +74,8 @@ The assigned CPUs are wrongly freed early when <code>kcm</code> returns. To avoi
 situation, avoid forking in the shell command, or alternately isolate a shell
 and wrap your complex command:
 <code>kcm isolate --pool=&lt;pool&gt; /bin/bash -- -c "foo &amp;&amp; bar || baz"</code></p>
-
 <p><a href="images/user-container.svg" target="_blank"><img src="images/user-container.svg" alt="User container diagram" style="max-width:100%;"></a></p>
-
 <p>The figure illustrates a few important points:</p>
-
 <ul>
 <li>The <a href="config.html">KCM configuration directory</a> must be mounted into the
 container at a path that matches the value of <code>--config-dir</code>.</li>
@@ -98,7 +89,6 @@ filesystem so it can be mounted and used from user containers without forcing
 them to build <code>kcm</code> into their images. By default these docs assume the
 binary is available on the host filesystem at <code>/opt/bin/kcm</code>.</li>
 </ul>
-
 <p>For a complete example, see the <a href="../resources/pods/kcm-isolate-pod.yaml">kcm isolate pod template</a>.</p>
 
               </article>
