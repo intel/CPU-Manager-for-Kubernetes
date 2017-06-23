@@ -54,20 +54,15 @@
               
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 
-
 <h1>
 <a id="user-content-the-kcm-configuration-directory" class="anchor" href="#the-kcm-configuration-directory" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The <code>kcm</code> configuration directory</h1>
-
 <p>KCM checkpoints state in a directory structure on disk. The checkpoint
 describes all configured "pools" and their options, the "CPU lists" for
 those pools, and the "tasks" currently assigned to each CPU list. The
 directory format is described below.</p>
-
 <h2>
 <a id="user-content-kcm-filesystem-configuration-format" class="anchor" href="#kcm-filesystem-configuration-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>KCM filesystem configuration format</h2>
-
 <p><em>Example:</em></p>
-
 <pre><code>etc
 └── kcm
     ├── lock
@@ -91,9 +86,7 @@ directory format is described below.</p>
             │   └── tasks
             └── exclusive
 </code></pre>
-
 <p><em>Where:</em></p>
-
 <table>
 <thead>
 <tr>
@@ -124,18 +117,13 @@ directory format is described below.</p>
 </tr>
 </tbody>
 </table>
-
 <h2>
 <a id="user-content-creating-a-new-configuration" class="anchor" href="#creating-a-new-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating a new configuration</h2>
-
 <p>KCM can set up its own initial state. See <a href="cli.html#kcm-init"><code>kcm init</code></a> doc for more
 information.</p>
-
 <h2>
 <a id="user-content-configuration-changes-over-time" class="anchor" href="#configuration-changes-over-time" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration changes over time</h2>
-
 <p><code>kcm</code> updates the configuration as follows:</p>
-
 <ul>
 <li>The operator creates the initial configuration on each host, either manually
 or by using the <a href="cli.html#kcm-init"><code>kcm init</code></a> helper program.</li>

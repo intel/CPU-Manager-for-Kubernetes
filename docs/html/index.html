@@ -54,25 +54,18 @@
               
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 
-
 <h1>
 <a id="user-content-kubernetes-comms-mvp" class="anchor" href="#kubernetes-comms-mvp" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>kubernetes-comms-mvp</h1>
-
 <p><a href="https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp"><img src="https://camo.githubusercontent.com/a68e1c740aad3c34396ca486df66a2474eac07d7/68747470733a2f2f7472617669732d63692e636f6d2f696e74656c7364692d782f6b756265726e657465732d636f6d6d732d6d76702e7376673f746f6b656e3d616a795a356f73795835484e6a735575356d756a266272616e63683d6d6173746572" alt="Build Status" data-canonical-src="https://travis-ci.com/intelsdi-x/kubernetes-comms-mvp.svg?token=ajyZ5osyX5HNjsUu5muj&amp;branch=master" style="max-width:100%;"></a></p>
-
 <h2>
 <a id="user-content-overview" class="anchor" href="#overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
-
 <p>This project provides basic core affinity for NFV-style workloads on top
 of vanilla Kubernetes v1.5+.</p>
-
 <p>This project ships a single multi-use command-line program to perform
 various functions for host configuration, managing groups of CPUs, and
 constraining workloads to specific CPUs.</p>
-
 <h2>
 <a id="user-content-concepts" class="anchor" href="#concepts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Concepts</h2>
-
 <table>
 <thead>
 <tr>
@@ -103,10 +96,8 @@ constraining workloads to specific CPUs.</p>
 </tr>
 </tbody>
 </table>
-
 <h2>
 <a id="user-content-usage-summary" class="anchor" href="#usage-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage summary</h2>
-
 <pre><code>kcm.
 
 Usage:
@@ -135,7 +126,7 @@ Options:
   --kcm-cmd-list=&lt;list&gt; Comma seperated list of KCM sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.5.0].
+  --kcm-img=&lt;img&gt;       KCM Docker image [default: kcm:v0.6.0].
   --kcm-img-pol=&lt;pol&gt;   Image pull policy for the KCM Docker image
                         [default: IfNotPresent].
   --conf-dir=&lt;dir&gt;      KCM configuration directory [default: /etc/kcm].
@@ -153,13 +144,10 @@ Options:
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
 </code></pre>
-
 <p><em>For detailed usage information about each subcommand, see
 <a href="docs/cli.html">Using the kcm command-line tool</a>.</em></p>
-
 <h2>
 <a id="user-content-further-reading" class="anchor" href="#further-reading" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Further Reading</h2>
-
 <ul>
 <li><a href="docs/build.html">Building kcm</a></li>
 <li><a href="docs/operator.html">Operator manual</a></li>
@@ -167,7 +155,8 @@ Options:
 <li><a href="docs/cli.html">Using the kcm command-line tool</a></li>
 <li><a href="docs/config.html">The kcm configuration directory</a></li>
 <li><a href="docs/end-to-end-tests.html">End to end tests</a></li>
-<li><a href="RELEASE.html">Making release</a></li>
+<li>[Making release] <a href="RELEASE.html">release</a>
+</li>
 </ul>
 
               </article>
