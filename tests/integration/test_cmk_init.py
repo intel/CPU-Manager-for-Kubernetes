@@ -22,7 +22,7 @@ import subprocess
 
 
 # Physical CPU cores on the first socket.
-cores = topology.parse(topology.lscpu())[0].cores
+cores = topology.parse(topology.lscpu()).get_socket(0).cores
 
 proc_env_ok = {
     proc.ENV_PROC_FS: helpers.procfs_dir("ok"),

@@ -62,7 +62,7 @@ def test_init_success1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
@@ -116,7 +116,7 @@ def test_init_success2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
@@ -167,7 +167,7 @@ def test_init_success3(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
@@ -193,7 +193,7 @@ def test_init_failure1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -204,7 +204,7 @@ def test_init_failure1(monkeypatch):
                 3: topology.CPU(3)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
@@ -216,7 +216,7 @@ def test_init_failure2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -227,7 +227,7 @@ def test_init_failure2(monkeypatch):
                 5: topology.CPU(5)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
@@ -242,7 +242,7 @@ def test_init_failure3(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -257,7 +257,7 @@ def test_init_failure3(monkeypatch):
                 6: topology.CPU(6)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
