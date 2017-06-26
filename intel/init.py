@@ -31,30 +31,37 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         check_assignment(conf_dir, num_dp_cores, num_cp_cores)
         return
 
-    sockets = topology.discover()
+    platform = topology.discover()
 
     # List of intel.topology.Core objects.
-    cores = []
-    for socket in sockets.values():
-        cores += list(socket.cores.values())
+    cores = platform.get_cores()
 
-    check_isolated_cores(cores, num_dp_cores, num_cp_cores)
+    check_isolated_cores(platform, num_dp_cores, num_cp_cores)
 
     # Align dp+cp cores to isolated cores if possible
-    isolated_cores = sockets.get_isolated_cores()
-    shared_cores = sockets.get_shared_cores()
-    cores = sockets.get_cores()
+    # isolated_cores = sockets.get_isolated_cores()
+    # shared_cores = sockets.get_shared_cores()
+    # cores = sockets.get_cores()
 
-    if sockets.has_isolated_cores():
+    if platform.has_isolated_cores():
         logging.info("Isolated physical cores: {}".format(
-            ",".join([str(c.core_id) for c in isolated_cores])))
-        assign(isolated_cores, "dataplane", count=num_dp_cores)
-        assign(isolated_cores, "controlplane", count=num_cp_cores)
-        assign(shared_cores, "infra")
+            ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
+
+        dataplane_cores = platform.get_dataplane_cores(num_dp_cores,
+                                                       isolated=True)
+        controlplane_cores = platform.get_isolated_cores()
+        infra_cores = platform.get_shared_cores()
+
+        assign(dataplane_cores, "dataplane", count=num_dp_cores)
+        assign(controlplane_cores, "controlplane", count=num_cp_cores)
+        assign(infra_cores, "infra")
     else:
         logging.info("No isolated physical cores detected: allocating "
                      "control plane and data plane from full core list")
-        assign(cores, "dataplane", count=num_dp_cores)
+
+        dataplane_cores = platform.get_dataplane_cores(num_dp_cores)
+
+        assign(dataplane_cores, "dataplane", count=num_dp_cores)
         assign(cores, "controlplane", count=num_cp_cores)
         assign(cores, "infra")
 
@@ -104,9 +111,9 @@ def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
         sys.exit(1)
 
 
-def check_isolated_cores(sockets, num_dp_cores, num_cp_cores):
-    isolated_cores = sockets.get_isolated_cores()
-    cores = sockets.get_cores()
+def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
+    isolated_cores = platform.get_isolated_cores()
+    cores = platform.get_cores()
     # isolated_cores = [c for c in cores if c.is_isolated()]
     num_isolated_cores = len(isolated_cores)
 

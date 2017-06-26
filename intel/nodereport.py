@@ -61,7 +61,7 @@ def generate_report(conf_dir):
     report = NodeReport()
     check_describe(report, conf_dir)
     check_cmk_config(report, conf_dir)
-    for socket in topology.discover().values():
+    for socket in topology.discover().sockets.values():
         report.add_socket(socket)
     return report
 

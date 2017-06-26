@@ -31,7 +31,7 @@ def discover():
     return parse(lscpu(), isol)
 
 
-class Sockets:
+class Platform:
     def __init__(self, sockets):
         self.sockets = sockets
 
@@ -45,22 +45,47 @@ class Sockets:
         return self.sockets[id]
 
     def get_isolated_cores(self):
-        cores = {}
+        cores = []
         for socket in self.sockets.values():
-            cores[socket.socket_id] = socket.get_isolated()
+            cores += socket.get_isolated_cores()
         return cores
 
     def get_cores(self):
         cores = []
         for socket in self.sockets.values():
-            cores[socket.socket_id] = socket.get_cores()
+            cores += socket.get_cores()
         return cores
 
     def get_shared_cores(self):
         cores = []
         for socket in self.sockets.values():
-            cores[socket.socket_id] = socket.get_shared_cores()
+            cores += socket.get_shared_cores()
         return cores
+
+    def get_dataplane_cores(self, count, isolated=False):
+        cores = []
+
+        for socket in self.sockets.values():
+            if isolated:
+                socket_cores = socket.get_isolated_cores()
+            else:
+                socket_cores = socket.get_cores()
+
+            if len(socket_cores) >= count:
+                logging.info("Socket with required number of cores has been "
+                             "found: {}".format(socket.socket_id))
+                cores = socket_cores
+                break
+
+        if not cores:
+            logging.warning("Socket with required number of cores has not "
+                            "been found")
+            if isolated:
+                cores = self.get_isolated_cores()
+            else:
+                cores = self.get_cores()
+
+        return cores[:count]
 
 
 class Socket:
@@ -178,7 +203,7 @@ def parse(lscpu_output, isolated_cpus=None):
                 cpu.isolated = True
             core.cpus[cpu_id] = cpu
 
-    return Sockets(sockets)
+    return Platform(sockets)
 
 
 def lscpu():

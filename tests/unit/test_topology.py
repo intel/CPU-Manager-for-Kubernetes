@@ -24,9 +24,9 @@ def test_init_topology_one_core():
 """
 
     sockets = topology.parse(lscpu)
-    assert len(sockets) is 1
+    assert len(sockets.sockets) is 1
 
-    cores = sockets[0].cores
+    cores = sockets.get_socket(0).cores
     assert len(cores) is 1
     assert 0 in cores
     assert cores[0].cpu_ids() == [0]
@@ -42,9 +42,9 @@ def test_init_topology_two_cores():
 """
 
     sockets = topology.parse(lscpu)
-    assert len(sockets) == 1
+    assert len(sockets.sockets) == 1
 
-    cores = sockets[0].cores
+    cores = sockets.get_socket(0).cores
     assert len(cores) == 2
     assert 0 in cores
     assert 1 in cores
@@ -68,9 +68,9 @@ def test_init_topology_one_socket():
 """
 
     sockets = topology.parse(lscpu)
-    assert len(sockets) == 1
+    assert len(sockets.sockets) == 1
 
-    cores = sockets[0].cores
+    cores = sockets.get_socket(0).cores
     assert len(cores) == 4
     assert 0 in cores
     assert 1 in cores
@@ -117,9 +117,9 @@ def test_topology_isolated_one_socket():
 
     isolated_cpus = [0, 4, 1, 5]
     sockets = topology.parse(lscpu, isolated_cpus)
-    assert len(sockets) == 1
+    assert len(sockets.sockets) == 1
 
-    cores = sockets[0].cores
+    cores = sockets.get_socket(0).cores
 
     assert len(cores) == 4
     assert 0 in cores
@@ -140,23 +140,23 @@ def test_topology_isolated_one_socket():
     # reported as isolated.
     isolated_cpus = [0, 1]
     sockets = topology.parse(lscpu, isolated_cpus)
-    assert len(sockets) is 1
-    cores = sockets[0].cores.values()
+    assert len(sockets.sockets) is 1
+    cores = sockets.get_socket(0).cores.values()
     assert len(cores) is 4
     assert len([c for c in cores if c.is_isolated()]) is 0
 
     # Test case where all discovered cores are isolated.
     isolated_cpus = list(range(8))
     sockets = topology.parse(lscpu, isolated_cpus)
-    assert len(sockets) is 1
-    cores = sockets[0].cores.values()
+    assert len(sockets.sockets) is 1
+    cores = sockets.get_socket(0).cores.values()
     assert len(cores) is 4
     assert len([c for c in cores if c.is_isolated()]) is 4
 
     # Test case where superset of discovered cores are isolated.
     isolated_cpus = list(range(9))
     sockets = topology.parse(lscpu, isolated_cpus)
-    assert len(sockets) is 1
-    cores = sockets[0].cores.values()
+    assert len(sockets.sockets) is 1
+    cores = sockets.get_socket(0).cores.values()
     assert len(cores) is 4
     assert len([c for c in cores if c.is_isolated()]) is 4
