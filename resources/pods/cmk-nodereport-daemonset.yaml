@@ -41,7 +41,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: cmk:v1.0.0
+        image: cmk:v1.0.1
         name: cmk-nodereport
         volumeMounts:
         - mountPath: "/host/proc"
