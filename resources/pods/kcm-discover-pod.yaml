@@ -89,7 +89,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: kcm:v0.6.0
+    image: kcm:v0.6.1
     name: kcm-discover-pod
     volumeMounts:
     - mountPath: "/etc/kcm"
