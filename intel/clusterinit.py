@@ -214,13 +214,13 @@ def run_cmd_pods(cmd_list, cmd_init_list, kcm_img, kcm_img_pol, conf_dir,
     for node_name in kcm_node_list:
         if cmd_list:
             update_pod_with_node_details(pod, node_name, cmd_list)
-            pod = k8s.ds_from(pod=pod)
+            daemon_set = k8s.ds_from(pod=pod)
         elif cmd_init_list:
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
             if cmd_list:
-                cr_pod_resp = k8s.create_ds(None, pod)
+                cr_pod_resp = k8s.create_ds(None, daemon_set)
                 logging.debug("Response while creating ds for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
