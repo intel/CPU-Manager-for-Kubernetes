@@ -16,15 +16,15 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: cmk-uninstall-all
+    app: cmk-uninstall-all-nodes
   annotations:
     "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-uninstall-all
+  name: cmk-uninstall-all-nodes
 spec:
   template:
     metadata:
       labels:
-        app: cmk-uninstall-all
+        app: cmk-uninstall-all-nodes
     spec:
       nodeSelector:
         "cmk.intel.com/cmk-node": "true"
@@ -42,7 +42,7 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         image: cmk:v1.0.1
-        name: cmk-uninstall-all
+        name: cmk-uninstall-all-nodes
         volumeMounts:
         - mountPath: "/etc/cmk"
           name: cmk-conf-dir
@@ -60,6 +60,6 @@ spec:
           path: "/etc/cmk"
         name: cmk-conf-dir
       - hostPath:
-      # Change this to modify the CMK installation dir in the host file system.
+          # Change this to modify the CMK installation dir in the host file system.
           path: "/opt/bin"
         name: cmk-install-dir
