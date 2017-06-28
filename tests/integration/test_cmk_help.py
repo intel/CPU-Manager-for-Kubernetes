@@ -26,8 +26,9 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>]
+                   [--saname=<name>] [--socket-id=<num>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+           [--socket-id=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -62,6 +63,9 @@ Options:
                         restricted Docker registry.
   --saname=<name>       ServiceAccount name to pass
                         [default: cmk-serviceaccount].
+  --socket-id=<num>     ID of socket, which should deliver cores for
+                        dataplane. If it's set to -1 then dataplane
+                        will be spawned on any socket [default: -1].
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `CMK_CPUS_ASSIGNED` environment

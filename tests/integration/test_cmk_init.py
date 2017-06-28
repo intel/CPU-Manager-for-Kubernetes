@@ -47,6 +47,7 @@ def test_cmk_init_exists():
 
 def test_cmk_init_wrong_assignment():
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(helpers.conf_dir("ok"))]
@@ -82,6 +83,7 @@ def test_cmk_init_isolated_cores_mismatch():
     }
 
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
@@ -100,6 +102,7 @@ def test_cmk_init_partial_isolation():
     }
 
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
@@ -113,6 +116,7 @@ def test_cmk_init_partial_isolation():
 
 def test_cmk_init_insufficient_cores():
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=10",
             "--num-cp-cores=5",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
