@@ -31,25 +31,28 @@ _Related:_
 Kubernetes >= v1.5.0
 
 ### Kubernetes preparation
-All of template manifests provided with CMK are using serviceaccount which is defined in
-[`cmk-serviceaccount`][cmk-serviceaccount] manifest. Before first CMK run, operator should use it to
-define `cmk-serviceaccount`. This step isn't obligatory on Kubernetes 1.5 but it's strongly recomended. Kubernetes 1.6
-requires it because of RBAC authorization method which will use it to deliver API access from inside of CMK pod(s).
+All of template manifests provided with CMK are using serviceaccount which is
+defined in [`cmk-serviceaccount`][cmk-serviceaccount] manifest. Before first
+CMK run, operator should use it to define `cmk-serviceaccount`. This step isn't
+obligatory on Kubernetes 1.5 but it's strongly recomended. Kubernetes 1.6
+requires it because of RBAC authorization method which will use it to deliver
+API access from inside of CMK pod(s).
 
 #### Kubernetes 1.6
-From Kubernetes 1.6 [RBAC][RBAC] has became default authorization method. Operator needs to prepare additional
-[ClusterRole][ClusterRole] and [ClusterRoleBindings][ClusterRoleBindings] to be able spawn CMK on this version of
-Kubernetes. CMK is providing their definitions in [`cmk-rbac-rules`][cmk-rbac-rules] manifest. In this case operator
+From Kubernetes 1.6 [RBAC][RBAC] has became default authorization method.
+Operator needs to prepare additional [ClusterRole][ClusterRole] and
+[ClusterRoleBindings][ClusterRoleBindings] in order to deploy CMK.Those are
+provided in [`cmk-rbac-rules`][cmk-rbac-rules] manifest. In this case operator
 must also use provided serviceaccount manifest as well.
 
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.
 
-Notes: 
+Notes:
 - The recommended way to prepare Kubernetes nodes for the `CMK` software is to run `cmk cluster-init` as a Pod as
 described in [cluster setup instructions using `cmk cluster-init`][cluster-init-op-manual].
-- The [cluster setup instructions using manually created Pods][indvidual-pods-op-manual] should only be used if and 
+- The [cluster setup instructions using manually created Pods][indvidual-pods-op-manual] should only be used if and
 only if running `cmk cluster-init` fails for some reason.
 
 ### TL;DR
@@ -66,41 +69,41 @@ Prepare the nodes by running `cmk cluster-init` using these [instructions][clust
 | :------------- | :------ |
 | `CMK` nodes    | The operator can choose any number of nodes in the kubernetes cluster to work with `CMK`. These participating nodes will be referred as `CMK` nodes. |
 | Pod            | A Pod is an abstraction in Kubernetes to represent one or more containers and their configuration. It is the smallest schedulable unit in Kubernetes. |
-| OIR            | Acronym for [Opaque Integer Resource][oir-docs]. In Kubernetes, OIR allow cluster operators to advertise new node-level resources that would be otherwise unknown to the system. | 
-| Volume         | A volume is a directory (on host file system). In Kubernetes, a volume has the same lifetime as the Pod that uses it. Many types of volumes are supported in Kubernetes. | 
-| `hostPath`       | `hostPath` is a volume type in Kubernetes. It mounts a file or directory from the host file system into the Pod. | 
+| OIR            | Acronym for [Opaque Integer Resource][oir-docs]. In Kubernetes, OIR allow cluster operators to advertise new node-level resources that would be otherwise unknown to the system. |
+| Volume         | A volume is a directory (on host file system). In Kubernetes, a volume has the same lifetime as the Pod that uses it. Many types of volumes are supported in Kubernetes. |
+| `hostPath`       | `hostPath` is a volume type in Kubernetes. It mounts a file or directory from the host file system into the Pod. |
 
 ### Prepare `CMK` nodes by running `cmk cluster-init`.
 `CMK` nodes can be prepared by using [`cmk cluster-init`][cmk-cluster-init] subcommand. The subcommand is expected to
 be run as a pod. The [cmk-cluster-init-pod template][cluster-init-template] can be used to run `cmk cluster-init` on a
-Kubernetes cluster. When run on a Kubernetes cluster, the Pod spawns two Pods per node at most in order to prepare 
+Kubernetes cluster. When run on a Kubernetes cluster, the Pod spawns two Pods per node at most in order to prepare
 each node.
 
 The only value that requires change in the [cmk-cluster-init-pod template][cmk-cluster-init] is the `args` field,
-which can be modified to pass different options. 
+which can be modified to pass different options.
 
-Following are some example modifications to the `args` field: 
+Following are some example modifications to the `args` field:
 ```yml
   - args:
-      # Change this value to pass different options to cluster-init. 
+      # Change this value to pass different options to cluster-init.
       - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3"
 ```
 The above command prepares nodes "node1", "node2" and "node3" for the `CMK` software using default options.
 
 ```yml
   - args:
-      # Change this value to pass different options to cluster-init. 
+      # Change this value to pass different options to cluster-init.
       - "/cmk/cmk.py cluster-init --all-hosts"
 ```
 The above command prepares all the nodes in the Kubernetes cluster for the `CMK` software using default options.
 
 ```yml
   - args:
-      # Change this value to pass different options to cluster-init. 
+      # Change this value to pass different options to cluster-init.
       - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --cmk-cmd-list=init,discover"
 ```
 The above command prepares nodes "node1", "node2" and "node3" but only runs the `cmk init` and `cmk discover`
-subcommands on each of those nodes. 
+subcommands on each of those nodes.
 
 For more details on the options provided by `cmk cluster-init`, see this [description][cmk-cluster-init].
 
@@ -109,7 +112,7 @@ For more details on the options provided by `cmk cluster-init`, see this [descri
 Notes:
 - The instructions provided in this section should only be used if and only if running `cmk cluster-init` fails
 for some reason.
-- The subcommands described below should be run in the same order. 
+- The subcommands described below should be run in the same order.
 - The documentation in this section assumes that the `CMK` configuration directory is `/etc/cmk` and the `cmk`
 binary is installed on the host under `/opt/bin`.
 - In all the pod templates used in this section, the name of container image used is `cmk:v1.0.1`. It is expected that the
@@ -123,8 +126,8 @@ The `CMK` nodes in the kubernetes cluster should be initialized in order to be u
 `cmk init` takes the `--conf-dir`, `--num-dp-cores` and the `--num-cp-cores` flags. In the
 [cmk-init-pod template][init-template], the values to these flags can be modified. The value for `--conf-dir` can be
 set by changing the `path` value of the `hostPath` for the `cmk-conf-dir`. The value for `--num-dp-cores` and
-`--num-cp-cores` can be set by changing the values for the `NUM_DP_CORES` and `NUM_CP_CORES` environment variables, 
-respectively. 
+`--num-cp-cores` can be set by changing the values for the `NUM_DP_CORES` and `NUM_CP_CORES` environment variables,
+respectively.
 
 Values that might require modification in the [cmk-init-pod template][init-template] are shown as snippets below:
 
@@ -149,7 +152,7 @@ Values that might require modification in the [cmk-init-pod template][init-templ
 #### Advertising `CMK` Opaque Integer Resource (OIR) slots
 All the `CMK` nodes in the Kubernetes cluster should be patched with `CMK` [OIR][oir-docs] slots using
 [`cmk discover`][cmk-discover]. The OIR slots are advertised as the dataplane pools need to be allocated exclusively.
-The number of slots advertised should be equal to the number of cpu lists under the __dataplane__ pool, as determined 
+The number of slots advertised should be equal to the number of cpu lists under the __dataplane__ pool, as determined
 by examining the `CMK` configuration directory. [cmk-discover-pod template][discover-template] can be used to
 advertise the `CMK` OIR slots.
 
@@ -184,7 +187,7 @@ snippets below:
 ```yml
     env:
     - name: CMK_RECONCILE_SLEEP_TIME
-        # Change this to modify the sleep interval between consecutive 
+        # Change this to modify the sleep interval between consecutive
         # cmk reconcile runs. The value is specified in seconds.
         value: '60'
 ```
@@ -199,9 +202,9 @@ snippets below:
 
 #### Run `cmk install`
 [`cmk install`][cmk-install] is used to create a zero-dependency binary of the `CMK` software and place it on the host
-filesystem. Subsequent containers can isolate themselves by mounting the install directory from the host and then 
+filesystem. Subsequent containers can isolate themselves by mounting the install directory from the host and then
 calling `cmk isolate`. To run it on all the `CMK` nodes, the [cmk-install-pod template][install-template]
-can be used. 
+can be used.
 
 `cmk install` takes the `--install-dir` flag. In the [cmk-install-pod template][install-template], the value for
 `--install-dir` can be configured by changing the `path` value of the `hostPath` for the `cmk-install-dir`.
@@ -218,18 +221,18 @@ below:
 ```
 
 ## Running the `cmk isolate` Hello World Pod
-After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello 
+After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
 World [cmk-isolate-pod template][isolate-template] describes a simple Pod with three containers requesting CPUs from
 the __dataplane__, __controlplane__ and the __infra__ pools, respectively, using [`cmk isolate`][cmk-isolate]. The
 `pool` is requested by passing the desired value to the `--pool` flag when using `cmk isolate` as described in the
 [documentation][cmk-isolate].
 
 `cmk isolate` takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
-the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`. 
+the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`.
 
 Values that might require modification in the [cmk-isolate-pod template][isolate-template] are shown as snippets
 below:
- 
+
 ```yml
   volumes:
   - hostPath:
@@ -242,19 +245,19 @@ below:
     name: cmk-conf-dir
 ```
 
-Notes: 
+Notes:
 - The Hello World cmk-isolate-pod consumes the `pod.alpha.kubernetes.io/opaque-int-resource-cmk` Opaque Integer
 Resource (OIR) only in the container isolated using the __dataplane__ pool. The `CMK` software assumes that only
-container isolated using the __dataplane__ pool requests the OIR and each of these containers should consume exactly 
-one OIR. This restricts the number of pods that can land on a Kubernetes node to the expected value. 
+container isolated using the __dataplane__ pool requests the OIR and each of these containers should consume exactly
+one OIR. This restricts the number of pods that can land on a Kubernetes node to the expected value.
 - The `cmk isolate` Hello World Pod should only be run after following the instructions provided in the
-[`Setting up the cluster`][cluster-setup] section. 
+[`Setting up the cluster`][cluster-setup] section.
 
 ## Validating the environment
-Following is an example to validate the environment in one node. 
-- Pick a node to test. For illustration, we will use `<node-name>` as the name of the node. 
+Following is an example to validate the environment in one node.
+- Pick a node to test. For illustration, we will use `<node-name>` as the name of the node.
 - Check if node has appropriate label.
-```sh 
+```sh
 kubectl get node <node-name> -o json | jq .metadata.labels
 ```
 Example output:
@@ -279,7 +282,7 @@ kubectl get node cmk-02-zzwt7w -o json | jq .metadata.annotations
       "volumes.kubernetes.io/controller-managed-attach-detach": "true"
 }
 ```
-- Check if node has the appropriate OIR. 
+- Check if node has the appropriate OIR.
 ```sh
 kubectl get node <node-name> -o json | jq .status.capacity
 ```
@@ -300,7 +303,7 @@ used for `cmk cluster-init`, you would do the following:
 ls /etc/cmk/
 ls /opt/bin/
 ```
-- Replace the `nodeName` in the Pod manifest below to the chosen node name and save it to a file. 
+- Replace the `nodeName` in the Pod manifest below to the chosen node name and save it to a file.
 ```yml
 apiVersion: v1
 kind: Pod
@@ -345,23 +348,23 @@ spec:
       path: "/etc/cmk"
     name: cmk-conf-dir
 ```
-- Run `kubectl create -f <file-name>`, where `<file-name>` is name of the Pod manifest file with `nodeName` field 
+- Run `kubectl create -f <file-name>`, where `<file-name>` is name of the Pod manifest file with `nodeName` field
 substituted as mentioned in the previous step.
-- Check if any process is isolated in the `infra` pool using `NodeReport` for that node. 
+- Check if any process is isolated in the `infra` pool using `NodeReport` for that node.
 `kubectl get NodeReport <node-name> -o json | jq .report.description.pools.infra`
 
 ## Troubleshooting and recovery
 If running `cmk cluster-init` using the [cmk-cluster-init-pod template][cluster-init-template] ends up in an error,
-the recommended way to start troubleshooting is to look at the logs using `kubectl logs POD_NAME [CONTAINER_NAME] -f`. 
+the recommended way to start troubleshooting is to look at the logs using `kubectl logs POD_NAME [CONTAINER_NAME] -f`.
 
 For example, assuming you ran the [cmk-cluster-init-pod template][cluster-init-template] with default options, it
 should create two pods on each node named `cmk-init-install-discover-pod-<node-name>` and
 `cmk-reconcile-nodereport-<node-name>`, where `<node-name>` should be replaced with the name of the node.
 
-If you want to look at the logs from the container which ran the `discover` subcommand in the pod, you can use 
+If you want to look at the logs from the container which ran the `discover` subcommand in the pod, you can use
 `kubectl logs -f cmk-init-install-discover-pod-<node-name> discover`
 
-If you want to look at the logs from the container which ran the `reconcile` subcommand in the pod, you can use 
+If you want to look at the logs from the container which ran the `reconcile` subcommand in the pod, you can use
 `kubectl logs -f cmk-reconcile-nodereport-pod-<node-name> reconcile`
 
 If you want to remove `cmk` use `cmk-uninstall-pod.yaml`. [nodeSelector](https://kubernetes.io/docs/user-guide/node-selection)
