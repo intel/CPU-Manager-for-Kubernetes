@@ -42,6 +42,8 @@ class Platform:
         return False
 
     def get_socket(self, id):
+        if id not in self.sockets:
+            return None
         return self.sockets[id]
 
     def get_isolated_cores(self):
@@ -62,8 +64,23 @@ class Platform:
             cores += socket.get_shared_cores()
         return cores
 
-    def get_dataplane_cores(self, count, isolated=False):
+    def get_dataplane_cores(self, count, socket_id, isolated=False):
         cores = []
+
+        if socket_id >= 0:
+            socket = self.get_socket(socket_id)
+            if not socket:
+                raise RuntimeError("Socket {} doesn't exist"
+                                   .format(socket_id))
+            if isolated:
+                socket_cores = socket.get_isolated_cores()
+            else:
+                socket_cores = socket.get_cores()
+            if len(socket_cores) < count:
+                raise RuntimeError("Requested socket hasn't got required "
+                                   "number of cores")
+            return socket_cores[:count]
+
 
         for socket in self.sockets.values():
             if isolated:

@@ -23,8 +23,9 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>]
+                   [--saname=<name>][--socket-id=<num>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
+           [--socket-id=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -59,6 +60,9 @@ Options:
                         restricted Docker registry.
   --saname=<name>       ServiceAccount name to pass
                         [default: cmk-serviceaccount].
+  --socket-id=<num>     ID of socket, which should deliver cores for
+                        dataplane. If it's set to -1 then dataplane
+                        will be spawned on any socket [default: -1].
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `CMK_CPUS_ASSIGNED` environment
@@ -84,12 +88,13 @@ def main():
                                  args["--cmk-img-pol"], args["--conf-dir"],
                                  args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"], args["--pull-secret"],
-                                 args["--saname"])
+                                 args["--saname"], int(args["--socket-id"]))
         return
     if args["init"]:
         init.init(args["--conf-dir"],
                   int(args["--num-dp-cores"]),
-                  int(args["--num-cp-cores"]))
+                  int(args["--num-cp-cores"]),
+                  int(args["--socket-id"]))
         return
     if args["discover"]:
         discover.discover(args["--conf-dir"])

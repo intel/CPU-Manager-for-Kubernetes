@@ -17,7 +17,7 @@ import logging
 import sys
 
 
-def init(conf_dir, num_dp_cores, num_cp_cores):
+def init(conf_dir, num_dp_cores, num_cp_cores, socket_id):
     check_hugepages()
 
     logging.info("Writing config to {}.".format(conf_dir))
@@ -48,6 +48,7 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
             ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
 
         dataplane_cores = platform.get_dataplane_cores(num_dp_cores,
+                                                       socket_id,
                                                        isolated=True)
         controlplane_cores = platform.get_isolated_cores()
         infra_cores = platform.get_shared_cores()
@@ -59,7 +60,7 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         logging.info("No isolated physical cores detected: allocating "
                      "control plane and data plane from full core list")
 
-        dataplane_cores = platform.get_dataplane_cores(num_dp_cores)
+        dataplane_cores = platform.get_dataplane_cores(num_dp_cores, socket_id)
 
         assign(dataplane_cores, "dataplane", count=num_dp_cores)
         assign(cores, "controlplane", count=num_cp_cores)
