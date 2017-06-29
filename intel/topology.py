@@ -81,7 +81,6 @@ class Platform:
                                    "number of cores")
             return socket_cores[:count]
 
-
         for socket in self.sockets.values():
             if isolated:
                 socket_cores = socket.get_isolated_cores()

@@ -135,7 +135,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             args = ""
             if cmd == "init":
                 args = ("/cmk/cmk.py init --num-dp-cores={} "
-                        "--num-cp-cores={} --socket-id={}").format(num_dp_cores, num_cp_cores, socket_id)
+                        "--num-cp-cores={} --socket-id={}")\
+                    .format(num_dp_cores, num_cp_cores, socket_id)
                 # If init is the only cmd in cmd_init_list, it should be run
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.
