@@ -17,8 +17,7 @@ from . import integration
 
 
 def test_cmk_help():
-    pass
-assert helpers.execute(integration.cmk(), ["--help"]) == b"""cmk.
+    assert helpers.execute(integration.cmk(), ["--help"]) == b"""cmk.
 
 Usage:
   cmk (-h | --help)
