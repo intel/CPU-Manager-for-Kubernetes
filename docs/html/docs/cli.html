@@ -67,7 +67,7 @@ Usage:
                    [--cmk-img=&lt;img&gt;] [--cmk-img-pol=&lt;pol&gt;] [--conf-dir=&lt;dir&gt;]
                    [--install-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;]
                    [--num-cp-cores=&lt;num&gt;] [--pull-secret=&lt;name&gt;]
-                   [--serviceaccount=&lt;name&gt;]
+                   [--saname=&lt;name&gt;]
   cmk init [--conf-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;] [--num-cp-cores=&lt;num&gt;]
   cmk discover [--conf-dir=&lt;dir&gt;]
   cmk describe [--conf-dir=&lt;dir&gt;]
@@ -79,34 +79,34 @@ Usage:
   cmk uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;]
 
 Options:
-  -h --help               Show this screen.
-  --version               Show version.
-  --host-list=&lt;list&gt;      Comma seperated list of Kubernetes nodes to prepare
-                          for CMK software.
-  --all-hosts             Prepare all Kubernetes nodes for the CMK software.
-  --cmk-cmd-list=&lt;list&gt;   Comma seperated list of CMK sub-commands to run on
-                          each host
-                          [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=&lt;img&gt;         CMK Docker image [default: cmk:v1.0.1].
-  --cmk-img-pol=&lt;pol&gt;     Image pull policy for the CMK Docker image
-                          [default: IfNotPresent].
-  --conf-dir=&lt;dir&gt;        CMK configuration directory [default: /etc/cmk].
-  --install-dir=&lt;dir&gt;     CMK install directory [default: /opt/bin].
-  --interval=&lt;seconds&gt;    Number of seconds to wait between rerunning.
-                          If set to 0, will only run once. [default: 0]
-  --num-dp-cores=&lt;num&gt;    Number of data plane cores [default: 4].
-  --num-cp-cores=&lt;num&gt;    Number of control plane cores [default: 1].
-  --pool=&lt;pool&gt;           Pool name: either infra, controlplane or dataplane.
-  --publish               Whether to publish reports to the Kubernetes
-                          API server.
-  --pull-secret=&lt;name&gt;    Name of secret used for pulling Docker images from
-                          restricted Docker registry.
-  --serviceaccount=&lt;name&gt; ServiceAccount name to pass [default: cmk-serviceaccount].
-  --no-affinity           Do not set cpu affinity before forking the child
-                          command. In this mode the user program is responsible
-                          for reading the `CMK_CPUS_ASSIGNED` environment
-                          variable and moving a subset of its own processes
-                          and/or tasks to the assigned CPUs.
+  -h --help             Show this screen.
+  --version             Show version.
+  --host-list=&lt;list&gt;    Comma seperated list of Kubernetes nodes to prepare
+                        for CMK software.
+  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
+  --cmk-cmd-list=&lt;list&gt; Comma seperated list of CMK sub-commands to run on
+                        each host
+                        [default: init,reconcile,install,discover,nodereport].
+  --cmk-img=&lt;img&gt;       CMK Docker image [default: cmk:v1.0.1].
+  --cmk-img-pol=&lt;pol&gt;   Image pull policy for the CMK Docker image
+                        [default: IfNotPresent].
+  --conf-dir=&lt;dir&gt;      CMK configuration directory [default: /etc/cmk].
+  --install-dir=&lt;dir&gt;   CMK install directory [default: /opt/bin].
+  --interval=&lt;seconds&gt;  Number of seconds to wait between rerunning.
+                        If set to 0, will only run once. [default: 0]
+  --num-dp-cores=&lt;num&gt;  Number of data plane cores [default: 4].
+  --num-cp-cores=&lt;num&gt;  Number of control plane cores [default: 1].
+  --pool=&lt;pool&gt;         Pool name: either infra, controlplane or dataplane.
+  --publish             Whether to publish reports to the Kubernetes
+                        API server.
+  --pull-secret=&lt;name&gt;  Name of secret used for pulling Docker images from
+                        restricted Docker registry.
+  --saname=&lt;name&gt;       ServiceAccount name to pass [default: cmk-serviceaccount].
+  --no-affinity         Do not set cpu affinity before forking the child
+                        command. In this mode the user program is responsible
+                        for reading the `CMK_CPUS_ASSIGNED` environment
+                        variable and moving a subset of its own processes
+                        and/or tasks to the assigned CPUs.
 </code></pre>
 <h2>
 <a id="user-content-global-configuration" class="anchor" href="#global-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Global configuration</h2>
