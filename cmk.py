@@ -23,7 +23,7 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>]
+                   [--serviceaccount=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
@@ -35,35 +35,35 @@ Usage:
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
 
 Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for CMK software.
-  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
-  --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
-                        each host
-                        [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>       CMK Docker image [default: cmk:v1.0.1].
-  --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
-                        [default: IfNotPresent].
-  --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
-  --install-dir=<dir>   CMK install directory [default: /opt/bin].
-  --interval=<seconds>  Number of seconds to wait between rerunning.
-                        If set to 0, will only run once. [default: 0]
-  --num-dp-cores=<num>  Number of data plane cores [default: 4].
-  --num-cp-cores=<num>  Number of control plane cores [default: 1].
-  --pool=<pool>         Pool name: either infra, controlplane or dataplane.
-  --publish             Whether to publish reports to the Kubernetes
-                        API server.
-  --pull-secret=<name>  Name of secret used for pulling Docker images from
-                        restricted Docker registry.
-  --saname=<name>       ServiceAccount name to pass
-                        [default: cmk-serviceaccount].
-  --no-affinity         Do not set cpu affinity before forking the child
-                        command. In this mode the user program is responsible
-                        for reading the `CMK_CPUS_ASSIGNED` environment
-                        variable and moving a subset of its own processes
-                        and/or tasks to the assigned CPUs.
+  -h --help               Show this screen.
+  --version               Show version.
+  --host-list=<list>      Comma seperated list of Kubernetes nodes to prepare
+                          for CMK software.
+  --all-hosts             Prepare all Kubernetes nodes for the CMK software.
+  --cmk-cmd-list=<list>   Comma seperated list of CMK sub-commands to run on
+                          each host
+                          [default: init,reconcile,install,discover,nodereport]. # noqa: E501
+  --cmk-img=<img>         CMK Docker image [default: cmk:v1.0.1].
+  --cmk-img-pol=<pol>     Image pull policy for the CMK Docker image
+                          [default: IfNotPresent].
+  --conf-dir=<dir>        CMK configuration directory [default: /etc/cmk].
+  --install-dir=<dir>     CMK install directory [default: /opt/bin].
+  --interval=<seconds>    Number of seconds to wait between rerunning.
+                          If set to 0, will only run once. [default: 0]
+  --num-dp-cores=<num>    Number of data plane cores [default: 4].
+  --num-cp-cores=<num>    Number of control plane cores [default: 1].
+  --pool=<pool>           Pool name: either infra, controlplane or dataplane.
+  --publish               Whether to publish reports to the Kubernetes
+                          API server.
+  --pull-secret=<name>    Name of secret used for pulling Docker images from
+                          restricted Docker registry.
+  --serviceaccount=<name> ServiceAccount name to pass
+                          [default: cmk-serviceaccount].
+  --no-affinity           Do not set cpu affinity before forking the child
+                          command. In this mode the user program is responsible
+                          for reading the `CMK_CPUS_ASSIGNED` environment
+                          variable and moving a subset of its own processes
+                          and/or tasks to the assigned CPUs.
 """
 from intel import (
     clusterinit, describe, discover, init, install,
@@ -84,7 +84,7 @@ def main():
                                  args["--cmk-img-pol"], args["--conf-dir"],
                                  args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"], args["--pull-secret"],
-                                 args["--saname"])
+                                 args["--serviceaccount"])
         return
     if args["init"]:
         init.init(args["--conf-dir"],

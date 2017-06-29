@@ -260,20 +260,20 @@ def test_clusterinit_dont_pass_pull_secrets():
 
 def test_clusterinit_pass_serviceaccountname():
     mock = MagicMock()
-    saname = "testSAname"
+    serviceaccount_name = "testSAname"
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
         with patch('intel.clusterinit.wait_for_pod_phase',
                    MagicMock(return_value=True)):
             clusterinit.cluster_init("fakenode1", False,
                                      "init, discover, install",
                                      "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "", saname)
+                                     "4", "2", "", serviceaccount_name)
             called_methods = mock.method_calls
             params = called_methods[0][1]
             pod_spec = params[1]
             assert "serviceAccountName" in pod_spec["spec"]
             sa_name_in_spec = pod_spec["spec"]["serviceAccountName"]
-            assert sa_name_in_spec == saname
+            assert sa_name_in_spec == serviceaccount_name
 
 
 def test_clusterinit_dont_pass_serviceaccountname():
