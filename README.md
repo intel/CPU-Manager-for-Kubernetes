@@ -49,6 +49,7 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
+                   [--saname=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
@@ -82,6 +83,8 @@ Options:
                         API server.
   --pull-secret=<name>  Name of secret used for pulling Docker images from
                         restricted Docker registry.
+  --saname=<name>       ServiceAccount name to pass
+                        [default: cmk-serviceaccount].
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `CMK_CPUS_ASSIGNED` environment

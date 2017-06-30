@@ -24,6 +24,7 @@ spec:
       labels:
         app: cmk-node-report
     spec:
+      serviceAccountName: cmk-serviceaccount
       containers:
       - args:
         - /cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=$CMK_NODE_REPORT_SLEEP_TIME --publish

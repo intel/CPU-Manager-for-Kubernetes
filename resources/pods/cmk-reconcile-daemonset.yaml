@@ -24,6 +24,7 @@ spec:
       labels:
         app: cmk-reconcile
     spec:
+      serviceAccountName: cmk-serviceaccount
       containers:
       - args:
         - /cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=$CMK_RECONCILE_SLEEP_TIME --publish

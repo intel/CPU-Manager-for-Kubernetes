@@ -21,6 +21,7 @@ metadata:
   annotations:
     "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
 spec:
+  serviceAccountName: cmk-serviceaccount
   # Use nodeName to schedule on specific node
   # nodeName: compute1
   containers:

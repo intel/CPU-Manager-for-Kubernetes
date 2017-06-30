@@ -65,7 +65,7 @@ cluster already configured for CMK, see the
    exclusively allocated cores.
 
 1. Run on unmodified Kubernetes releases.  
-   **Supported Kubernetes versions:** v1.5.x
+   **Supported Kubernetes versions:** v1.5.x, v1.6.x
 
 1. Allow the `cmk` tools to be mounted from the host filesystem
    so that users do not need to include the tools inside every user

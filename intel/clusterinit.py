@@ -23,7 +23,8 @@ from intel import k8s
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_dp_cores, num_cp_cores,
-                 pull_secret):
+                 pull_secret, serviceaccount):
+    logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
 
@@ -63,11 +64,11 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     if cmk_cmd_init_list:
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret)
+                 pull_secret, serviceaccount)
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret)
+                 pull_secret, serviceaccount)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -76,7 +77,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 # Note: Only one of cmd_list or cmd_init_list should be specified.
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
              install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-             pull_secret):
+             pull_secret, serviceaccount):
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -85,7 +86,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
     run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret)
+                 pull_secret, serviceaccount)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -114,12 +115,12 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 # pod on each node provided by cmk_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret):
+                 pull_secret, serviceaccount):
     pod = k8s.get_pod_template()
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
-        update_pod(pod, "Always", conf_dir, install_dir)
+        update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
         for cmd in cmd_list:
             args = ""
             if cmd == "reconcile":
@@ -129,7 +130,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
             update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args)
     elif cmd_init_list:
-        update_pod(pod, "Never", conf_dir, install_dir)
+        update_pod(pod, "Never", conf_dir, install_dir, serviceaccount)
         for cmd in cmd_init_list:
             args = ""
             if cmd == "init":
@@ -223,7 +224,8 @@ def wait_for_pod_phase(pod_name, phase_name):
 
 
 # update_pod() updates the pod template with the provided options.
-def update_pod(pod, restart_pol, conf_dir, install_dir):
+def update_pod(pod, restart_pol, conf_dir, install_dir, serviceaccount):
+    pod["spec"]["serviceAccountName"] = serviceaccount
     pod["spec"]["restartPolicy"] = restart_pol
     pod["spec"]["volumes"][1]["hostPath"]["path"] = conf_dir
     pod["spec"]["volumes"][2]["hostPath"]["path"] = install_dir
