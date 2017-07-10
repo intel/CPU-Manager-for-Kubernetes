@@ -29,7 +29,7 @@ Usage:
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk isolate [--conf-dir=<dir>] --pool=<pool> --socket-id=<num> <command>
+  cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
               [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -106,7 +106,7 @@ def main():
                         args["--pool"],
                         args["--no-affinity"],
                         args["<command>"],
-                        args["<args>"].
+                        args["<args>"],
                         args["--socket-id"])
         return
     if args["reconcile"]:
