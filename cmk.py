@@ -23,14 +23,14 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>][--socket-id=<num>]
+                   [--saname=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
            [--socket-id=<num>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-              [--no-affinity]
+  cmk isolate [--conf-dir=<dir>] --pool=<pool> --socket-id=<num> <command>
+              [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
@@ -93,8 +93,7 @@ def main():
     if args["init"]:
         init.init(args["--conf-dir"],
                   int(args["--num-dp-cores"]),
-                  int(args["--num-cp-cores"]),
-                  int(args["--socket-id"]))
+                  int(args["--num-cp-cores"]))
         return
     if args["discover"]:
         discover.discover(args["--conf-dir"])
@@ -107,7 +106,8 @@ def main():
                         args["--pool"],
                         args["--no-affinity"],
                         args["<command>"],
-                        args["<args>"])
+                        args["<args>"].
+                        args[""])
         return
     if args["reconcile"]:
         reconcile.reconcile(args["--conf-dir"],

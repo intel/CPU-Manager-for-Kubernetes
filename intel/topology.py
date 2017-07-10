@@ -64,45 +64,11 @@ class Platform:
             cores += socket.get_shared_cores()
         return cores
 
-    def get_dataplane_cores(self, count, socket_id, isolated=False):
+    def get_cores_from_pool(self, pool):
         cores = []
-
-        if socket_id >= 0:
-            socket = self.get_socket(socket_id)
-            if not socket:
-                raise RuntimeError("Socket {} doesn't exist"
-                                   .format(socket_id))
-            if isolated:
-                socket_cores = socket.get_isolated_cores()
-            else:
-                socket_cores = socket.get_cores()
-            if len(socket_cores) < count:
-                raise RuntimeError("Requested socket hasn't got required "
-                                   "number of cores")
-            return socket_cores[:count]
-
         for socket in self.sockets.values():
-            if isolated:
-                socket_cores = socket.get_isolated_cores()
-            else:
-                socket_cores = socket.get_cores()
-
-            if len(socket_cores) >= count:
-                logging.info("Socket with required number of cores has been "
-                             "found: {}".format(socket.socket_id))
-                cores = socket_cores
-                break
-
-        if not cores:
-            logging.warning("Socket with required number of cores has not "
-                            "been found")
-            if isolated:
-                cores = self.get_isolated_cores()
-            else:
-                cores = self.get_cores()
-
-        return cores[:count]
-
+            cores += socket.get_cores_from_pool(pool)
+        return cores
 
 class Socket:
     def __init__(self, socket_id, cores=None):
@@ -126,6 +92,9 @@ class Socket:
 
     def get_shared_cores(self):
         return [core for core in self.cores.values() if not core.is_isolated()]
+
+    def get_cores_from_pool(self, pool):
+        return [core for core in self.cores.values() if core.pool == pool]
 
     def as_dict(self, include_pool=True):
         return {
