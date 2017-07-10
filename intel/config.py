@@ -16,6 +16,7 @@ from collections import OrderedDict
 import fcntl
 import logging
 import os
+from stat import S_ISDIR
 import threading
 import _thread
 
@@ -106,6 +107,9 @@ class Pool:
 
         result = OrderedDict()
         for f in sorted(os.listdir(self.path)):
+            fd_stat = os.stat(os.path.join(self.path, f)).st_mode
+            if not S_ISDIR(fd_stat):
+                continue
             result.update(self.socket_cpu_list(f))
         return result
 
