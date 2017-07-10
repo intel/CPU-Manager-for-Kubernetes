@@ -70,6 +70,7 @@ class Platform:
             cores += socket.get_cores_from_pool(pool)
         return cores
 
+
 class Socket:
     def __init__(self, socket_id, cores=None):
         if not cores:

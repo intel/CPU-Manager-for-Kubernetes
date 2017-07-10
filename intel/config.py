@@ -135,10 +135,8 @@ class Pool:
         open(os.path.join(self.path, socket_id, cpus, "tasks"), "w+")
         return self.cpu_list(socket_id, cpus)
 
-
     def add_socket(self, socket_id):
         os.makedirs(os.path.join(self.path, socket_id))
-
 
     def as_dict(self):
         result = {}

@@ -33,12 +33,9 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
         pool = pools[pool_name]
 
         if socket_id == "-1":
-            logging.info("Spawn application on any socket")
             selected_socket = None
         else:
-            logging.info("Spawn application on %s socket", socket_id)
             selected_socket = socket_id
-
 
         clist = None
         if pool.exclusive():

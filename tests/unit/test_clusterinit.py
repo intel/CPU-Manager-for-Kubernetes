@@ -24,7 +24,7 @@ def test_clusterinit_invalid_cmd_list_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
                                  "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                 "4", "2", "", "", "-1")
+                                 "4", "2", "", "")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -35,7 +35,7 @@ def test_clusterinit_invalid_cmd_list_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
                                  "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                 "4", "2", "", "", "-1")
+                                 "4", "2", "", "")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -46,7 +46,7 @@ def test_clusterinit_invalid_cmd_list_failure3():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
                                  "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                 "4", "2", "", "", "-1")
+                                 "4", "2", "", "")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -57,7 +57,7 @@ def test_clusterinit_invalid_cmd_list_failure4():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "discover, init",
                                  "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                 "4", "2", "", "", "-1")
+                                 "4", "2", "", "")
     expected_err_msg = "init command should be run and listed first."
     assert err.value.args[0] == expected_err_msg
 
@@ -65,7 +65,7 @@ def test_clusterinit_invalid_cmd_list_failure4():
 def test_clusterinit_invalid_image_pol():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "fakepol1",
-                                 "/etc/cmk", "/opt/bin", "4", "2", "", "", "-1")
+                                 "/etc/cmk", "/opt/bin", "4", "2", "", "")
     expected_err_msg = ('Image pull policy should be one of '
                         '[\'Never\', \'IfNotPresent\', \'Always\']')
     assert err.value.args[0] == expected_err_msg
@@ -74,7 +74,7 @@ def test_clusterinit_invalid_image_pol():
 def test_clusterinit_invalid_dp_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "-1", "2", "", "", "-1")
+                                 "/etc/cmk", "/opt/bin", "-1", "2", "", "")
     expected_err_msg = "num_dp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -82,7 +82,7 @@ def test_clusterinit_invalid_dp_cores_failure1():
 def test_clusterinit_invalid_dp_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "3.5", "2", "", "", "-1")
+                                 "/etc/cmk", "/opt/bin", "3.5", "2", "", "")
     expected_err_msg = "num_dp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -90,7 +90,7 @@ def test_clusterinit_invalid_dp_cores_failure2():
 def test_clusterinit_invalid_cp_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "2.5", "", "", "-1")
+                                 "/etc/cmk", "/opt/bin", "1", "2.5", "", "")
     expected_err_msg = "num_cp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -98,7 +98,7 @@ def test_clusterinit_invalid_cp_cores_failure1():
 def test_clusterinit_invalid_cp_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "10.5", "", "", "-1")
+                                 "/etc/cmk", "/opt/bin", "1", "10.5", "", "")
     expected_err_msg = "num_cp_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -130,7 +130,7 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["init"], "fake_img",
                                  "Never", "fake-conf-dir", "fake-install-dir",
-                                 "2", "2", ["fakenode"], "", "", "-1")
+                                 "2", "2", ["fakenode"], "", "")
         exp_err = "Exception when creating pod for ['init'] command(s)"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -145,7 +145,7 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "", "", "-1")
+                                 "2", ["fakenode"], "", "")
         exp_err = "Exception when creating pod for ['discover'] command(s)"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -160,7 +160,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["install"], "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "", "", "-1")
+                                 "2", ["fakenode"], "", "")
         exp_err = "Exception when creating pod for ['install'] command(s)"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -175,7 +175,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "", "", "-1")
+                                 "2", ["fakenode"], "", "")
         exp_err = "Exception when creating pod for ['reconcile'] command(s)"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -190,7 +190,7 @@ def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
-                                 "2", ["fakenode"], "", "", "-1")
+                                 "2", ["fakenode"], "", "")
         exp_err = "Exception when creating pod for ['nodereport'] command(s)"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -232,7 +232,7 @@ def test_clusterinit_pass_pull_secrets():
             clusterinit.cluster_init("fakenode1", False,
                                      "init, discover, install",
                                      "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "supersecret", "", "-1")
+                                     "4", "2", "supersecret", "")
             called_methods = mock.method_calls
             params = called_methods[0][1]
             pod_spec = params[1]
@@ -251,7 +251,7 @@ def test_clusterinit_dont_pass_pull_secrets():
             clusterinit.cluster_init("fakenode1", False,
                                      "init, discover, install",
                                      "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "", "", "-1")
+                                     "4", "2", "", "")
             called_methods = mock.method_calls
             params = called_methods[0][1]
             pod_spec = params[1]

@@ -88,7 +88,7 @@ def main():
                                  args["--cmk-img-pol"], args["--conf-dir"],
                                  args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"], args["--pull-secret"],
-                                 args["--saname"], int(args["--socket-id"]))
+                                 args["--saname"])
         return
     if args["init"]:
         init.init(args["--conf-dir"],

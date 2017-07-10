@@ -69,7 +69,9 @@ def test_pool_cpu_lists():
     c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
+        print(pools["dataplane"].cpu_lists())
         clists = pools["dataplane"].cpu_lists()
+
         assert len(clists) == 4
         assert len(clists["4,12"].tasks()) == 1
         assert 2000 in clists["4,12"].tasks()
