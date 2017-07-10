@@ -107,7 +107,7 @@ def main():
                         args["--no-affinity"],
                         args["<command>"],
                         args["<args>"].
-                        args[""])
+                        args["--socket-id"])
         return
     if args["reconcile"]:
         reconcile.reconcile(args["--conf-dir"],
