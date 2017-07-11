@@ -140,7 +140,7 @@ def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
                 (num_isolated_cores, required_isolated_cores))
 
 
-def assign(cores, pool, count=None, mode="vertical"):
+def assign(cores, pool, count=None):
     free_cores = [c for c in cores if c.pool is None]
 
     if not free_cores:
