@@ -97,7 +97,7 @@ def test_cmk_isolate_pid_bookkeeping():
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
     helpers.execute("cat {}".format(fifo))
-    clist = c.pool("shared").cpu_list("0")
+    clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
     # Signal subprocess to exit
     helpers.execute("echo 1 > {}".format(fifo))
@@ -130,7 +130,7 @@ def test_cmk_isolate_sigkill():
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
     helpers.execute("cat {}".format(fifo))
-    clist = c.pool("shared").cpu_list("0")
+    clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
 
     # Send sigkill to cmk
@@ -164,7 +164,7 @@ def test_cmk_isolate_sigterm():
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
     helpers.execute("cat {}".format(fifo))
-    clist = c.pool("shared").cpu_list("0")
+    clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
 
     # Send sigterm to cmk

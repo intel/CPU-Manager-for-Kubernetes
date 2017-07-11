@@ -140,15 +140,21 @@ def test_cmk_init_isolcpus():
     output = helpers.execute(
         integration.cmk(), args, proc_env_partially_isolated)
 
+    print(output)
+
     assert "INFO:root:Isolated logical cores: 0,1,2,3,4,8,9,10,11,12" \
            in str(output)
 
     assert "INFO:root:Isolated physical cores: 0,1,2,3,4" in str(output)
 
-    assert "INFO:root:Adding cpu list 0,8 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 1,9 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 2,10 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 3,11 to dataplane pool." in str(output)
+    assert "INFO:root:Adding cpu list 0,8 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 1,9 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 2,10 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 3,11 from socket 0 to dataplane pool." \
+           in str(output)
 
     assert "INFO:root:Adding cpu list 4,12 to controlplane pool." \
            in str(output)
