@@ -23,9 +23,9 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>]
+                   [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-           [--socket-id=<num>]
+           [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -54,6 +54,10 @@ Options:
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
+  --cp-mode=<mode>      Control plane allocation mode. Possible modes:
+                        vertical and horizontal [default: vertical].
+  --dp-mode=<mode>      Data plane allocation mode. Possible modes:
+                        vertical and horizontal [default: vertical].
   --publish             Whether to publish reports to the Kubernetes
                         API server.
   --pull-secret=<name>  Name of secret used for pulling Docker images from
@@ -88,12 +92,15 @@ def main():
                                  args["--cmk-img-pol"], args["--conf-dir"],
                                  args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"], args["--pull-secret"],
-                                 args["--saname"])
+                                 args["--saname"], args["--dp-mode"],
+                                 args["--cp-mode"])
         return
     if args["init"]:
         init.init(args["--conf-dir"],
                   int(args["--num-dp-cores"]),
-                  int(args["--num-cp-cores"]))
+                  int(args["--num-cp-cores"]),
+                  args["--dp-mode"],
+                  args["--cp-mode"])
         return
     if args["discover"]:
         discover.discover(args["--conf-dir"])

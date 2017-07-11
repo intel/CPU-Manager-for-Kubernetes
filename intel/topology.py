@@ -46,17 +46,52 @@ class Platform:
             return None
         return self.sockets[id]
 
-    def get_isolated_cores(self):
+    def get_cores(self, mode="vertical"):
+        return self.get_cores_general(mode, False)
+
+    def get_isolated_cores(self, mode="vertical"):
+        return self.get_cores_general(mode, True)
+
+    def get_cores_general(self, mode, isolated=False):
+        if mode not in ["horizontal", "vertical"]:
+            logging.warning("Wrong mode has been selected."
+                            "Fallback to vertical")
+            mode = "vertical"
+
+        if mode == "vertical":
+            return self.allocate_vertical(isolated)
+        if mode == "horizontal":
+            return self.allocate_horizontal(isolated)
+        return []
+
+    def allocate_vertical(self, isolated_cores=False):
         cores = []
         for socket in self.sockets.values():
-            cores += socket.get_isolated_cores()
+            if isolated_cores:
+                cores += socket.get_isolated_cores()
+            else:
+                cores += socket.get_cores()
         return cores
 
-    def get_cores(self):
-        cores = []
-        for socket in self.sockets.values():
-            cores += socket.get_cores()
-        return cores
+    def allocate_horizontal(self, isolated_cores=False):
+        output_cores = []
+        socket_cores = {}
+
+        for socket in self.sockets:
+            if isolated_cores:
+                socket_cores[socket] = self.sockets[socket]\
+                    .get_isolated_cores()
+            socket_cores[socket] = self.sockets[socket].get_cores()
+        while len(socket_cores) > 0:
+            sockets = [socket for socket in socket_cores]
+            for socket in sockets:
+                if len(socket_cores[socket]) == 0:
+                    del(socket_cores[socket])
+                    continue
+                output_cores.append(socket_cores[socket][0])
+                del(socket_cores[socket][0])
+
+        return output_cores
 
     def get_shared_cores(self):
         cores = []

@@ -17,7 +17,8 @@ import logging
 import sys
 
 
-def init(conf_dir, num_dp_cores, num_cp_cores):
+def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
+         cp_allocation_mode):
     check_hugepages()
 
     logging.info("Writing config to {}.".format(conf_dir))
@@ -42,18 +43,25 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         logging.info("Isolated physical cores: {}".format(
             ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
 
-        isolated_cores = platform.get_isolated_cores()
+        isolated_cores_dp = platform.get_isolated_cores(
+            mode=dp_allocation_mode)
+        isolated_cores_cp = platform.get_isolated_cores(
+            mode=cp_allocation_mode)
+
         infra_cores = platform.get_shared_cores()
 
-        assign(isolated_cores, "dataplane", count=num_dp_cores)
-        assign(isolated_cores, "controlplane", count=num_cp_cores)
+        assign(isolated_cores_dp, "dataplane", count=num_dp_cores)
+        assign(isolated_cores_cp, "controlplane", count=num_cp_cores)
         assign(infra_cores, "infra")
     else:
         logging.info("No isolated physical cores detected: allocating "
                      "control plane and data plane from full core list")
 
-        assign(cores, "dataplane", count=num_dp_cores)
-        assign(cores, "controlplane", count=num_cp_cores)
+        cores_dp = platform.get_cores(mode=dp_allocation_mode)
+        cores_cp = platform.get_cores(mode=cp_allocation_mode)
+
+        assign(cores_dp, "dataplane", count=num_dp_cores)
+        assign(cores_cp, "controlplane", count=num_cp_cores)
         assign(cores, "infra")
 
     with c.lock():
@@ -105,7 +113,6 @@ def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
 def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
     isolated_cores = platform.get_isolated_cores()
     cores = platform.get_cores()
-    # isolated_cores = [c for c in cores if c.is_isolated()]
     num_isolated_cores = len(isolated_cores)
 
     for core in cores:
@@ -133,7 +140,7 @@ def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
                 (num_isolated_cores, required_isolated_cores))
 
 
-def assign(cores, pool, count=None):
+def assign(cores, pool, count=None, mode="vertical"):
     free_cores = [c for c in cores if c.pool is None]
 
     if not free_cores:
