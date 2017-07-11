@@ -26,14 +26,14 @@ Usage:
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>] [--socket-id=<num>]
+                   [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-           [--socket-id=<num>]
+           [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk isolate [--conf-dir=<dir>] --pool=<pool> <command> [-- <args> ...]
-              [--no-affinity]
+  cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
+              [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
@@ -57,6 +57,10 @@ Options:
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
+  --cp-mode=<mode>      Control plane allocation mode. Possible modes:
+                        vertical and horizontal [default: vertical].
+  --dp-mode=<mode>      Data plane allocation mode. Possible modes:
+                        vertical and horizontal [default: vertical].
   --publish             Whether to publish reports to the Kubernetes
                         API server.
   --pull-secret=<name>  Name of secret used for pulling Docker images from

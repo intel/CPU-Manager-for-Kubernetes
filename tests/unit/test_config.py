@@ -83,9 +83,11 @@ def test_write_config():
         assert len(c.pools()) == 0
         foo = c.add_pool("foo", False)
         bar = c.add_pool("bar", True)
+        foo.add_socket("0")
+        bar.add_socket("0")
         assert len(c.pools()) == 2
-        c0 = foo.add_cpu_list("0-3")
-        c1 = bar.add_cpu_list("4-7")
+        c0 = foo.add_cpu_list("0", "0-3")
+        c1 = bar.add_cpu_list("0", "4-7")
         assert c0.cpus() == "0-3"
         assert c1.cpus() == "4-7"
         c0.add_task(5)
