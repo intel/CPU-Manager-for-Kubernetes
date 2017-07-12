@@ -54,7 +54,6 @@ Notes:
 described in [cluster setup instructions using `cmk cluster-init`][cluster-init-op-manual].
 - The [cluster setup instructions using manually created Pods][indvidual-pods-op-manual] should only be used if and
 only if running `cmk cluster-init` fails for some reason.
-- ___(multiple socket platforms)___ Dataplane pool shouldn't be spread within numa nodes, so `--num-dp-cores` value should be lower than number of cores on single socket.
 
 ### TL;DR
 Prepare the nodes by running `cmk cluster-init` using these [instructions][cluster-init-op-manual].

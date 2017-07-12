@@ -62,7 +62,6 @@ class Platform:
             return self.allocate_vertical(isolated)
         if mode == "horizontal":
             return self.allocate_horizontal(isolated)
-        return []
 
     def allocate_vertical(self, isolated_cores=False):
         cores = []
