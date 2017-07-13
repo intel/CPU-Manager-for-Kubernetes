@@ -80,7 +80,8 @@ class Platform:
             if isolated_cores:
                 socket_cores[socket] = self.sockets[socket]\
                     .get_isolated_cores()
-            socket_cores[socket] = self.sockets[socket].get_cores()
+            else:
+                socket_cores[socket] = self.sockets[socket].get_cores()
         while len(socket_cores) > 0:
             sockets = [socket for socket in socket_cores]
             for socket in sockets:
