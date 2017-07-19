@@ -54,19 +54,19 @@ Options:
   --num-dp-cores=<num>  Number of data plane cores [default: 4].
   --num-cp-cores=<num>  Number of control plane cores [default: 1].
   --pool=<pool>         Pool name: either infra, controlplane or dataplane.
-  --cp-mode=<mode>      Control plane allocation mode. Possible modes:
-                        vertical and horizontal [default: vertical].
-  --dp-mode=<mode>      Data plane allocation mode. Possible modes:
-                        vertical and horizontal [default: vertical].
+  --cp-mode=<mode>      Control plane core allocation mode. Possible modes:
+                        packed and spread [default: packed].
+  --dp-mode=<mode>      Data plane core allocation mode. Possible modes:
+                        packed and spread [default: packed].
   --publish             Whether to publish reports to the Kubernetes
                         API server.
   --pull-secret=<name>  Name of secret used for pulling Docker images from
                         restricted Docker registry.
   --saname=<name>       ServiceAccount name to pass
                         [default: cmk-serviceaccount].
-  --socket-id=<num>     ID of socket, which should deliver cores for
-                        dataplane. If it's set to -1 then dataplane
-                        will be spawned on any socket [default: -1].
+  --socket-id=<num>     ID of socket where allocated core should come from.
+                        If it's set to -1 then child command will be assigned
+                        to any socket [default: -1].
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `CMK_CPUS_ASSIGNED` environment

@@ -43,6 +43,11 @@ def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
         logging.info("Isolated physical cores: {}".format(
             ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
 
+        '''
+        Following core lists depends on selected policies. If operator sets
+        same policies for data plane and control plane pools those lists will
+        be the same.
+        '''
         isolated_cores_dp = platform.get_isolated_cores(
             mode=dp_allocation_mode)
         isolated_cores_cp = platform.get_isolated_cores(

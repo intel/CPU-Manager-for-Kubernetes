@@ -274,14 +274,14 @@ def test_topology_cores_get_modes():
     sockets = topology.parse(lscpu, isolated_cpus)
     assert len(sockets.sockets) == 2
 
-    cores = sockets.get_cores(mode="horizontal")
+    cores = sockets.get_cores(mode="spread")
 
     assert cores[0].core_id == 0
     assert cores[1].core_id == 4
     assert cores[2].core_id == 1
     assert cores[3].core_id == 5
 
-    cores = sockets.get_cores(mode="vertical")
+    cores = sockets.get_cores(mode="packed")
     assert cores[0].core_id == 0
     assert cores[1].core_id == 1
     assert cores[2].core_id == 2
@@ -293,7 +293,7 @@ def test_topology_cores_get_modes():
     assert cores[2].core_id == 2
     assert cores[3].core_id == 3
 
-    cores = sockets.get_isolated_cores(mode="horizontal")
+    cores = sockets.get_isolated_cores(mode="spread")
     for core in cores:
         print(core.cpu_ids())
     assert cores[0].core_id == 0
@@ -301,7 +301,7 @@ def test_topology_cores_get_modes():
     assert cores[2].core_id == 1
     assert cores[3].core_id == 5
 
-    cores = sockets.get_isolated_cores(mode="vertical")
+    cores = sockets.get_isolated_cores(mode="packed")
     for core in cores:
         print(core.cpu_ids())
     assert cores[0].core_id == 0

@@ -46,24 +46,24 @@ class Platform:
             return None
         return self.sockets[id]
 
-    def get_cores(self, mode="vertical"):
+    def get_cores(self, mode="packed"):
         return self.get_cores_general(mode, False)
 
-    def get_isolated_cores(self, mode="vertical"):
+    def get_isolated_cores(self, mode="packed"):
         return self.get_cores_general(mode, True)
 
     def get_cores_general(self, mode, isolated=False):
-        if mode not in ["horizontal", "vertical"]:
+        if mode not in ["spread", "packed"]:
             logging.warning("Wrong mode has been selected."
                             "Fallback to vertical")
-            mode = "vertical"
+            mode = "packed"
 
-        if mode == "vertical":
-            return self.allocate_vertical(isolated)
-        if mode == "horizontal":
-            return self.allocate_horizontal(isolated)
+        if mode == "packed":
+            return self.allocate_packed(isolated)
+        if mode == "spread":
+            return self.allocate_spread(isolated)
 
-    def allocate_vertical(self, isolated_cores=False):
+    def allocate_packed(self, isolated_cores=False):
         cores = []
         for socket in self.sockets.values():
             if isolated_cores:
@@ -72,7 +72,7 @@ class Platform:
                 cores += socket.get_cores()
         return cores
 
-    def allocate_horizontal(self, isolated_cores=False):
+    def allocate_spread(self, isolated_cores=False):
         output_cores = []
         socket_cores = {}
 
