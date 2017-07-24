@@ -19,6 +19,7 @@ limitations under the License.
 ## Table of Contents
 * [System requirements](#system-requirements)
 * [Setting up the cluster](#setting-up-the-cluster)
+  * [Multi socket support](#multi-socket-support)
 * [Running the `cmk isolate` Hello World Pod](#running-the-cmk-isolate-hello-world-pod)
 * [Validating the environment](#validating-the-environment)
 * [Troubleshooting and recovery](#troubleshooting-and-recovery)
@@ -220,6 +221,22 @@ below:
     name: cmk-install-dir
 ```
 
+### Multi socket support
+`CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
+across pools. To prevent situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
+operator is able to use one of two `mode` policies: `packed` and `spread`. This policies are configuring order of cores
+allocation:
+
+- __packed__ mode will put following cores order:
+![CMK packed mode](images/cmk-packed-mode.svg)
+
+- __spread__ mode will put following cores order:
+![CMK spread mode](images/cmk-packed-mode.svg)
+
+To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
+Those parameters can be used with `cluster-init` and `init`.
+
+
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
 World [cmk-isolate-pod template][isolate-template] describes a simple Pod with three containers requesting CPUs from
@@ -227,7 +244,9 @@ the __dataplane__, __controlplane__ and the __infra__ pools, respectively, using
 `pool` is requested by passing the desired value to the `--pool` flag when using `cmk isolate` as described in the
 [documentation][cmk-isolate].
 
-`cmk isolate` takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
+`cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned.
+
+`cmk isolate` also takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
 the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`.
 
 Values that might require modification in the [cmk-isolate-pod template][isolate-template] are shown as snippets

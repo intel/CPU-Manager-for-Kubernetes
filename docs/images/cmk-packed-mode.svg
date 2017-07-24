@@ -1,0 +1,1171 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="127.15625mm"
+   height="150mm"
+   viewBox="0 0 127.15625 150"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.1 r"
+   sodipodi:docname="cmk-packed-mode.svg">
+  <defs
+     id="defs2">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824"
+         id="use3830"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-6">
+      <g
+         id="use3830-0"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect3938"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect3940"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect3942"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-7">
+      <g
+         id="use3830-9"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4246"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4248"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4250"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-9">
+      <g
+         id="use3830-2"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4234"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4236"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4238"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-2">
+      <g
+         id="use3830-93"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4397"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4399"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4401"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-2-3">
+      <g
+         id="use3830-93-6"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4067"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4069"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4071"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-9-1">
+      <g
+         id="use3830-2-0"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4075"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4077"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4079"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-7-6">
+      <g
+         id="use3830-9-3"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4083"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4085"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4087"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-20">
+      <g
+         id="use3830-6"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4091"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4093"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4095"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-5">
+      <g
+         id="use3830-04"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4347"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4349"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4351"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-1">
+      <g
+         id="use3830-06"
+         inkscape:label="Clip">
+        <rect
+           style="fill:#f9f9f9;stroke-width:0.28611809"
+           id="rect4355"
+           width="50"
+           height="25"
+           x="15"
+           y="52" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458499"
+           id="rect4357"
+           width="19.844"
+           height="14.363094"
+           x="17.5"
+           y="54.636906" />
+        <rect
+           style="fill:#808080;stroke-width:0.26458332"
+           id="rect4359"
+           width="19.84375"
+           height="14.363095"
+           x="42.427826"
+           y="54.636906" />
+      </g>
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-11">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-77"
+         id="use3830-5"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-93">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-8"
+         id="use3830-90"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-4">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-0"
+         id="use3830-8"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-4-9">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-0-7"
+         id="use3830-8-6"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-93-2">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-8-9"
+         id="use3830-90-1"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-11-7">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-77-4"
+         id="use3830-5-8"
+         width="100%"
+         height="100%" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath3828-57">
+      <use
+         x="0"
+         y="0"
+         xlink:href="#g3824-9"
+         id="use3830-4"
+         width="100%"
+         height="100%" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.5"
+     inkscape:cx="-717.54984"
+     inkscape:cy="254.46519"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="968"
+     inkscape:window-x="1920"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     showborder="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <sodipodi:guide
+       position="-18.819894,189.98744"
+       orientation="0,1"
+       id="guide3699"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="-41.749999,177.15105"
+       orientation="1,0"
+       id="guide3768"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="-24.552083,150.22025"
+       orientation="0,1"
+       id="guide3787"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="-8.9416667,20.12083"
+       orientation="0,1"
+       id="guide3934"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="-10.132292,145.26875"
+       orientation="0,1"
+       id="guide3936"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="4.2875,142.35834"
+       orientation="0,1"
+       id="guide4169"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="38.021874,128.07084"
+       orientation="0,1"
+       id="guide4171"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="7.5,142.3631"
+       orientation="1,0"
+       id="guide4173"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="27.344001,109.0231"
+       orientation="1,0"
+       id="guide4175"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="7.5,120.39792"
+       orientation="1,0"
+       id="guide4177"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="9.971715,130.02553"
+       orientation="1,0"
+       id="guide4179"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="25.950261,136.60365"
+       orientation="0,1"
+       id="guide4181"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="32.432551,136.60366"
+       orientation="1,0"
+       id="guide4183"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="35.045313,130.41901"
+       orientation="1,0"
+       id="guide4185"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="27.344,86.7145"
+       orientation="0,1"
+       id="guide4232"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="35.045312,53.41271"
+       orientation="0,1"
+       id="guide4242"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="4.948958,57.36094"
+       orientation="1,0"
+       id="guide4244"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="29.885938,122.31615"
+       orientation="0,1"
+       id="guide4288"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-10,-47)">
+    <rect
+       style="fill:#00ffff;stroke-width:0.27013138"
+       id="rect3682"
+       width="60"
+       height="150"
+       x="10"
+       y="47" />
+    <g
+       id="g3826"
+       clip-path="url(#clipPath3828)"
+       transform="translate(-4.5917549e-8,-0.0708394)">
+      <g
+         inkscape:label="Clip"
+         id="g3824">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="24.14171"
+       y="189.6111"
+       id="text4047"><tspan
+         sodipodi:role="line"
+         id="tspan4045"
+         x="24.14171"
+         y="189.6111"
+         style="font-size:7.05555534px;stroke-width:0.26458332">Socket #0</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="19.74181"
+       y="63.458054"
+       id="text4101"
+       transform="scale(0.99999049,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099"
+         x="19.74181"
+         y="63.458054"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #0</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="44.825962"
+       y="63.489857"
+       id="text4101-6"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8"
+         x="44.825962"
+         y="63.489857"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #4</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="17.197918"
+       y="74.617706"
+       id="text4282"><tspan
+         sodipodi:role="line"
+         id="tspan4280"
+         x="17.197918"
+         y="74.617706"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #0</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="42.134895"
+       y="74.617706"
+       id="text4286"><tspan
+         sodipodi:role="line"
+         id="tspan4284"
+         x="42.134895"
+         y="74.617706"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #0</tspan></text>
+    <g
+       id="g3826-9"
+       clip-path="url(#clipPath3828-11)"
+       transform="translate(-8.6800521e-7,33.339995)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-77">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-6"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-73"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-6"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="19.74181"
+       y="96.868576"
+       id="text4101-5"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-6"
+         x="19.74181"
+         y="96.868576"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #1</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="44.825962"
+       y="96.900696"
+       id="text4101-6-3"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-9"
+         x="44.825962"
+         y="96.900696"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #5</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="17.197918"
+       y="108.02855"
+       id="text4282-4"><tspan
+         sodipodi:role="line"
+         id="tspan4280-8"
+         x="17.197918"
+         y="108.02855"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #1</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="42.134892"
+       y="108.02855"
+       id="text4286-1"><tspan
+         sodipodi:role="line"
+         id="tspan4284-2"
+         x="42.134892"
+         y="108.02855"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #1</tspan></text>
+    <g
+       id="g3826-8"
+       clip-path="url(#clipPath3828-93)"
+       transform="translate(-0.05104204,66.58729)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-8">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-5"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-0"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-9"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="19.690767"
+       y="130.11554"
+       id="text4101-63"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-85"
+         x="19.690767"
+         y="130.11554"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #2</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="44.774921"
+       y="130.14799"
+       id="text4101-6-6"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-1"
+         x="44.774921"
+         y="130.14799"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #6</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="17.146877"
+       y="141.27585"
+       id="text4282-1"><tspan
+         sodipodi:role="line"
+         id="tspan4280-5"
+         x="17.146877"
+         y="141.27585"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #2</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="42.083855"
+       y="141.27585"
+       id="text4286-9"><tspan
+         sodipodi:role="line"
+         id="tspan4284-8"
+         x="42.083855"
+         y="141.27585"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #2</tspan></text>
+    <g
+       id="g3826-1"
+       clip-path="url(#clipPath3828-4)"
+       transform="translate(-0.05104204,99.87917)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-0">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-3"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-04"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-4"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="19.690767"
+       y="163.40712"
+       id="text4101-4"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-4"
+         x="19.690767"
+         y="163.40712"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #3</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="44.774921"
+       y="163.43988"
+       id="text4101-6-7"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-6"
+         x="44.774921"
+         y="163.43988"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #7</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="17.146875"
+       y="174.56772"
+       id="text4282-3"><tspan
+         sodipodi:role="line"
+         id="tspan4280-1"
+         x="17.146875"
+         y="174.56772"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #3</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="42.083851"
+       y="174.56772"
+       id="text4286-7"><tspan
+         sodipodi:role="line"
+         id="tspan4284-5"
+         x="42.083851"
+         y="174.56772"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #3</tspan></text>
+    <rect
+       style="fill:#00ffff;stroke-width:0.27013138"
+       id="rect3682-1"
+       width="60"
+       height="150"
+       x="77.15625"
+       y="47" />
+    <g
+       id="g3826-85"
+       clip-path="url(#clipPath3828-57)"
+       transform="translate(67.15625,-0.07084068)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-9">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-7"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-5"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-3"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="91.297958"
+       y="189.6111"
+       id="text4047-8"><tspan
+         sodipodi:role="line"
+         id="tspan4045-8"
+         x="91.297958"
+         y="189.6111"
+         style="font-size:7.05555534px;stroke-width:0.26458332">Socket #1</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="86.898697"
+       y="63.458054"
+       id="text4101-3"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-1"
+         x="86.898697"
+         y="63.458054"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #8</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="111.98221"
+       y="63.489857"
+       id="text4101-6-8"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-96"
+         x="111.98221"
+         y="63.489857"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #12</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="84.354172"
+       y="74.617706"
+       id="text4282-43"><tspan
+         sodipodi:role="line"
+         id="tspan4280-3"
+         x="84.354172"
+         y="74.617706"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #4</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="109.29115"
+       y="74.617706"
+       id="text4286-3"><tspan
+         sodipodi:role="line"
+         id="tspan4284-86"
+         x="109.29115"
+         y="74.617706"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #4</tspan></text>
+    <g
+       id="g3826-9-0"
+       clip-path="url(#clipPath3828-11-7)"
+       transform="translate(67.156249,33.339995)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-77-4">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-6-8"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-73-8"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-6-8"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="86.898697"
+       y="96.868584"
+       id="text4101-5-9"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-6-7"
+         x="86.898697"
+         y="96.868584"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #9</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="111.98221"
+       y="96.900696"
+       id="text4101-6-3-7"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-9-6"
+         x="111.98221"
+         y="96.900696"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #13</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="84.354172"
+       y="108.02855"
+       id="text4282-4-4"><tspan
+         sodipodi:role="line"
+         id="tspan4280-8-3"
+         x="84.354172"
+         y="108.02855"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #5</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="109.29115"
+       y="108.02855"
+       id="text4286-1-0"><tspan
+         sodipodi:role="line"
+         id="tspan4284-2-3"
+         x="109.29115"
+         y="108.02855"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #5</tspan></text>
+    <g
+       id="g3826-8-0"
+       clip-path="url(#clipPath3828-93-2)"
+       transform="translate(67.105208,66.58729)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-8-9">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-5-2"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-0-5"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-9-4"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="86.847656"
+       y="130.11554"
+       id="text4101-63-0"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-85-5"
+         x="86.847656"
+         y="130.11554"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #10</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="111.93117"
+       y="130.14799"
+       id="text4101-6-6-9"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-1-4"
+         x="111.93117"
+         y="130.14799"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #14</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="84.303131"
+       y="141.27585"
+       id="text4282-1-6"><tspan
+         sodipodi:role="line"
+         id="tspan4280-5-9"
+         x="84.303131"
+         y="141.27585"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #6</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="109.2401"
+       y="141.27585"
+       id="text4286-9-2"><tspan
+         sodipodi:role="line"
+         id="tspan4284-8-2"
+         x="109.2401"
+         y="141.27585"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #6</tspan></text>
+    <g
+       id="g3826-1-4"
+       clip-path="url(#clipPath3828-4-9)"
+       transform="translate(67.105208,99.87917)">
+      <g
+         inkscape:label="Clip"
+         id="g3824-0-7">
+        <rect
+           y="52"
+           x="15"
+           height="25"
+           width="50"
+           id="rect3785-3-7"
+           style="fill:#f9f9f9;stroke-width:0.28611809" />
+        <rect
+           y="54.636906"
+           x="17.5"
+           height="14.363094"
+           width="19.844"
+           id="rect3804-04-5"
+           style="fill:#808080;stroke-width:0.26458499" />
+        <rect
+           y="54.636906"
+           x="42.427826"
+           height="14.363095"
+           width="19.84375"
+           id="rect3804-3-4-4"
+           style="fill:#808080;stroke-width:0.26458332" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58323193px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458082"
+       x="86.847656"
+       y="163.40712"
+       id="text4101-4-8"
+       transform="scale(0.9999905,1.0000095)"><tspan
+         sodipodi:role="line"
+         id="tspan4099-4-1"
+         x="86.847656"
+         y="163.40712"
+         style="font-size:4.23329306px;stroke-width:0.26458082">CPU #11</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="111.93117"
+       y="163.43988"
+       id="text4101-6-7-2"><tspan
+         sodipodi:role="line"
+         id="tspan4099-8-6-8"
+         x="111.93117"
+         y="163.43988"
+         style="font-size:4.23333311px;stroke-width:0.26458332">CPU #15</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="84.303123"
+       y="174.56772"
+       id="text4282-3-9"><tspan
+         sodipodi:role="line"
+         id="tspan4280-1-3"
+         x="84.303123"
+         y="174.56772"
+         style="font-size:4.93888903px;stroke-width:0.26458332">Core #7</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="109.2401"
+       y="174.56772"
+       id="text4286-7-6"><tspan
+         sodipodi:role="line"
+         id="tspan4284-5-8"
+         x="109.2401"
+         y="174.56772"
+         style="font-size:4.93888903px;fill:#008000;stroke-width:0.26458332">Order #7</tspan></text>
+  </g>
+</svg>
