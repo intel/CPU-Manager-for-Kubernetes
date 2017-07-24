@@ -233,7 +233,7 @@ allocation:
 
 - __spread__ mode will put following cores order:
 
-![CMK spread mode](images/cmk-packed-mode.png)
+![CMK spread mode](images/cmk-spread-mode.png)
 
 To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
 Those parameters can be used with `cluster-init` and `init`.
