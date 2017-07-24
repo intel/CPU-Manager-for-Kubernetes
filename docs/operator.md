@@ -228,10 +228,10 @@ operator is able to use one of two `mode` policies: `packed` and `spread`. This 
 allocation:
 
 - __packed__ mode will put following cores order:
-![CMK packed mode](images/cmk-packed-mode.svg)
+![CMK packed mode](images/cmk-packed-mode.png)
 
 - __spread__ mode will put following cores order:
-![CMK spread mode](images/cmk-packed-mode.svg)
+![CMK spread mode](images/cmk-packed-mode.png)
 
 To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
 Those parameters can be used with `cluster-init` and `init`.
