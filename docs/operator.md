@@ -223,7 +223,7 @@ below:
 
 ### Multi socket support
 `CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
-across pools. To prevent situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
+across pools. To prevent a situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
 operator is able to use one of two `mode` policies: `packed` and `spread`. This policies are configuring order of cores
 allocation:
 
