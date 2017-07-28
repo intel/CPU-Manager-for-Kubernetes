@@ -42,7 +42,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: cmk:v1.0.1
+        image: cmk:v1.1.0
         name: cmk-reconcile
         volumeMounts:
         - mountPath: "/host/proc"
