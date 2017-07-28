@@ -23,7 +23,7 @@ import subprocess
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
 
 
-def isolate(conf_dir, pool_name, no_affinity, command, args):
+def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
     c = config.Config(conf_dir)
     with c.lock():
         pools = c.pools()
@@ -32,9 +32,14 @@ def isolate(conf_dir, pool_name, no_affinity, command, args):
                            .format(pool_name))
         pool = pools[pool_name]
 
+        if socket_id == "-1" or pool_name != "dataplane":
+            selected_socket = None
+        else:
+            selected_socket = socket_id
+
         clist = None
         if pool.exclusive():
-            for cl in pool.cpu_lists().values():
+            for cl in pool.cpu_lists(selected_socket).values():
                 if len(cl.tasks()) == 0:
                     clist = cl
                     break

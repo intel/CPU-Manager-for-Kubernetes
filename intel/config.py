@@ -16,6 +16,7 @@ from collections import OrderedDict
 import fcntl
 import logging
 import os
+from stat import S_ISDIR
 import threading
 import _thread
 
@@ -100,26 +101,42 @@ class Pool:
                 return True
             return False
 
-    def cpu_lists(self):
+    def cpu_lists(self, socket_id=None):
+        if socket_id:
+            return self.socket_cpu_list(socket_id)
+
         result = OrderedDict()
         for f in sorted(os.listdir(self.path)):
-            d = os.path.join(self.path, f)
+            fd_stat = os.stat(os.path.join(self.path, f)).st_mode
+            if not S_ISDIR(fd_stat):
+                continue
+            result.update(self.socket_cpu_list(f))
+        return result
+
+    def socket_cpu_list(self, socket_id):
+        result = OrderedDict()
+        socket_path = os.path.join(self.path, socket_id)
+        for f in sorted(os.listdir(socket_path)):
+            d = os.path.join(socket_path, f)
             if os.path.isdir(d):
                 clist = CPUList(d)
                 result[clist.cpus()] = clist
         return result
 
-    def cpu_list(self, name):
-        return self.cpu_lists()[name]
+    def cpu_list(self, socket_id, name):
+        return self.cpu_lists(socket_id)[name]
 
-    # Writes a new cpu list to disk and returns the corresponding
+    # Writes a new cpu list to disk and socket_idreturns the corresponding
     # CPUList object.
-    def add_cpu_list(self, cpus):
-        if cpus in self.cpu_lists():
+    def add_cpu_list(self, socket_id, cpus):
+        if cpus in self.cpu_lists(socket_id=socket_id):
             raise KeyError("CPU list {} already exists".format(cpus))
-        os.makedirs(os.path.join(self.path, cpus))
-        open(os.path.join(self.path, cpus, "tasks"), "w+")
-        return self.cpu_list(cpus)
+        os.makedirs(os.path.join(self.path, socket_id, cpus))
+        open(os.path.join(self.path, socket_id, cpus, "tasks"), "w+")
+        return self.cpu_list(socket_id, cpus)
+
+    def add_socket(self, socket_id):
+        os.makedirs(os.path.join(self.path, socket_id))
 
     def as_dict(self):
         result = {}

@@ -31,6 +31,81 @@ def discover():
     return parse(lscpu(), isol)
 
 
+class Platform:
+    def __init__(self, sockets):
+        self.sockets = sockets
+
+    def has_isolated_cores(self):
+        for socket in self.sockets.values():
+            if socket.has_isolated_cores():
+                return True
+        return False
+
+    def get_socket(self, id):
+        if id not in self.sockets:
+            return None
+        return self.sockets[id]
+
+    def get_cores(self, mode="packed"):
+        return self.get_cores_general(mode, False)
+
+    def get_isolated_cores(self, mode="packed"):
+        return self.get_cores_general(mode, True)
+
+    def get_cores_general(self, mode, isolated=False):
+        if mode not in ["spread", "packed"]:
+            logging.warning("Wrong mode has been selected."
+                            "Fallback to vertical")
+            mode = "packed"
+
+        if mode == "packed":
+            return self.allocate_packed(isolated)
+        if mode == "spread":
+            return self.allocate_spread(isolated)
+
+    def allocate_packed(self, isolated_cores=False):
+        cores = []
+        for socket in self.sockets.values():
+            if isolated_cores:
+                cores += socket.get_isolated_cores()
+            else:
+                cores += socket.get_cores()
+        return cores
+
+    def allocate_spread(self, isolated_cores=False):
+        output_cores = []
+        socket_cores = {}
+
+        for socket in self.sockets:
+            if isolated_cores:
+                socket_cores[socket] = self.sockets[socket]\
+                    .get_isolated_cores()
+            else:
+                socket_cores[socket] = self.sockets[socket].get_cores()
+        while len(socket_cores) > 0:
+            sockets = [socket for socket in socket_cores]
+            for socket in sockets:
+                if len(socket_cores[socket]) == 0:
+                    del(socket_cores[socket])
+                    continue
+                output_cores.append(socket_cores[socket][0])
+                del(socket_cores[socket][0])
+
+        return output_cores
+
+    def get_shared_cores(self):
+        cores = []
+        for socket in self.sockets.values():
+            cores += socket.get_shared_cores()
+        return cores
+
+    def get_cores_from_pool(self, pool):
+        cores = []
+        for socket in self.sockets.values():
+            cores += socket.get_cores_from_pool(pool)
+        return cores
+
+
 class Socket:
     def __init__(self, socket_id, cores=None):
         if not cores:
@@ -38,6 +113,24 @@ class Socket:
         self.socket_id = socket_id
         self.cores = OrderedDict(
             sorted(cores.items(), key=lambda pair: pair[1].core_id))
+
+    def has_isolated_cores(self):
+        for core in self.cores.values():
+            if core.is_isolated():
+                return True
+        return False
+
+    def get_cores(self):
+        return [core for core in self.cores.values()]
+
+    def get_isolated_cores(self):
+        return [core for core in self.cores.values() if core.is_isolated()]
+
+    def get_shared_cores(self):
+        return [core for core in self.cores.values() if not core.is_isolated()]
+
+    def get_cores_from_pool(self, pool):
+        return [core for core in self.cores.values() if core.pool == pool]
 
     def as_dict(self, include_pool=True):
         return {
@@ -131,7 +224,7 @@ def parse(lscpu_output, isolated_cpus=None):
                 cpu.isolated = True
             core.cpus[cpu_id] = cpu
 
-    return sockets
+    return Platform(sockets)
 
 
 def lscpu():

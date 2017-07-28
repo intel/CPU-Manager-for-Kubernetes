@@ -62,11 +62,11 @@ def test_init_success1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 2, 1)
+        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -93,7 +93,7 @@ def test_init_success1_isolcpus(monkeypatch):
     with patch("intel.topology.lscpu",
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 2, 1)
+        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -116,11 +116,11 @@ def test_init_success2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 2)
+        init.init(os.path.join(temp_dir, "init"), 1, 2, "vertical", "vertical")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -145,7 +145,7 @@ def test_init_success2_isolcpus(monkeypatch):
     with patch("intel.topology.lscpu",
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 2)
+        init.init(os.path.join(temp_dir, "init"), 1, 2, "vertical", "vertical")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -167,11 +167,11 @@ def test_init_success3(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {0: quad_core()}
+    sockets = topology.Platform({0: quad_core()})
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 1)
+        init.init(os.path.join(temp_dir, "init"), 1, 1, "vertical", "vertical")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -193,7 +193,7 @@ def test_init_failure1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -204,19 +204,20 @@ def test_init_failure1(monkeypatch):
                 3: topology.CPU(3)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError):
-            init.init(os.path.join(temp_dir, "init"), 2, 1)
+            init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
+                      "vertical")
 
 
 def test_init_failure2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -227,12 +228,13 @@ def test_init_failure2(monkeypatch):
                 5: topology.CPU(5)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
-            init.init(os.path.join(temp_dir, "init"), 2, 1)
+            init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
+                      "vertical")
         assert err is not None
         expected_msg = "No more free cores left to assign for controlplane"
         assert err.value.args[0] == expected_msg
@@ -242,7 +244,7 @@ def test_init_failure3(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
 
-    sockets = {
+    sockets = topology.Platform({
         0: topology.Socket(0, {
             0: topology.Core(0, {
                 0: topology.CPU(0),
@@ -257,12 +259,13 @@ def test_init_failure3(monkeypatch):
                 6: topology.CPU(6)
             })
         })
-    }
+    })
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
-            init.init(os.path.join(temp_dir, "init"), 2, 1)
+            init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
+                      "vertical")
         assert err is not None
         expected_msg = "No more free cores left to assign for infra"
         assert err.value.args[0] == expected_msg
