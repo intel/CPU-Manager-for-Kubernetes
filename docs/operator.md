@@ -224,20 +224,24 @@ below:
 ### Multi socket support
 `CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
 across pools. To prevent a situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
-operator is able to use one of two `mode` policies: `packed` and `spread`. This policies are configuring order of cores
-allocation:
+operator is able to use one of two `mode` policies: `packed` and `spread`. Those policies define how cores are assigned to
+specific pool:
 
-- __packed__ mode will put following cores order:
+- __packed__ mode will put cores in the following order:
 
 ![CMK packed mode](images/cmk-packed-mode.png)
+
+_Note: This policy is not topology aware, so there is a possibility that one pool won't spread on multiple sockets._
 
 - __spread__ mode will put following cores order:
 
 ![CMK spread mode](images/cmk-spread-mode.png)
 
-To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
-Those parameters can be used with `cluster-init` and `init`.
+_Note: This policy is topology aware, so CMK will try to spread pools on each socket._
 
+To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
+Those parameters can be used with `cluster-init` and `init`. If operator use two different modes, then those policies
+will be mixed. In that case __dataplane__ pool is resolving before __controlplane__ pool.
 
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
@@ -246,7 +250,8 @@ the __dataplane__, __controlplane__ and the __infra__ pools, respectively, using
 `pool` is requested by passing the desired value to the `--pool` flag when using `cmk isolate` as described in the
 [documentation][cmk-isolate].
 
-`cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned.
+`cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned. This flag is optional
+ and if it's not used `cmk isolate` will use first not reserved core.
 
 `cmk isolate` also takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
 the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`.
