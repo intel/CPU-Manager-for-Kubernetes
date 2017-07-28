@@ -64,7 +64,7 @@ def reconcile(conf_dir, seconds, publish):
 def reclaim_cpu_lists(conf, report):
     for r in report["reclaimedCpuLists"]:
         pool = conf.pool(r.pool())
-        cl = pool.cpu_list(r.cpus())
+        cl = pool.cpu_list(None, r.cpus())
         logging.debug("Removing pid {} from cpu list \"{}\" in pool {}".format(
             r.pid(), r.cpus(), r.pool()))
         cl.remove_task(r.pid())

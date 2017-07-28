@@ -17,7 +17,8 @@ import logging
 import sys
 
 
-def init(conf_dir, num_dp_cores, num_cp_cores):
+def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
+         cp_allocation_mode):
     check_hugepages()
 
     logging.info("Writing config to {}.".format(conf_dir))
@@ -31,39 +32,47 @@ def init(conf_dir, num_dp_cores, num_cp_cores):
         check_assignment(conf_dir, num_dp_cores, num_cp_cores)
         return
 
-    sockets = topology.discover()
-
-    if len(sockets) != 1:
-        logging.error("Only single socket systems are supported for now. "
-                      "Found %d sockets" % len(sockets))
-        sys.exit(1)
+    platform = topology.discover()
 
     # List of intel.topology.Core objects.
-    cores = list(sockets[0].cores.values())
+    cores = platform.get_cores()
 
-    check_isolated_cores(cores, num_dp_cores, num_cp_cores)
+    check_isolated_cores(platform, num_dp_cores, num_cp_cores)
 
-    # Align dp+cp cores to isolated cores if possible
-    isolated_cores = [c for c in cores if c.is_isolated()]
-    shared_cores = [c for c in cores if not c.is_isolated()]
-
-    if isolated_cores:
+    if platform.has_isolated_cores():
         logging.info("Isolated physical cores: {}".format(
-            ",".join([str(c.core_id) for c in isolated_cores])))
-        assign(isolated_cores, "dataplane", count=num_dp_cores)
-        assign(isolated_cores, "controlplane", count=num_cp_cores)
-        assign(shared_cores, "infra")
+            ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
+
+        '''
+        Following core lists depends on selected policies. If operator sets
+        same policies for data plane and control plane pools those lists will
+        be the same.
+        '''
+        isolated_cores_dp = platform.get_isolated_cores(
+            mode=dp_allocation_mode)
+        isolated_cores_cp = platform.get_isolated_cores(
+            mode=cp_allocation_mode)
+
+        infra_cores = platform.get_shared_cores()
+
+        assign(isolated_cores_dp, "dataplane", count=num_dp_cores)
+        assign(isolated_cores_cp, "controlplane", count=num_cp_cores)
+        assign(infra_cores, "infra")
     else:
         logging.info("No isolated physical cores detected: allocating "
                      "control plane and data plane from full core list")
-        assign(cores, "dataplane", count=num_dp_cores)
-        assign(cores, "controlplane", count=num_cp_cores)
+
+        cores_dp = platform.get_cores(mode=dp_allocation_mode)
+        cores_cp = platform.get_cores(mode=cp_allocation_mode)
+
+        assign(cores_dp, "dataplane", count=num_dp_cores)
+        assign(cores_cp, "controlplane", count=num_cp_cores)
         assign(cores, "infra")
 
     with c.lock():
-        write_exclusive_pool("dataplane", cores, c)
-        write_shared_pool("controlplane", cores, c)
-        write_shared_pool("infra", cores, c)
+        write_exclusive_pool("dataplane", platform, c)
+        write_shared_pool("controlplane", platform, c)
+        write_shared_pool("infra", platform, c)
 
 
 def check_hugepages():
@@ -106,8 +115,9 @@ def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
         sys.exit(1)
 
 
-def check_isolated_cores(cores, num_dp_cores, num_cp_cores):
-    isolated_cores = [c for c in cores if c.is_isolated()]
+def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
+    isolated_cores = platform.get_isolated_cores()
+    cores = platform.get_cores()
     num_isolated_cores = len(isolated_cores)
 
     for core in cores:
@@ -155,31 +165,37 @@ def assign(cores, pool, count=None):
         c.pool = pool
 
 
-def write_exclusive_pool(pool_name, cores, config):
+def write_exclusive_pool(pool_name, platform, config):
     logging.info("Adding %s pool." % pool_name)
     pool = config.add_pool(pool_name, True)
 
-    cores = [c for c in cores if c.pool == pool_name]
+    sockets = platform.sockets.values()
+    for socket in sockets:
+        pool.add_socket(str(socket.socket_id))
+        cores = socket.get_cores_from_pool(pool_name)
+        for core in cores:
+            cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
+            pool.add_cpu_list(str(socket.socket_id), cpu_ids_str)
+            logging.info("Adding cpu list %s from socket %s to %s pool." %
+                         (cpu_ids_str, socket.socket_id, pool_name))
 
-    # We write one cpu list per core for exclusive pools/
-    for core in cores:
-        cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
-        pool.add_cpu_list(cpu_ids_str)
-        logging.info("Adding cpu list %s to %s pool." %
-                     (cpu_ids_str, pool_name))
 
-
-def write_shared_pool(pool_name, cores, config):
+def write_shared_pool(pool_name, platform, config):
     logging.info("Adding %s pool." % pool_name)
     pool = config.add_pool(pool_name, False)
 
-    cores = [c for c in cores if c.pool == pool_name]
+    sockets = platform.sockets.values()
+    for socket in sockets:
+        pool.add_socket(str(socket.socket_id))
+        cores = socket.get_cores_from_pool(pool_name)
+        cpu_ids = []
+        for core in cores:
+            cpu_ids.extend(core.cpu_ids())
 
-    cpu_ids = []
-    for core in cores:
-        cpu_ids.extend(core.cpu_ids())
+        if not cpu_ids:
+            continue
 
-    cpu_ids_str = ",".join([str(c) for c in cpu_ids])
-    pool.add_cpu_list(cpu_ids_str)
-    logging.info("Adding cpu list %s to %s pool." %
-                 (cpu_ids_str, pool_name))
+        cpu_ids_str = ",".join([str(c) for c in cpu_ids])
+        pool.add_cpu_list(str(socket.socket_id), cpu_ids_str)
+        logging.info("Adding cpu list %s to %s pool." %
+                     (cpu_ids_str, pool_name))

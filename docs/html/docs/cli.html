@@ -67,13 +67,14 @@ Usage:
                    [--cmk-img=&lt;img&gt;] [--cmk-img-pol=&lt;pol&gt;] [--conf-dir=&lt;dir&gt;]
                    [--install-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;]
                    [--num-cp-cores=&lt;num&gt;] [--pull-secret=&lt;name&gt;]
-                   [--saname=&lt;name&gt;]
+                   [--saname=&lt;name&gt;] [--cp-mode=&lt;mode&gt;] [--dp-mode=&lt;mode&gt;]
   cmk init [--conf-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;] [--num-cp-cores=&lt;num&gt;]
+           [--socket-id=&lt;num&gt;] [--cp-mode=&lt;mode&gt;] [--dp-mode=&lt;mode&gt;]
   cmk discover [--conf-dir=&lt;dir&gt;]
   cmk describe [--conf-dir=&lt;dir&gt;]
   cmk reconcile [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
-  cmk isolate [--conf-dir=&lt;dir&gt;] --pool=&lt;pool&gt; &lt;command&gt; [-- &lt;args&gt; ...]
-              [--no-affinity]
+  cmk isolate [--conf-dir=&lt;dir&gt;] [--socket-id=&lt;num&gt;] --pool=&lt;pool&gt; &lt;command&gt;
+              [-- &lt;args&gt; ...][--no-affinity]
   cmk install [--install-dir=&lt;dir&gt;]
   cmk node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
   cmk uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;]
@@ -97,12 +98,19 @@ Options:
   --num-dp-cores=&lt;num&gt;  Number of data plane cores [default: 4].
   --num-cp-cores=&lt;num&gt;  Number of control plane cores [default: 1].
   --pool=&lt;pool&gt;         Pool name: either infra, controlplane or dataplane.
+  --cp-mode=&lt;mode&gt;      Control plane core allocation mode. Possible modes:
+                        packed and spread [default: packed].
+  --dp-mode=&lt;mode&gt;      Data plane core allocation mode. Possible modes:
+                        packed and spread [default: packed].
   --publish             Whether to publish reports to the Kubernetes
                         API server.
   --pull-secret=&lt;name&gt;  Name of secret used for pulling Docker images from
                         restricted Docker registry.
   --saname=&lt;name&gt;       ServiceAccount name to pass
                         [default: cmk-serviceaccount].
+  --socket-id=&lt;num&gt;     ID of socket where allocated core should come from.
+                        If it's set to -1 then child command will be assigned
+                        to any socket [default: -1].
   --no-affinity         Do not set cpu affinity before forking the child
                         command. In this mode the user program is responsible
                         for reading the `CMK_CPUS_ASSIGNED` environment

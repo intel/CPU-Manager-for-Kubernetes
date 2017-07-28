@@ -22,7 +22,7 @@ import subprocess
 
 
 # Physical CPU cores on the first socket.
-cores = topology.parse(topology.lscpu())[0].cores
+cores = topology.parse(topology.lscpu()).get_socket(0).cores
 
 proc_env_ok = {
     proc.ENV_PROC_FS: helpers.procfs_dir("ok"),
@@ -47,6 +47,7 @@ def test_cmk_init_exists():
 
 def test_cmk_init_wrong_assignment():
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(helpers.conf_dir("ok"))]
@@ -82,6 +83,7 @@ def test_cmk_init_isolated_cores_mismatch():
     }
 
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
@@ -100,6 +102,7 @@ def test_cmk_init_partial_isolation():
     }
 
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=1",
             "--num-cp-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
@@ -113,6 +116,7 @@ def test_cmk_init_partial_isolation():
 
 def test_cmk_init_insufficient_cores():
     args = ["init",
+            "--socket-id=-1",
             "--num-dp-cores=10",
             "--num-cp-cores=5",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
@@ -136,15 +140,21 @@ def test_cmk_init_isolcpus():
     output = helpers.execute(
         integration.cmk(), args, proc_env_partially_isolated)
 
+    print(output)
+
     assert "INFO:root:Isolated logical cores: 0,1,2,3,4,8,9,10,11,12" \
            in str(output)
 
     assert "INFO:root:Isolated physical cores: 0,1,2,3,4" in str(output)
 
-    assert "INFO:root:Adding cpu list 0,8 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 1,9 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 2,10 to dataplane pool." in str(output)
-    assert "INFO:root:Adding cpu list 3,11 to dataplane pool." in str(output)
+    assert "INFO:root:Adding cpu list 0,8 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 1,9 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 2,10 from socket 0 to dataplane pool." \
+           in str(output)
+    assert "INFO:root:Adding cpu list 3,11 from socket 0 to dataplane pool." \
+           in str(output)
 
     assert "INFO:root:Adding cpu list 4,12 to controlplane pool." \
            in str(output)
