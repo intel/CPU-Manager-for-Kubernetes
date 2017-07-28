@@ -32,7 +32,7 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
                            .format(pool_name))
         pool = pools[pool_name]
 
-        if socket_id == "-1":
+        if socket_id == "-1" or pool_name != "dataplane":
             selected_socket = None
         else:
             selected_socket = socket_id
