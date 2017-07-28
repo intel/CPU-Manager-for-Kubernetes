@@ -19,7 +19,7 @@ limitations under the License.
 ## Table of Contents
 * [System requirements](#system-requirements)
 * [Setting up the cluster](#setting-up-the-cluster)
-  * [Multi socket support](#multi-socket-support)
+  * [Multi socket support (experimental)](#multi-socket-support-experimental)
 * [Running the `cmk isolate` Hello World Pod](#running-the-cmk-isolate-hello-world-pod)
 * [Validating the environment](#validating-the-environment)
 * [Troubleshooting and recovery](#troubleshooting-and-recovery)
@@ -221,7 +221,7 @@ below:
     name: cmk-install-dir
 ```
 
-### Multi socket support
+### Multi socket support (experimental)
 `CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
 across pools. To prevent a situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
 operator is able to use one of two `mode` policies: `packed` and `spread`. Those policies define how cores are assigned to
@@ -250,8 +250,8 @@ the __dataplane__, __controlplane__ and the __infra__ pools, respectively, using
 `pool` is requested by passing the desired value to the `--pool` flag when using `cmk isolate` as described in the
 [documentation][cmk-isolate].
 
-`cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned. This flag is optional
- and if it's not used `cmk isolate` will use first not reserved core.
+`cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned. This flag is optional,
+suitable only for __dataplane__ pool and if it's not used `cmk isolate` will use first not reserved core.
 
 `cmk isolate` also takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
 the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`.
