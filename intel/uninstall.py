@@ -92,14 +92,49 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
         else:
             k8s.delete_pod(None, pod_name, namespace)
     except K8sApiException as err:
-        if json.loads(err.body)["reason"] != "NotFound":
-            logging.error(
-                "Aborting uninstall: Exception when removing pod \"{}\": "
-                "{}".format(pod_name, err))
-            sys.exit(1)
+        # Chceck type error
+        logging.error(err.body)
+        sys.exit(1)
+
+        # INFO: root:Removing"cmk-init-install-discover-pod-k8stest16-3"
+        # ERROR: root:User  "system:serviceaccount:default:default" cannot delete pods in the namespace "default".
+
+
+        # if json.loads(err.body)["reason"] != "NotFound":
+        #     logging.error(
+        #         "Aborting uninstall: Exception when removing pod \"{}\": "
+        #         "{}".format(pod_name, err))
+        #     sys.exit(1)
 
         logging.warning("\"{}\" does not exist".format(pod_name))
     logging.info("\"{}\" deleted".format(pod_name))
+
+# Change function that using try-catch to veryfi json, maybe better should be recognize exception and handle
+# def delete_cmk_pod_new(pod_base_name, namespace="default"):
+#     pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
+#     logging.info("Removing \"{}\"".format(pod_name))
+#
+#     try:
+#         if "-ds-" in pod_name:
+#             # Pod is part of DaemonSet - remove ds otherwise ds
+#             # controller will restart pod
+#             logging.info("\"{}\" is DaemonSet".format(pod_name))
+#             k8s.delete_ds(None, pod_name, namespace)
+#         else:
+#             k8s.delete_pod(None, pod_name, namespace)
+#     except K8sApiException as err:
+#         try:
+#             if json.loads(err.body)["reason"] != "NotFound":
+#                 logging.error(
+#                     "Aborting uninstall: Exception when removing pod \"{}\": "
+#                     "{}".format(pod_name, err))
+#                 sys.exit(1)
+#         except  ValueError as e:
+#             logging.error(e.body)
+#             sys.exit(1)
+#
+#         logging.warning("\"{}\" does not exist".format(pod_name))
+#     logging.info("\"{}\" deleted".format(pod_name))
 
 
 def check_remove_conf_dir(conf_dir):
