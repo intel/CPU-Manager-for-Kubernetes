@@ -31,7 +31,7 @@ spec:
       value: '/proc'
     - name: NUM_DP_CORES
       # Change this to modify the value passed to `--num-dp-cores` flag.
-      value: '4'
+      value: '2'
     - name: NUM_CP_CORES
       # Change this to modify the value passed to `--num-cp-cores` flag.
       value: '1'

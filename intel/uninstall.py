@@ -29,6 +29,10 @@ from . import k8s
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
     delete_cmk_pod("cmk-reconcile-nodereport-ds")
+    delete_cmk_pod("delete_cmk_pod")
+    delete_cmk_pod("cmk-init-pod")
+    delete_cmk_pod("cmk-install-pod")
+    delete_cmk_pod("cmk-discover-pod")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -91,10 +95,11 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
             k8s.delete_ds(None, pod_name, namespace)
         else:
             k8s.delete_pod(None, pod_name, namespace)
+            k8s.delete_pod(None, pod_base_name, namespace)
     except K8sApiException as err:
         # Chceck type error
-        logging.error(err.body)
-        sys.exit(1)
+        logging.warning(err.body)
+        #sys.exit(1)
 
         # INFO: root:Removing"cmk-init-install-discover-pod-k8stest16-3"
         # ERROR: root:User  "system:serviceaccount:default:default" cannot delete pods in the namespace "default".
