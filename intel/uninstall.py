@@ -29,10 +29,6 @@ from . import k8s
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
     delete_cmk_pod("cmk-reconcile-nodereport-ds")
-    delete_cmk_pod("cmk-init-pod")
-    delete_cmk_pod("cmk-install-pod")
-    delete_cmk_pod("cmk-discover-pod")
-    delete_cmk_pod("delete_cmk_pod")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -43,6 +39,11 @@ def uninstall(install_dir, conf_dir):
     remove_node_cmk_oir()
 
     remove_binary(install_dir)
+
+    delete_cmk_pod("cmk-init-pod")
+    delete_cmk_pod("cmk-install-pod")
+    delete_cmk_pod("cmk-discover-pod")
+    delete_cmk_pod("cmk-delete-pod")
 
 
 def remove_binary(install_dir):
@@ -83,7 +84,7 @@ def remove_report(report_type):
         report_type, os.getenv("NODE_NAME")))
 
 
-def delete_cmk_pod(pod_base_name, namespace="default"):
+def delete_cmk_pod(pod_base_name, namespace="default"): # sprawdż kloejnośc usuwania; czy potrzemne są pody z nazwą node
     pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
     logging.info("Removing \"{}\"".format(pod_name))
 
@@ -96,23 +97,10 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
             logging.info("\"{}\" deleted".format(pod_name))
         else:
             k8s.delete_pod(None, pod_base_name, namespace)
-            k8s.delete_pod(None, pod_name, namespace)
+            #k8s.delete_pod(None, pod_name, namespace)
             logging.info("\"{}\" deleted".format(pod_name))
     except K8sApiException as err:
-        # Chceck type error
         logging.warning(err.body)
-        #sys.exit(1)
-
-        # INFO: root:Removing"cmk-init-install-discover-pod-k8stest16-3"
-        # ERROR: root:User  "system:serviceaccount:default:default" cannot delete pods in the namespace "default".
-
-
-        # if json.loads(err.body)["reason"] != "NotFound":
-        #     logging.error(
-        #         "Aborting uninstall: Exception when removing pod \"{}\": "
-        #         "{}".format(pod_name, err))
-        #     sys.exit(1)
-
         logging.warning("\"{}\" does not exist".format(pod_name))
 
 
@@ -142,6 +130,10 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
 #
 #         logging.warning("\"{}\" does not exist".format(pod_name))
 #     logging.info("\"{}\" deleted".format(pod_name))
+
+        # INFO: root:Removing"cmk-init-install-discover-pod-k8stest16-3"
+        # ERROR: root:User  "system:serviceaccount:default:default" cannot delete pods in the namespace "default".
+
 
 
 def check_remove_conf_dir(conf_dir):
