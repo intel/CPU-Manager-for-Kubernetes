@@ -29,10 +29,10 @@ from . import k8s
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
     delete_cmk_pod("cmk-reconcile-nodereport-ds")
-    delete_cmk_pod("delete_cmk_pod")
     delete_cmk_pod("cmk-init-pod")
     delete_cmk_pod("cmk-install-pod")
     delete_cmk_pod("cmk-discover-pod")
+    delete_cmk_pod("delete_cmk_pod")
     remove_report("Nodereport")
     remove_report("Reconcilereport")
 
@@ -93,9 +93,11 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
             # controller will restart pod
             logging.info("\"{}\" is DaemonSet".format(pod_name))
             k8s.delete_ds(None, pod_name, namespace)
+            logging.info("\"{}\" deleted".format(pod_name))
         else:
-            k8s.delete_pod(None, pod_name, namespace)
             k8s.delete_pod(None, pod_base_name, namespace)
+            k8s.delete_pod(None, pod_name, namespace)
+            logging.info("\"{}\" deleted".format(pod_name))
     except K8sApiException as err:
         # Chceck type error
         logging.warning(err.body)
@@ -112,7 +114,7 @@ def delete_cmk_pod(pod_base_name, namespace="default"):
         #     sys.exit(1)
 
         logging.warning("\"{}\" does not exist".format(pod_name))
-    logging.info("\"{}\" deleted".format(pod_name))
+
 
 # Change function that using try-catch to veryfi json, maybe better should be recognize exception and handle
 # def delete_cmk_pod_new(pod_base_name, namespace="default"):
