@@ -25,7 +25,7 @@ spec:
   containers:
   - args:
       # Change this value to pass different options to cluster-init.
-      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --saname=cmk-serviceaccount"
+      - "/cmk/cmk.py cluster-init --host-list=k8stest16-1,k8stest16-2,k8stest16-3 --saname=cmk-serviceaccount"
     command:
     - "/bin/bash"
     - "-c"
