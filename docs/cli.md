@@ -354,6 +354,7 @@ container is run as a Kubernetes Pod.
 
 For instance:
 
+For Kubernetes 1.6 and older versions which using third part resources:
 ```bash
 $ kubectl get ReconcileReport
 NAME            KIND
@@ -380,7 +381,36 @@ $ kubectl get ReconcileReport cmk-02-zzwt7w -o json
   }
 }
 ```
+For Kubernetes 1.7 and newer versions which using custom resources definitions:
+```bash
+$ kubectl get cmk-reconcilereport
+NAME            KIND
+cmk-02-zzwt7w   Cmk-reconcilereport.v1.intel.com
+```
 
+```bash
+$ kubectl get cmk-reconcilereport cmk-02-zzwt7w -o json
+{
+  "apiVersion": "intel.com/v1",
+    "kind": "Cmk-reconcilereport",
+    "metadata": {
+        "clusterName": "",
+        "creationTimestamp": "2017-09-20T12:29:04Z",
+        "deletionGracePeriodSeconds": null,
+        "deletionTimestamp": null,
+        "name": "cmk-02-zzwt7w",
+        "namespace": "default",
+        "resourceVersion": "7165673",
+        "selfLink": "/apis/intel.com/v1/namespaces/default/cmk-reconcilereports/cmk-02-zzwt7w",
+        "uid": "4a365a42-9dff-11e7-b032-fa163e7cbcb6"
+    },
+    "spec": {
+        "report": {
+            "reclaimedCpuLists": []
+        }
+    }
+}
+```
 
 _**NOTE:** This subcommand requires the `CMK_PROC_FS` environment variable
 to be set._
@@ -534,6 +564,8 @@ $ docker run -it \
 ```
 
 _Get node reports from the API server using Kubectl:_
+
+For Kubernetes 1.6 and older versions which using third part resources:
 
 ```bash
 $ kubectl get NodeReport
@@ -703,6 +735,216 @@ $ kubectl get NodeReport cmk-02-zzwt7w -o json
       }
     }
   }
+}
+```
+For Kubernetes 1.7 and newer versions which using custom resources definitions:
+```bash
+$ kubectl get cmk-nodereport
+NAME            KIND
+cmk-02-zzwt7w   Cmk-nodereport.v1.intel.com
+```
+
+```bash
+$ kubectl get cmk-nodereport cmk-02-zzwt7w -o json
+{
+  "apiVersion": "intel.com/v1",      
+  "kind": "Cmk-nodereport",
+  "metadata": {
+    "clusterName": "",           
+    "creationTimestamp": "2017-09-20T14:06:20Z",
+    "deletionGracePeriodSeconds": null,
+    "deletionTimestamp": null,            
+    "name": "cmk-02-zzwt7w", 
+    "namespace": "default",          
+    "resourceVersion": "7180345",
+    "selfLink": "/apis/intel.com/v1/namespaces/default/cmk-nodereports/cmk-02-zzwt7w",
+    "uid": "e0f78043-9e0c-11e7-b032-fa163e7cbcb6"  
+  },
+  "spec": {                                                                                                                                                                                                      
+        "report": {                                                                                                                                                                                                
+            "checks": {                                                                                                                                                                                            
+                "configDirectory": {                                                                                                                                                                               
+                    "errors": [],                                                                                                                                                                                  
+                    "ok": true                                                                                                                                                                                     
+                }                                                                                                                                                                                                  
+            },                                                                                                                                                                                                     
+            "description": {                                                                                                                                                                                       
+                "path": "/etc/cmk",                                                                                                                                                                                
+                "pools": {                                                                                                                                                                                         
+                    "controlplane": {                                                                                                                                                                              
+                        "cpuLists": {                                                                                                                                                                              
+                            "2": {                                                                                                                                                                                 
+                                "cpus": "2",                                                                                                                                                                       
+                                "tasks": []                                                                                                                                                                        
+                            }                                                                                                                                                                                      
+                        },                                                                                                                                                                                         
+                        "exclusive": false,                                                                                                                                                                        
+                        "name": "controlplane"                                                                                                                                                                     
+                    },                                                                                                                                                                                             
+                    "dataplane": {                                                                                                                                                                                 
+                        "cpuLists": {                                                                                                                                                                              
+                            "0": {                                                                                                                                                                                 
+                                "cpus": "0",                                                                                                                                                                       
+                                "tasks": []                                                                                                                                                                        
+                            },                                                                                                                                                                                     
+                            "1": {                                                                                                                                                                                 
+                                "cpus": "1",                                                                                                                                                                       
+                                "tasks": []                                                                                                                                                                        
+                            }                                                                                                                                                                                      
+                        },                                                                                                                                                                                         
+                        "exclusive": true,                                                                                                                                                                         
+                        "name": "dataplane"                                                                                                                                                                        
+                    },
+                    "infra": {                                                                                                                                                                                     
+                        "cpuLists": {                                                                                                                                                                              
+                            "3": {                                                                                                                                                                                 
+                                "cpus": "3",                                                                                                                                                                       
+                                "tasks": [                                                                                                                                                                         
+                                    3416                                                                                                                                                                           
+                                ]                                                                                                                                                                                  
+                            },                                                                                                                                                                                     
+                            "4": {                                                                                                                                                                                 
+                                "cpus": "4",                                                                                                                                                                       
+                                "tasks": [                                                                                                                                                                         
+                                    3387                                                                                                                                                                           
+                                ]                                                                                                                                                                                  
+                            },                                                                                                                                                                                     
+                            "5": {                                                                                                                                                                                 
+                                "cpus": "5",
+                                "tasks": []
+                            },
+                            "6": {
+                                "cpus": "6",
+                                "tasks": []
+                            },
+                            "7": {
+                                "cpus": "7",
+                                "tasks": []
+                            }
+                        },
+                        "exclusive": false,
+                        "name": "infra"
+                    }
+                }
+            },
+            "topology": {
+                "sockets": {
+                    "0": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 0,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 0
+                            }
+                        ],
+                        "id": 0
+                    },
+                    "1": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 1,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 1
+                            }
+                        ],
+                        "id": 1
+                    },
+                    "2": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 2,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 2
+                            }
+                        ],
+                        "id": 2
+                    },
+                    "3": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 3,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 3
+                            }
+                        ],
+                        "id": 3
+                    },
+                    "4": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 4,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 4
+                            }
+                        ],
+                        "id": 4
+                    },
+                    "5": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 5,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 5
+                            }
+                        ],
+                        "id": 5
+                    },
+                    "6": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 6,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 6
+                            }
+                        ],
+                        "id": 6
+                    },
+                    "7": {
+                        "cores": [
+                            {
+                                "cpus": [
+                                    {
+                                        "id": 7,
+                                        "isolated": false
+                                    }
+                                ],
+                                "id": 7
+                            }
+                        ],
+                        "id": 7
+                    }
+                }
+            }
+        }
+    }                    
 }
 ```
 

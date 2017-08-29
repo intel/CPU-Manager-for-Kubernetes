@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
+
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
@@ -93,6 +95,15 @@ def extensions_client_from_config(config):
     else:
         client = k8sclient.ApiClient(config=config)
         return k8sclient.ExtensionsV1beta1Api(api_client=client)
+
+
+def version_api_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.VersionApi()
+    else:
+        client = k8sclient.ApiClient(config=config)
+        return k8sclient.VersionApi(api_client=client)
 
 
 def get_container_template():
@@ -211,6 +222,13 @@ def create_namespace(config, ns_name):
 def get_namespaces(config):
     k8s_api = client_from_config(config)
     return k8s_api.list_namespace().to_dict()
+
+
+# Get kubelet version from node
+def get_kubelet_version(config):
+    k8s_api = version_api_client_from_config(config)
+    version_info = k8s_api.get_code()
+    return int(version_info.major), int(version_info.minor.replace("+", ""))
 
 
 # Delete namespace by name.

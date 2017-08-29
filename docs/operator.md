@@ -46,6 +46,13 @@ Operator needs to prepare additional [ClusterRole][ClusterRole] and
 provided in [`cmk-rbac-rules`][cmk-rbac-rules] manifest. In this case operator
 must also use provided serviceaccount manifest as well.
 
+#### Kubernetes 1.7
+From Kubernetes 1.7 [Custom Resource Definitions] has replaced [Third Party Resource]. 
+Only in Kubernetes 1.7 both are compatible. Operator must [migrate] from TRP to CRD. 
+To [`cmk-rbac-rules`][cmk-rbac-rules] manifest ClusterRole and ClusterRoleBindings have been added for CRD. 
+CMK will detect the version Kubernetes itself and will be use [Custom Resource Definitions]
+if Kubernetes version is 1.7 else [Third Party Resource] to create Nodereport and Reconcilereport.
+
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.
@@ -377,7 +384,10 @@ spec:
 - Run `kubectl create -f <file-name>`, where `<file-name>` is name of the Pod manifest file with `nodeName` field
 substituted as mentioned in the previous step.
 - Check if any process is isolated in the `infra` pool using `NodeReport` for that node.
+If you using third part resources (kubernetes 1.6.x and older versions)
 `kubectl get NodeReport <node-name> -o json | jq .report.description.pools.infra`
+If you using custom resources definition (kubernetes 1.7.x and newer versions)
+`kubectl get cmk-nodereport <node-name> -o json | jq .spec.report.description.pools.infra`
 
 ## Troubleshooting and recovery
 If running `cmk cluster-init` using the [cmk-cluster-init-pod template][cluster-init-template] ends up in an error,
@@ -419,3 +429,6 @@ can help to fine-grain the deletion for specific node.
 [ClusterRole]: https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole
 [ClusterRoleBindings]: https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 [cmk-rbac-rules]: ../resources/authorization/cmk-rbac-rules.yaml
+[Custom Resource Definitions]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/
+[Third Party Resource]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/
+[migrate]: https://kubernetes.io/docs/tasks/access-kubernetes-api/migrate-third-party-resource/

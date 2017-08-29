@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc, third_party, topology
 import itertools
 import json
-from kubernetes import config as k8sconfig, client as k8sclient
 import logging
 import os
 import time
+
+from kubernetes import config as k8sconfig, client as k8sclient
+from . import config, custom_resource, k8s, proc, third_party, topology
 
 
 def nodereport(conf_dir, seconds, publish):
@@ -38,16 +39,33 @@ def nodereport(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            node_report_type = third_party.ThirdPartyResourceType(
-                v1beta,
-                "cmk.intel.com",
-                "Nodereport")
+            version_major, version_minor = k8s.get_kubelet_version(None)
 
-            # third_party throws an exception if the environment variable
-            # is not set.
-            node_report = node_report_type.create(os.getenv("NODE_NAME"))
-            node_report.body["report"] = report.as_dict()
-            node_report.save()
+            if version_major == 1 and version_minor >= 7:
+                crdt = custom_resource.CustomResourceDefinitionType
+                node_report_type = crdt(
+                    v1beta,
+                    "intel.com",
+                    "cmk-nodereport",
+                    ["cmk-nr"]
+                )
+                # custom_resource throws an exception if the environment
+                # variable is not set.
+                node_name = os.getenv("NODE_NAME")
+                node_report = node_report_type.create(node_name)
+                node_report.body["spec"]["report"] = report.as_dict()
+                node_report.save()
+            else:
+                node_report_type = third_party.ThirdPartyResourceType(
+                    v1beta,
+                    "cmk.intel.com",
+                    "Nodereport")
+                # third_party throws an exception if the environment
+                # variable is not set.
+                node_name = os.getenv("NODE_NAME")
+                node_report = node_report_type.create(node_name)
+                node_report.body["report"] = report.as_dict()
+                node_report.save()
 
         if should_exit:
             break

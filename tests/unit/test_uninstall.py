@@ -72,7 +72,7 @@ def test_remove_report_success(caplog):
                   MagicMock(return_value=0)), \
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
-        uninstall.remove_report("NodeReport")
+        uninstall.remove_report_tpr("NodeReport")
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[-1][2] == "\"NodeReport\" for node \"{}\" " \
                                       "removed.".format(os.getenv("NODE_NAME"))
@@ -94,7 +94,7 @@ def test_remove_report_success2(caplog):
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
 
-        uninstall.remove_report("NodeReport")
+        uninstall.remove_report_tpr("NodeReport")
         caplog_tuple = caplog.record_tuples
         assert \
             caplog_tuple[-2][2] == "\"NodeReport\" for node \"{}\" does" \
@@ -119,7 +119,7 @@ def test_remove_report_failure(caplog):
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
         with pytest.raises(SystemExit):
-            uninstall.remove_report("NodeReport")
+            uninstall.remove_report_tpr("NodeReport")
         caplog_tuple = caplog.record_tuples
         exp_err = "Aborting uninstall: " \
                   "Exception when removing third party resource \"NodeReport\""

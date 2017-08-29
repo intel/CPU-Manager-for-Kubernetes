@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc, third_party
-from kubernetes import config as k8sconfig, client as k8sclient
 import json
 import logging
 import os
 import time
+
+from kubernetes import config as k8sconfig, client as k8sclient
+from . import config, proc, third_party, custom_resource, k8s
 
 
 def reconcile(conf_dir, seconds, publish):
@@ -43,15 +44,31 @@ def reconcile(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            reconcile_report_type = third_party.ThirdPartyResourceType(
-                v1beta,
-                "cmk.intel.com",
-                "Reconcilereport")
+            version_major, version_minor = k8s.get_kubelet_version(None)
 
-            node_name = os.getenv("NODE_NAME")
-            reconcile_report = reconcile_report_type.create(node_name)
-            reconcile_report.body["report"] = report
-            reconcile_report.save()
+            if version_major == 1 and version_minor >= 7:
+                crdt = custom_resource.CustomResourceDefinitionType
+                reconcile_report_type = crdt(
+                    v1beta,
+                    "intel.com",
+                    "cmk-reconcilereport",
+                    ["cmk-rr"]
+                )
+
+                node_name = os.getenv("NODE_NAME")
+                reconcile_report = reconcile_report_type.create(node_name)
+                reconcile_report.body["spec"]["report"] = report
+                reconcile_report.save()
+            else:
+                reconcile_report_type = third_party.ThirdPartyResourceType(
+                    v1beta,
+                    "cmk.intel.com",
+                    "Reconcilereport")
+
+                node_name = os.getenv("NODE_NAME")
+                reconcile_report = reconcile_report_type.create(node_name)
+                reconcile_report.body["report"] = report
+                reconcile_report.save()
 
         if should_exit:
             break
