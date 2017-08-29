@@ -18,8 +18,10 @@ import logging
 import os
 import shutil
 import sys
+
 from time import sleep
 from kubernetes.client.rest import ApiException as K8sApiException
+from . import custom_resource
 from . import config, third_party
 from . import reconcile
 from . import discover
@@ -29,8 +31,8 @@ from . import k8s
 def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
     delete_cmk_pod("cmk-reconcile-nodereport-ds")
-    remove_report("Nodereport")
-    remove_report("Reconcilereport")
+
+    remove_all_report()
 
     check_remove_conf_dir(conf_dir)
 
@@ -54,14 +56,64 @@ def remove_binary(install_dir):
         sys.exit(0)
 
 
-def remove_report(report_type):
+def remove_all_report():
+    version_major, version_minor = k8s.get_kubelet_version(None)
+
+    if version_major == 1 and version_minor >= 7:
+        remove_report_crd("cmk-nodereport", ["cmk-nr"])
+        remove_report_crd("cmk-reconcilereport", ["cmk-rr"])
+
+    else:
+        remove_report_tpr("Nodereport")
+        remove_report_tpr("Reconcilereport")
+
+
+def remove_report_crd(report_type, short_name):
+    logging.info(
+        "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
+            report_type, os.getenv("NODE_NAME")))
+    node_report_type = custom_resource.CustomResourceDefinitionType(
+        k8s.extensions_client_from_config(None),
+        "intel.com",
+        report_type,
+        short_name
+    )
+    node_report = node_report_type.create(os.getenv("NODE_NAME"))
+
+    try:
+        node_report.remove_all()
+    except K8sApiException as err:
+        if json.loads(err.body)["reason"] != "NotFound":
+            logging.error(
+                "Aborting uninstall: Exception when removing custom"
+                " resource definition \"{}\": {}".format(report_type, err))
+            sys.exit(1)
+
+        logging.warning("\"{}\" for node \"{}\" does not exist.".format(
+            report_type, os.getenv("NODE_NAME")))
+    except K8sApiException as err:
+        if json.loads(err.body)["reason"] != "NotFound":
+            logging.error(
+                "Aborting uninstall: Exception when removing custom"
+                " resource definition \"{}\": {}".format(report_type, err))
+            sys.exit(1)
+
+        logging.warning("\"{}\" for node \"{}\" does not exist.".format(
+            report_type, os.getenv("NODE_NAME")))
+
+    logging.info("\"{}\" for node \"{}\" removed.".format(
+        report_type, os.getenv("NODE_NAME")))
+
+
+def remove_report_tpr(report_type):
     logging.info(
         "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
     node_report_type = third_party.ThirdPartyResourceType(
         k8s.extensions_client_from_config(None),
         "cmk.intel.com",
-        report_type)
+        report_type
+    )
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
 
     try:

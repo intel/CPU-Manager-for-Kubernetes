@@ -14,8 +14,56 @@
 
 import os
 from intel import util
+import pytest
 
 
 def test_cmk_root():
     result = util.cmk_root()
     assert os.path.isdir(os.path.join(result, "tests", "data"))
+
+
+def test_ldh_parser_success():
+
+    original_node_names = [
+        "node-123",
+        "node-123.45",
+        "Node.Master-89",
+        "123-master-NODE",
+        "192.167-100-2.NODE",
+        "MINION.1@10.12.56.78",
+        "MINION.1@.#10.12.56.78",
+        "Compute---1@10.12.56.78"
+    ]
+
+    expected_node_names = [
+        "node-123",
+        "node-123-45",
+        "node-master-89",
+        "123-master-node",
+        "192-167-100-2-node",
+        "minion-1-10-12-56-78",
+        "minion-1---10-12-56-78",
+        "compute---1-10-12-56-78"
+    ]
+
+    retrieved_node_names = []
+
+    for name in original_node_names:
+        retrieved_node_names.append(util.ldh_convert_check(name))
+
+    assert expected_node_names == retrieved_node_names
+
+
+def test_ldh_parser_fail():
+
+    original_invalid_node_names = [
+        "node-123-",
+        "node-123.45@",
+        "$Node.Master-89",
+        ".123-master-NODE",
+        "@192.167-100-2-NODE",
+    ]
+
+    for name in original_invalid_node_names:
+        with pytest.raises(SystemExit):
+            util.ldh_convert_check(name)
