@@ -14,11 +14,13 @@
 
 from intel import config
 import json
-from kubernetes import config as k8sconfig, client as k8sclient
-from kubernetes.client.rest import ApiException as K8sApiException
 import logging
 import os
 import sys
+
+from kubernetes import config as k8sconfig, client as k8sclient
+from kubernetes.client.rest import ApiException as K8sApiException
+from . import k8s
 
 
 # discover reads the CMK configuration file, patches kubernetes nodes with
@@ -88,11 +90,20 @@ def add_node_taint():
         logging.error("Aborting discover ...")
         sys.exit(1)
 
+    version_major, version_minor = k8s.get_kubelet_version(None)
     node_taints_list = []
-    node_taint_key = "scheduler.alpha.kubernetes.io/taints"
-    if node_taint_key in node_resp["metadata"]["annotations"]:
-        node_taints = node_resp["metadata"]["annotations"][node_taint_key]
-        # Do not try to parse the empty string as JSON.
+    node_taints = []
+
+    if version_major == 1 and version_minor >= 7:
+        node_taints = node_resp["spec"]["taints"]
+        if node_taints:
+            node_taints_list = node_taints
+        patch_path = "/spec/taints"
+    else:
+        node_taint_key = "scheduler.alpha.kubernetes.io/taints"
+        if node_taint_key in node_resp["metadata"]["annotations"]:
+            node_taints = node_resp["metadata"]["annotations"][node_taint_key]
+        patch_path = "/metadata/annotations/scheduler.alpha.kubernetes.io~1taints"  # noqa: E501
         if node_taints:
             node_taints_list = json.loads(node_taints)
 
@@ -105,14 +116,17 @@ def add_node_taint():
         "effect": "NoSchedule"
     })
 
-    patch_path = "/metadata/annotations/scheduler.alpha.kubernetes.io~1taints"
+    if version_major == 1 and version_minor >= 7:
+        value = node_taints_list
+    else:
+        value = json.dumps(node_taints_list)
 
     # See: https://tools.ietf.org/html/rfc6902#section-4.1
     patch_body = [
         {
             "op": "add",
             "path": patch_path,
-            "value": json.dumps(node_taints_list)
+            "value": value
         }
     ]
 
