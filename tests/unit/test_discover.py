@@ -146,7 +146,9 @@ def test_discover_add_taint_failure2(caplog):
     with patch('intel.discover.get_k8s_node',
                MagicMock(return_value=fake_node_resp)), \
             patch('intel.discover.patch_k8s_node',
-                  MagicMock(side_effect=fake_api_exception)):
+                  MagicMock(side_effect=fake_api_exception)), \
+            patch('intel.k8s.get_kubelet_version',
+                  MagicMock(return_value=(1, 5))):
         with pytest.raises(SystemExit):
             discover.add_node_taint()
         exp_err = "Exception when tainting the node"

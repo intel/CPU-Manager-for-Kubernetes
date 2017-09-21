@@ -179,7 +179,9 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
-               MagicMock(side_effect=fake_api_exception)):
+               MagicMock(side_effect=fake_api_exception)), \
+            patch('intel.k8s.get_kubelet_version',
+                  MagicMock(return_value=(1, 5))):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
@@ -195,7 +197,9 @@ def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
-               MagicMock(side_effect=fake_api_exception)):
+               MagicMock(side_effect=fake_api_exception)), \
+            patch('intel.k8s.get_kubelet_version',
+                  MagicMock(return_value=(1, 5))):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
