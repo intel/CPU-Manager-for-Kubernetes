@@ -255,19 +255,33 @@ def remove_node_taint():
                       "\"{}\" obj: {}".format(node_name, err))
         sys.exit(1)
 
+    version_major, version_minor = k8s.get_kubelet_version(None)
     node_taints_list = []
-    node_taint_key = "scheduler.alpha.kubernetes.io/taints"
-    if node_taint_key in node_resp["metadata"]["annotations"]:
-        node_taints = node_resp["metadata"]["annotations"][node_taint_key]
-        node_taints_list = ast.literal_eval(node_taints)
-        node_taints_list = \
-            [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
-    patch_path = '/metadata/annotations/scheduler.alpha.kubernetes.io~1taints'
+    if version_major == 1 and version_minor >= 7:
+        node_taints = node_resp["spec"]["taints"]
+        if node_taints:
+            node_taints_list = node_taints
+        patch_path = '/spec/taints'
+    else:
+        node_taint_key = "scheduler.alpha.kubernetes.io/taints"
+        if node_taint_key in node_resp["metadata"]["annotations"]:
+            node_taints = node_resp["metadata"]["annotations"][node_taint_key]
+            node_taints_list = ast.literal_eval(node_taints)
+        patch_path = '/metadata/annotations/scheduler.alpha.kubernetes.io~1taints'  # noqa: E501
+
+    node_taints_list = \
+        [taint for taint in node_taints_list if taint["key"] != "cmk"]
+
+    if version_major == 1 and version_minor >= 7:
+        value = node_taints_list
+    else:
+        value = json.dumps(node_taints_list)
+
     patch_body = [{
         "op": "replace",
         "path": patch_path,
-        "value": json.dumps(node_taints_list)
+        "value": value
     }]
 
     try:
