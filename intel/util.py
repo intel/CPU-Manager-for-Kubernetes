@@ -25,9 +25,9 @@ def cmk_root():
 def ldh_convert_check(name):
     name_con = re.sub(r'[^-a-z0-9]', '-', name.lower())
     logging.info("Converted \"{}\" to \"{}\" for"
-                 " TPR name".format(name, name_con))
+                 " TPR/CRD name".format(name, name_con))
     if not re.fullmatch('[a-z0-9]([-a-z0-9]*[a-z0-9])?', name_con):
-        logging.error("Cant create valid TPR name using "
+        logging.error("Cant create valid TPR/CRD name using "
                       "\"{}\" - must match regex "
                       "[a-z0-9]([-a-z0-9]*[a-z0-9])?".format(name_con))
         exit(1)
