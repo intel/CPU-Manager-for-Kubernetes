@@ -17,11 +17,15 @@ kind: Pod
 metadata:
   labels:
     app: cmk-isolate-pod
-  annotations:
-    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
+# Needed for k8s < 1.7
+#  annotations:
+#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-isolate-pod
 spec:
   serviceAccountName: cmk-serviceaccount
+# Needed for k8s >= 1.7
+#  tolerations:
+#  - operator: "Exists"
   containers:
   - args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane echo -- Hello World DP!!!"

@@ -17,8 +17,9 @@ kind: DaemonSet
 metadata:
   labels:
     app: cmk-uninstall-all-nodes
-  annotations:
-    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
+# Needed for k8s < 1.7
+#  annotations:
+#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-uninstall-all-nodes
 spec:
   template:
@@ -27,6 +28,9 @@ spec:
         app: cmk-uninstall-all-nodes
     spec:
       serviceAccountName: cmk-serviceaccount
+# Needed for k8s >= 1.7
+#      tolerations:
+#      - operator: "Exists"
       nodeSelector:
         "cmk.intel.com/cmk-node": "true"
       containers:
