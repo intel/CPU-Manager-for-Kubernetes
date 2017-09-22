@@ -26,6 +26,7 @@ spec:
       labels:
         app: cmk-uninstall-all-nodes
     spec:
+      serviceAccountName: cmk-serviceaccount
       nodeSelector:
         "cmk.intel.com/cmk-node": "true"
       containers:
