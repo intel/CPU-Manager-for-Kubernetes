@@ -69,7 +69,7 @@ def remove_all_report():
         remove_report_tpr("Reconcilereport")
 
 
-def remove_report_crd(report_type, short_name):
+def remove_report_crd(report_type, short_names):
     logging.info(
         "Removing \"{}\" from Kubernetes API server for node \"{}\".".format(
             report_type, os.getenv("NODE_NAME")))
@@ -77,21 +77,12 @@ def remove_report_crd(report_type, short_name):
         k8s.extensions_client_from_config(None),
         "intel.com",
         report_type,
-        short_name
+        short_names
     )
     node_report = node_report_type.create(os.getenv("NODE_NAME"))
 
     try:
-        node_report.remove_all()
-    except K8sApiException as err:
-        if json.loads(err.body)["reason"] != "NotFound":
-            logging.error(
-                "Aborting uninstall: Exception when removing custom"
-                " resource definition \"{}\": {}".format(report_type, err))
-            sys.exit(1)
-
-        logging.warning("\"{}\" for node \"{}\" does not exist.".format(
-            report_type, os.getenv("NODE_NAME")))
+        node_report.remove()
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
             logging.error(
