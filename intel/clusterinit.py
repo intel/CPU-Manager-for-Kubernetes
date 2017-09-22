@@ -124,9 +124,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         version_major, version_minor = k8s.get_kubelet_version(None)
         if version_major == 1 and version_minor >= 7:
             pod["spec"]["tolerations"] = [{
-                "key": "cmk",
-                "value": "true",
-                "effect": "NoSchedule"}]
+                "operator": "Exists"}]
 
         for cmd in cmd_list:
             args = ""
