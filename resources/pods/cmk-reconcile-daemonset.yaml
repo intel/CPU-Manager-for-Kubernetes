@@ -17,6 +17,9 @@ kind: DaemonSet
 metadata:
   labels:
     app: cmk-reconile
+# Needed for k8s < 1.7
+#  annotations:
+#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-reconcile
 spec:
   template:
@@ -25,9 +28,12 @@ spec:
         app: cmk-reconcile
     spec:
       serviceAccountName: cmk-serviceaccount
+# Needed for k8s >= 1.7
+#      tolerations:
+#      - operator: "Exists"
       containers:
       - args:
-        - /cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=$CMK_RECONCILE_SLEEP_TIME --publish
+        - "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=$CMK_RECONCILE_SLEEP_TIME --publish"
         command:
         - "/bin/bash"
         - "-c"
