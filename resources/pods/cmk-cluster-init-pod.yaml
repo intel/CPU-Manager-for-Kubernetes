@@ -17,8 +17,6 @@ kind: Pod
 metadata:
   labels:
     app: cmk-cluster-init-pod
-  annotations:
-    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-cluster-init-pod
 spec:
   serviceAccountName: cmk-serviceaccount

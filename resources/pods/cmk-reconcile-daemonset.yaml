@@ -16,16 +16,16 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: cmk-reconile
+    app: cmk-reconcile-ds-all
 # Needed for k8s < 1.7
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-reconcile
+  name: cmk-reconcile-ds-all
 spec:
   template:
     metadata:
       labels:
-        app: cmk-reconcile
+        app: cmk-reconcile-ds-all
     spec:
       serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7

@@ -16,16 +16,16 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: cmk-node-report
+    app: cmk-node-report-ds-all
 # Needed for k8s < 1.7
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-node-report
+  name: cmk-node-report-ds-all
 spec:
   template:
     metadata:
       labels:
-        app: cmk-node-report
+        app: cmk-node-report-ds-all
     spec:
       serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
