@@ -122,10 +122,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
         version_major, version_minor = k8s.get_kubelet_version(None)
-        if version_major == 1 and version_minor >= 7:
+        if version_major >= 1 and version_minor >= 7:
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
-
         for cmd in cmd_list:
             args = ""
             if cmd == "reconcile":

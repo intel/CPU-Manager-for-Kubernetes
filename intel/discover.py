@@ -94,7 +94,7 @@ def add_node_taint():
     node_taints_list = []
     node_taints = []
 
-    if version_major == 1 and version_minor >= 7:
+    if version_major >= 1 and version_minor >= 7:
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -116,7 +116,7 @@ def add_node_taint():
         "effect": "NoSchedule"
     })
 
-    if version_major == 1 and version_minor >= 7:
+    if version_major >= 1 and version_minor >= 7:
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)

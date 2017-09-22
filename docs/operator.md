@@ -47,11 +47,13 @@ provided in [`cmk-rbac-rules`][cmk-rbac-rules] manifest. In this case operator
 must also use provided serviceaccount manifest as well.
 
 #### Kubernetes 1.7
-From Kubernetes 1.7 [Custom Resource Definitions] has replaced [Third Party Resource]. 
-Only in Kubernetes 1.7 both are compatible. Operator must [migrate] from TRP to CRD. 
-To [`cmk-rbac-rules`][cmk-rbac-rules] manifest ClusterRole and ClusterRoleBindings have been added for CRD. 
+From Kubernetes 1.7 [Custom Resource Definitions] has replaced [Third Party Resource].
+Only in Kubernetes 1.7 both are compatible. Operator must [migrate] from TRP to CRD.
+To [`cmk-rbac-rules`][cmk-rbac-rules] manifest ClusterRole and ClusterRoleBindings have been added for CRD.
 CMK will detect the version Kubernetes itself and will be use [Custom Resource Definitions]
 if Kubernetes version is 1.7 else [Third Party Resource] to create Nodereport and Reconcilereport.
+
+Additionally [Taints][Taints] have been moved from alpha to beta and are no logner present in node `metadata` but directly in `spec`. Please note that if pod manifest has `nodeName: <nodename>` selector, taints tolerations are not needed.
 
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
@@ -303,7 +305,7 @@ kubectl get node cmk-02-zzwt7w -o json | jq .metadata.labels
     "kubernetes.io/hostname": "cmk-02-zzwt7w"
 }
 ```
-- Check if node has appropriate taint.
+- Check if node has appropriate taint. **(kubernetes < v1.7)**
 ```sh
 kubectl get node <node-name> -o json | jq .metadata.annotations
 ```
@@ -314,6 +316,23 @@ kubectl get node cmk-02-zzwt7w -o json | jq .metadata.annotations
       "scheduler.alpha.kubernetes.io/taints": "[{\"value\": \"true\", \"key\": \"cmk\", \"effect\": \"NoSchedule\"}]",
       "volumes.kubernetes.io/controller-managed-attach-detach": "true"
 }
+```
+- Check if node has appropriate taint. **(kubernetes >= v1.7)**
+```sh
+kubectl get node <node-name> -o json | jq .spec.taints
+```
+Example output:
+```sh
+kubectl get node cmk-02-zzwt7w -o json | jq .metadata.annotations
+[
+  {
+    "effect": "NoSchedule",
+    "key": "cmk",
+    "timeAdded": null,
+    "value": "true"
+  }
+]
+
 ```
 - Check if node has the appropriate OIR.
 ```sh
@@ -345,7 +364,7 @@ metadata:
     app: cmk-isolate-pod
   name: cmk-isolate-pod
 spec:
-  # Change this to the <node-name> you want to test.  
+  # Change this to the <node-name> you want to test.
   nodeName: NODENAME
   containers:
   - args:
@@ -432,3 +451,4 @@ can help to fine-grain the deletion for specific node.
 [Custom Resource Definitions]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/
 [Third Party Resource]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/
 [migrate]: https://kubernetes.io/docs/tasks/access-kubernetes-api/migrate-third-party-resource/
+[Taints]: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/

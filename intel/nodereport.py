@@ -41,7 +41,7 @@ def nodereport(conf_dir, seconds, publish):
 
             version_major, version_minor = k8s.get_kubelet_version(None)
 
-            if version_major == 1 and version_minor >= 7:
+            if version_major >= 1 and version_minor >= 7:
                 crdt = custom_resource.CustomResourceDefinitionType
                 node_report_type = crdt(
                     v1beta,
