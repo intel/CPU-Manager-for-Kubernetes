@@ -36,11 +36,12 @@ def uninstall(install_dir, conf_dir):
 
     check_remove_conf_dir(conf_dir)
 
-    remove_node_label()
     remove_node_taint()
     remove_node_cmk_oir()
 
     remove_binary(install_dir)
+
+    remove_node_label()
 
 
 def remove_binary(install_dir):
