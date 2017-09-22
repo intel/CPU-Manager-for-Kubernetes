@@ -32,6 +32,13 @@ def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-init-install-discover-pod")
     delete_cmk_pod("cmk-reconcile-nodereport-ds")
 
+    delete_cmk_pod("cmk-node-report-ds-all")
+    delete_cmk_pod("cmk-reconcile-ds-all")
+
+    delete_cmk_pod("cmk-discover-pod")
+    delete_cmk_pod("cmk-init-pod")
+    delete_cmk_pod("cmk-install-pod")
+
     remove_all_report()
 
     check_remove_conf_dir(conf_dir)
