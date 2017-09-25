@@ -29,12 +29,15 @@ from . import k8s
 
 
 def uninstall(install_dir, conf_dir):
-    delete_cmk_pod("cmk-init-install-discover-pod")
-    delete_cmk_pod("cmk-reconcile-nodereport-ds")
+    delete_cmk_pod("cmk-init-install-discover-pod",
+                   postfix=os.getenv("NODE_NAME"))
+    delete_cmk_pod("cmk-reconcile-nodereport-ds",
+                   postfix=os.getenv("NODE_NAME"))
 
     delete_cmk_pod("cmk-node-report-ds-all")
     delete_cmk_pod("cmk-reconcile-ds-all")
 
+    delete_cmk_pod("cmk-cluster-init-pod")
     delete_cmk_pod("cmk-discover-pod")
     delete_cmk_pod("cmk-init-pod")
     delete_cmk_pod("cmk-install-pod")
@@ -139,8 +142,12 @@ def remove_report_tpr(report_type):
         report_type, os.getenv("NODE_NAME")))
 
 
-def delete_cmk_pod(pod_base_name, namespace="default"):
-    pod_name = "{}-{}".format(pod_base_name, os.getenv("NODE_NAME"))
+def delete_cmk_pod(pod_base_name, postfix=None, namespace="default"):
+    if postfix:
+        pod_name = "{}-{}".format(pod_base_name, postfix)
+    else:
+        pod_name = pod_base_name
+
     logging.info("Removing \"{}\"".format(pod_name))
 
     try:
