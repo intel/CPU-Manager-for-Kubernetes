@@ -375,7 +375,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk
+    image: cmk:v1.2.0-rc1
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     volumeMounts:
