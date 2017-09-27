@@ -323,7 +323,7 @@ kubectl get node <node-name> -o json | jq .spec.taints
 ```
 Example output:
 ```sh
-kubectl get node cmk-02-zzwt7w -o json | jq .metadata.annotations
+kubectl get node cmk-02-zzwt7w -o json | jq .spec.taints
 [
   {
     "effect": "NoSchedule",
