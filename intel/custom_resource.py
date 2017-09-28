@@ -82,13 +82,17 @@ class CustomResourceDefinitionType:
             "spec": self.spec
         }
 
+        self.resource_path_crd = \
+            '/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/'
+
+        self.resource_path_crd_type = \
+            self.resource_path_crd + self.plural_name + "." + self.group
+
     def save(self):
         """Create custom resource definition spec"""
         try:
-            resource_path = \
-                '/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions'
             self.api.api_client.call_api(
-                resource_path,
+                self.resource_path_crd,
                 'POST',
                 self.header_params,
                 body=self.body,
@@ -106,17 +110,9 @@ class CustomResourceDefinitionType:
 
     def exists(self, namespace="default"):
         """Check if custom resource definition exists"""
-        resource_path = "/".join([
-            "/apis",
-            self.group,
-            "v1",
-            "namespaces", namespace,
-            self.plural_name
-        ])
-
         try:
             self.api.api_client.call_api(
-                resource_path,
+                self.resource_path_crd_type,
                 'GET',
                 self.header_params,
                 auth_settings=self.auth_settings)
@@ -136,12 +132,9 @@ class CustomResourceDefinitionType:
     def remove(self):
         """Remove custom resource definitions"""
         if self.exists():
-            resource_path = "/apis/apiextensions.k8s.io/" \
-                            + "v1beta1/customresourcedefinitions/" \
-                            + self.plural_name + "." + self.group
 
             self.api.api_client.call_api(
-                resource_path,
+                self.resource_path_crd_type,
                 'DELETE',
                 self.header_params,
                 auth_settings=self.auth_settings)
@@ -149,10 +142,10 @@ class CustomResourceDefinitionType:
 
 class CustomResourceDefinition:
     def __init__(self, api, resource_type, namespace, name):
-        assert (api is not None)
-        assert (resource_type is not None)
-        assert (name is not None)
-        assert (namespace is not None)
+        assert api is not None
+        assert resource_type is not None
+        assert name is not None
+        assert namespace is not None
 
         self.api = api
         self.resource_type = resource_type
@@ -216,13 +209,3 @@ class CustomResourceDefinition:
                     raise e
 
             self.create()
-
-    def remove_all(self):
-        """Remove all object custom resource"""
-        resource_path = self.resource_path
-
-        self.api.api_client.call_api(
-            resource_path,
-            'DELETE',
-            self.resource_type.header_params,
-            auth_settings=self.resource_type.auth_settings)
