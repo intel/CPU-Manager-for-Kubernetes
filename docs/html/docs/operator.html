@@ -187,7 +187,7 @@ for some reason.</li>
 <li>The subcommands described below should be run in the same order.</li>
 <li>The documentation in this section assumes that the <code>CMK</code> configuration directory is <code>/etc/cmk</code> and the <code>cmk</code>
 binary is installed on the host under <code>/opt/bin</code>.</li>
-<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.2.0-rc1</code>. It is expected that the
+<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.2.0</code>. It is expected that the
 <code>cmk</code> container image is built and cached locally in the host. The <code>image</code> field will require modification if the
 container image is hosted remotely (e.g., in <a href="https://hub.docker.com/">https://hub.docker.com/</a>).</li>
 </ul>
@@ -354,7 +354,7 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 </ul>
 <div class="highlight highlight-source-shell"><pre>kubectl get node <span class="pl-k">&lt;</span>node-name<span class="pl-k">&gt;</span> -o json <span class="pl-k">|</span> jq .spec.taints</pre></div>
 <p>Example output:</p>
-<div class="highlight highlight-source-shell"><pre>kubectl get node cmk-02-zzwt7w -o json <span class="pl-k">|</span> jq .metadata.annotations
+<div class="highlight highlight-source-shell"><pre>kubectl get node cmk-02-zzwt7w -o json <span class="pl-k">|</span> jq .spec.taints
 [
   {
     <span class="pl-s"><span class="pl-pds">"</span>effect<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>NoSchedule<span class="pl-pds">"</span></span>,
@@ -404,7 +404,7 @@ ls /opt/bin/</pre></div>
     <span class="pl-ent">env</span>:
     - <span class="pl-ent">name</span>: <span class="pl-s">CMK_PROC_FS</span>
       <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">"</span>/host/proc<span class="pl-pds">"</span></span>
-    <span class="pl-ent">image</span>: <span class="pl-s">cmk</span>
+    <span class="pl-ent">image</span>: <span class="pl-s">cmk:v1.2.0</span>
     <span class="pl-ent">imagePullPolicy</span>: <span class="pl-s"><span class="pl-pds">"</span>Never<span class="pl-pds">"</span></span>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-isolate-infra</span>
     <span class="pl-ent">volumeMounts</span>:
