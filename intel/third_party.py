@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import datetime
-import json
 import logging
 import time
 
+from http import client
 from kubernetes.client.rest import ApiException as K8sApiException
 from .util import ldh_convert_check
 
@@ -62,7 +62,7 @@ class ThirdPartyResourceType:
         try:
             self.api.create_third_party_resource(body)
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] != "AlreadyExists":
+            if e.status != client.CONFLICT:
                 raise e
 
         # Wait until resource type is ready.
@@ -95,7 +95,7 @@ class ThirdPartyResourceType:
                 auth_settings=auth_settings)
 
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] == "NotFound":
+            if e.status == client.CONFLICT or e.status == client.NOT_FOUND:
                 return False
             raise e
 
@@ -173,8 +173,21 @@ class ThirdPartyResource:
             self.create()
 
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] != "AlreadyExists":
+            if e.status == client.NOT_FOUND:
+                logging.warning("Third Party Resource is not ready yet. "
+                                "Report will be skipped")
+                return
+            if e.status == client.METHOD_NOT_ALLOWED:
+                logging.error("API is blocked. Report will be skipped")
+                return
+            if e.status != client.CONFLICT:
                 raise e
+            logging.info("Previous resource has been detected. Recreating...")
 
-            self.remove()
+            try:
+                self.remove()
+            except K8sApiException as e:
+                if e.status != client.NOT_FOUND:
+                    raise e
+
             self.create()
