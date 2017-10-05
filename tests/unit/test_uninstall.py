@@ -62,6 +62,7 @@ def test_uninstall_remove_node_cmk_oir_failure(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.6.3"))
 def test_remove_all_report_tpr_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
@@ -70,8 +71,6 @@ def test_remove_all_report_tpr_success(caplog):
                MagicMock(return_value=0)), \
             patch('kubernetes.client.ExtensionsV1beta1Api',
                   MagicMock(return_value=0)), \
-            patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value=(1, 6))), \
             patch.object(third_party.ThirdPartyResourceType,
                          'create',
                          MagicMock(return_value=mock)):
@@ -92,7 +91,7 @@ def test_remove_all_report_crd_success(caplog):
             patch('kubernetes.client.ExtensionsV1beta1Api',
                   MagicMock(return_value=0)), \
             patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value=(1, 7))), \
+                  MagicMock(return_value="v1.7.4")), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
                          MagicMock(return_value=mock)):
@@ -256,6 +255,7 @@ def test_uninstall_remove_node_taint_failure1(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_uninstall_remove_node_taint_failure2(caplog):
     fake_node_resp = {
             "metadata": {
@@ -268,9 +268,7 @@ def test_uninstall_remove_node_taint_failure2(caplog):
     with patch('intel.discover.get_k8s_node',
                MagicMock(return_value=fake_node_resp)), \
             patch('intel.discover.patch_k8s_node',
-                  MagicMock(side_effect=fake_api_exception)), \
-            patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value=(1, 5))):
+                  MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_taint()
         patch_path = '/metadata/annotations/' \
@@ -433,8 +431,7 @@ def test_remove_binary_failure(caplog):
         "touch",
         [fake_binary_path]
     )
-    with pytest.raises(SystemExit):
-        uninstall.remove_binary(temp_dir)
+    uninstall.remove_binary(temp_dir)
 
     caplog_tuple = caplog.record_tuples
     exp_log = "Could not found cmk binary in \"{}\"."\

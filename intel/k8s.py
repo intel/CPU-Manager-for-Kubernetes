@@ -228,7 +228,7 @@ def get_namespaces(config):
 def get_kubelet_version(config):
     k8s_api = version_api_client_from_config(config)
     version_info = k8s_api.get_code()
-    return int(version_info.major), int(version_info.minor.replace("+", ""))
+    return version_info.git_version
 
 
 # Delete namespace by name.

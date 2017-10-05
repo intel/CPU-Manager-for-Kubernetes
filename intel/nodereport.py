@@ -39,16 +39,16 @@ def nodereport(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version_major, version_minor = k8s.get_kubelet_version(None)
+            version = k8s.get_kubelet_version(None)
 
-            if version_major >= 1 and version_minor >= 7:
-                node_report_type = \
-                    custom_resource.CustomResourceDefinitionType(
-                        v1beta,
-                        "intel.com",
-                        "cmk-nodereport",
-                        ["cmk-nr"])
-
+            if version >= "v1.7.0":
+                crdt = custom_resource.CustomResourceDefinitionType
+                node_report_type = crdt(
+                    v1beta,
+                    "intel.com",
+                    "cmk-nodereport",
+                    ["cmk-nr"]
+                )
                 # custom_resource throws an exception if the environment
                 # variable is not set.
                 node_name = os.getenv("NODE_NAME")

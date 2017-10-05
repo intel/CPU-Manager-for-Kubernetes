@@ -43,12 +43,17 @@ def uninstall(install_dir, conf_dir):
     delete_cmk_pod("cmk-install-pod")
 
     remove_all_report()
+    remove_node_taint()
+
+    version = k8s.get_kubelet_version(None)
+    if version == "v1.8.0":
+        logging.warning("Unsupported Kubernetes version")
+    elif version >= "v1.8.1":
+        remove_node_cmk_er()
+    else:
+        remove_node_cmk_oir()
 
     check_remove_conf_dir(conf_dir)
-
-    remove_node_taint()
-    remove_node_cmk_oir()
-
     remove_binary(install_dir)
 
     remove_node_label()
@@ -64,13 +69,12 @@ def remove_binary(install_dir):
         logging.warning("Could not found cmk binary in "
                         "\"{}\".".format(install_dir))
         logging.warning("Wrong path or file has already been removed.")
-        sys.exit(0)
 
 
 def remove_all_report():
-    version_major, version_minor = k8s.get_kubelet_version(None)
+    version = k8s.get_kubelet_version(None)
 
-    if version_major >= 1 and version_minor >= 7:
+    if version >= "v1.7.0":
         remove_report_crd("cmk-nodereport", ["cmk-nr"])
         remove_report_crd("cmk-reconcilereport", ["cmk-rr"])
 
@@ -214,7 +218,6 @@ def check_remove_conf_dir(conf_dir):
                         .format(conf_dir, err))
         logging.warning("Wrong path or \"{}\" has already been removed."
                         .format(conf_dir))
-        sys.exit(0)
     except Exception as err:
         logging.error("Aborting uninstall: Exception when removing "
                       "\"{}\": {}".format(conf_dir, err))
@@ -260,10 +263,10 @@ def remove_node_taint():
                       "\"{}\" obj: {}".format(node_name, err))
         sys.exit(1)
 
-    version_major, version_minor = k8s.get_kubelet_version(None)
+    version = k8s.get_kubelet_version(None)
     node_taints_list = []
 
-    if version_major >= 1 and version_minor >= 7:
+    if version >= "v1.7.0":
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -278,7 +281,7 @@ def remove_node_taint():
     node_taints_list = \
         [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
-    if version_major >= 1 and version_minor >= 7:
+    if version >= "v1.7.0":
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)
@@ -318,3 +321,27 @@ def remove_node_cmk_oir():
             sys.exit(1)
         logging.warning("CMK oir \"{}\" does not exist.".format(patch_path))
     logging.info("Removed node oir \"{}\".".format(patch_path))
+
+
+def remove_node_cmk_er():
+    logging.info("Removing node ERs")
+    patch_body_capacity = [{
+        "op": "remove",
+        "path": '/status/capacity/cmk.intel.com~1dp-cores'
+    }]
+    patch_body_allocatable = [{
+        "op": "remove",
+        "path": '/status/allocatable/cmk.intel.com~1dp-cores'
+    }]
+
+    try:
+        discover.patch_k8s_node_status(patch_body_capacity)
+        discover.patch_k8s_node_status(patch_body_allocatable)
+    except K8sApiException as err:
+        if "nonexistant" not in json.loads(err.body)["message"]:
+            logging.error(
+                "Aborting uninstall: Exception when removing ER: "
+                "{}".format(err))
+            sys.exit(1)
+        logging.warning("CMK ER does not exist.")
+    logging.info("Removed node ERs")

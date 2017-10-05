@@ -44,15 +44,16 @@ def reconcile(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version_major, version_minor = k8s.get_kubelet_version(None)
+            version = k8s.get_kubelet_version(None)
 
-            if version_major >= 1 and version_minor >= 7:
-                reconcile_report_type = \
-                    custom_resource.CustomResourceDefinitionType(
-                        v1beta,
-                        "intel.com",
-                        "cmk-reconcilereport",
-                        ["cmk-rr"])
+            if version >= "v1.7.0":
+                crdt = custom_resource.CustomResourceDefinitionType
+                reconcile_report_type = crdt(
+                    v1beta,
+                    "intel.com",
+                    "cmk-reconcilereport",
+                    ["cmk-rr"]
+                )
 
                 node_name = os.getenv("NODE_NAME")
                 reconcile_report = reconcile_report_type.create(node_name)
