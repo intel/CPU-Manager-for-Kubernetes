@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 import time
 
+from http import client
 from kubernetes.client.rest import ApiException as K8sApiException
 from .util import ldh_convert_check
 
@@ -99,7 +99,7 @@ class CustomResourceDefinitionType:
                 auth_settings=self.auth_settings)
 
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] != "AlreadyExists":
+            if e.status != client.CONFLICT:
                 raise e
 
         # Wait until resource type is ready.
@@ -118,10 +118,9 @@ class CustomResourceDefinitionType:
                 auth_settings=self.auth_settings)
 
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] == "NotFound":
+            if e.status == client.CONFLICT or e.status == client.NOT_FOUND:
                 return False
             raise e
-
         return True
 
     def create(self, name, namespace="default"):
@@ -199,13 +198,22 @@ class CustomResourceDefinition:
             self.create()
 
         except K8sApiException as e:
-            if json.loads(e.body)["reason"] != "AlreadyExists":
+            if e.status == client.NOT_FOUND:
+                logging.warning("Custom Resource Definition is not ready yet. "
+                                "Report will be skipped")
+                return
+            if e.status == client.METHOD_NOT_ALLOWED:
+                logging.error("API is blocked. Report will be skipped")
+                return
+            if e.status != client.CONFLICT:
                 raise e
+            logging.warning("Previous definition has been detected. "
+                            "Recreating...")
 
             try:
                 self.remove()
             except K8sApiException as e:
-                if json.loads(e.body)["reason"] != "NotFound":
+                if e.status != client.NOT_FOUND:
                     raise e
 
             self.create()
