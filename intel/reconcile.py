@@ -47,13 +47,13 @@ def reconcile(conf_dir, seconds, publish):
             version = k8s.get_kubelet_version(None)
 
             if version >= "v1.7.0":
-                crdt = custom_resource.CustomResourceDefinitionType
-                reconcile_report_type = crdt(
-                    v1beta,
-                    "intel.com",
-                    "cmk-reconcilereport",
-                    ["cmk-rr"]
-                )
+                reconcile_report_type = \
+                    custom_resource.CustomResourceDefinitionType(
+                        v1beta,
+                        "intel.com",
+                        "cmk-reconcilereport",
+                        ["cmk-rr"]
+                    )
 
                 node_name = os.getenv("NODE_NAME")
                 reconcile_report = reconcile_report_type.create(node_name)

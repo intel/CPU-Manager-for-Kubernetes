@@ -42,13 +42,13 @@ def nodereport(conf_dir, seconds, publish):
             version = k8s.get_kubelet_version(None)
 
             if version >= "v1.7.0":
-                crdt = custom_resource.CustomResourceDefinitionType
-                node_report_type = crdt(
-                    v1beta,
-                    "intel.com",
-                    "cmk-nodereport",
-                    ["cmk-nr"]
-                )
+                node_report_type = \
+                    custom_resource.CustomResourceDefinitionType(
+                        v1beta,
+                        "intel.com",
+                        "cmk-nodereport",
+                        ["cmk-nr"]
+                    )
                 # custom_resource throws an exception if the environment
                 # variable is not set.
                 node_name = os.getenv("NODE_NAME")

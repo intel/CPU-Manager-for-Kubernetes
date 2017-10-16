@@ -337,7 +337,7 @@ kubectl get node cmk-02-zzwt7w -o json | jq .spec.taints
 ]
 
 ```
-- Check if node has the appropriate OIR.
+- Check if node has the appropriate OIR. **(kubernetes < v1.8)**
 ```sh
 kubectl get node <node-name> -o json | jq .status.capacity
 ```
@@ -349,6 +349,21 @@ kubectl get node cmk-02-zzwt7w -o json | jq .status.capacity
     "cpu": "16",
     "memory": "14778328Ki",
     "pod.alpha.kubernetes.io/opaque-int-resource-cmk": "4",
+    "pods": "110"
+}
+```
+- Check if node has the appropriate ER. **(kubernetes >= v1.8.1)**
+```sh
+kubectl get node <node-name> -o json | jq .status.capacity
+```
+Example output:
+```sh
+kubectl get node cmk-02-zzwt7w -o json | jq .status.capacity
+{
+    "alpha.kubernetes.io/nvidia-gpu": "0",
+    "cpu": "16",
+    "memory": "14778328Ki",
+    "cmk.intel.com/dp-cores": "4",
     "pods": "110"
 }
 ```

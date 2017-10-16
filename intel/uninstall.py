@@ -44,14 +44,7 @@ def uninstall(install_dir, conf_dir):
 
     remove_all_report()
     remove_node_taint()
-
-    version = k8s.get_kubelet_version(None)
-    if version == "v1.8.0":
-        logging.warning("Unsupported Kubernetes version")
-    elif version >= "v1.8.1":
-        remove_node_cmk_er()
-    else:
-        remove_node_cmk_oir()
+    remove_resource_tracking()
 
     check_remove_conf_dir(conf_dir)
     remove_binary(install_dir)
@@ -300,6 +293,16 @@ def remove_node_taint():
             "{}".format(patch_path, err))
         sys.exit(1)
     logging.info("Removed node taint with key\"{}\".".format("cmk"))
+
+
+def remove_resource_tracking():
+    version = k8s.get_kubelet_version(None)
+    if version == "v1.8.0":
+        logging.warning("Unsupported Kubernetes version")
+    elif version >= "v1.8.1":
+        remove_node_cmk_er()
+    else:
+        remove_node_cmk_oir()
 
 
 def remove_node_cmk_oir():
