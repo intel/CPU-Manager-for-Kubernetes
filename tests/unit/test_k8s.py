@@ -182,11 +182,10 @@ def test_k8s_get_kubelet_version():
     mock = MagicMock()
     with patch('intel.k8s.version_api_client_from_config',
                MagicMock(return_value=mock)):
-        mock.get_code.return_value.major = 1
-        mock.get_code.return_value.minor = '7+'
-        major_version, minor_version = k8s.get_kubelet_version(None)
-        assert major_version == 1
-        assert minor_version == 7
+        expected_version = "v1.7.0"
+        mock.get_code.return_value.git_version = expected_version
+        version = k8s.get_kubelet_version(None)
+        assert version == expected_version
 
 
 def test_k8s_core_client_from_config():

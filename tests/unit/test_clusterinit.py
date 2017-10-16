@@ -175,13 +175,12 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
-               MagicMock(side_effect=fake_api_exception)), \
-            patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value=(1, 5))):
+               MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
@@ -193,13 +192,12 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
-               MagicMock(side_effect=fake_api_exception)), \
-            patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value=(1, 5))):
+               MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
                                  "fake-conf-dir", "fake-install-dir", "2",
@@ -237,78 +235,78 @@ def test_clusterinit_node_list_host_list():
     assert node_list == ["fakenode1", "fakenode2", "fakenode3"]
 
 
+@patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config',
-               MagicMock(return_value=mock)):
-        with patch('intel.clusterinit.wait_for_pod_phase',
-                   MagicMock(return_value=True)):
-            clusterinit.cluster_init("fakenode1", False,
-                                     "init, discover, install",
-                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "supersecret", "", "vertical",
-                                     "vertical")
-            called_methods = mock.method_calls
-            params = called_methods[0][1]
-            pod_spec = params[1]
-            assert "imagePullSecrets" in pod_spec["spec"]
-            secrets = pod_spec["spec"]["imagePullSecrets"]
-            assert len(secrets) == 1
-            assert secrets[0]["name"] == "supersecret"
+    with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
+        clusterinit.cluster_init("fakenode1", False,
+                                 "init, discover, install",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "4", "2", "supersecret", "", "vertical",
+                                 "vertical")
+        called_methods = mock.method_calls
+        params = called_methods[0][1]
+        pod_spec = params[1]
+        assert "imagePullSecrets" in pod_spec["spec"]
+        secrets = pod_spec["spec"]["imagePullSecrets"]
+        assert len(secrets) == 1
+        assert secrets[0]["name"] == "supersecret"
 
 
+@patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_pull_secrets():
     mock = MagicMock()
     with patch('intel.k8s.client_from_config',
                MagicMock(return_value=mock)):
-        with patch('intel.clusterinit.wait_for_pod_phase',
-                   MagicMock(return_value=True)):
-            clusterinit.cluster_init("fakenode1", False,
-                                     "init, discover, install",
-                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "", "", "vertical", "vertical")
-            called_methods = mock.method_calls
-            params = called_methods[0][1]
-            pod_spec = params[1]
-            assert "imagePullSecrets" not in pod_spec["spec"]
+        clusterinit.cluster_init("fakenode1", False,
+                                 "init, discover, install",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "4", "2", "", "", "vertical", "vertical")
+        called_methods = mock.method_calls
+        params = called_methods[0][1]
+        pod_spec = params[1]
+        assert "imagePullSecrets" not in pod_spec["spec"]
 
 
+@patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_pass_serviceaccountname():
     mock = MagicMock()
     serviceaccount_name = "testSAname"
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
-        with patch('intel.clusterinit.wait_for_pod_phase',
-                   MagicMock(return_value=True)):
-            clusterinit.cluster_init("fakenode1", False,
-                                     "init, discover, install",
-                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "", serviceaccount_name,
-                                     "vertical", "vertical")
-            called_methods = mock.method_calls
-            params = called_methods[0][1]
-            pod_spec = params[1]
-            assert "serviceAccountName" in pod_spec["spec"]
-            sa_name_in_spec = pod_spec["spec"]["serviceAccountName"]
-            assert sa_name_in_spec == serviceaccount_name
+        clusterinit.cluster_init("fakenode1", False,
+                                 "init, discover, install",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "4", "2", "", serviceaccount_name,
+                                 "vertical", "vertical")
+        called_methods = mock.method_calls
+        params = called_methods[0][1]
+        pod_spec = params[1]
+        assert "serviceAccountName" in pod_spec["spec"]
+        sa_name_in_spec = pod_spec["spec"]["serviceAccountName"]
+        assert sa_name_in_spec == serviceaccount_name
 
 
+@patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_serviceaccountname():
     mock = MagicMock()
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
-        with patch('intel.clusterinit.wait_for_pod_phase',
-                   MagicMock(return_value=True)):
-            clusterinit.cluster_init("fakenode1", False,
-                                     "init, discover, install",
-                                     "cmk", "Never", "/etc/cmk", "/opt/bin",
-                                     "4", "2", "", "", "vertical", "vertical")
-            called_methods = mock.method_calls
-            params = called_methods[0][1]
-            pod_spec = params[1]
-            assert "serviceAccountName" in pod_spec["spec"]
-            sa_name_in_spec = pod_spec["spec"]["serviceAccountName"]
-            assert sa_name_in_spec == ""
+        clusterinit.cluster_init("fakenode1", False,
+                                 "init, discover, install",
+                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "4", "2", "", "", "vertical", "vertical")
+        called_methods = mock.method_calls
+        params = called_methods[0][1]
+        pod_spec = params[1]
+        assert "serviceAccountName" in pod_spec["spec"]
+        sa_name_in_spec = pod_spec["spec"]["serviceAccountName"]
+        assert sa_name_in_spec == ""
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_update_pod_with_init_container():
     pod_passed = k8sclient.V1Pod(
         metadata=k8sclient.V1ObjectMeta(annotations={}),

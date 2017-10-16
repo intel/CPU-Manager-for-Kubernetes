@@ -121,8 +121,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
-        version_major, version_minor = k8s.get_kubelet_version(None)
-        if version_major >= 1 and version_minor >= 7:
+        version = k8s.get_kubelet_version(None)
+        if version >= "v1.7.0":
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
         for cmd in cmd_list:
@@ -271,15 +271,21 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     # work with init-containers. Removing it as a work-around. Needs further
     # investigation.
     container_template["env"].pop()
-
     pod_init_containers_list = []
-    init_containers_key = "pod.beta.kubernetes.io/init-containers"
 
-    if init_containers_key in pod["metadata"]["annotations"]:
-        init_containers = \
-            pod["metadata"]["annotations"][init_containers_key]
-        pod_init_containers_list = json.loads(init_containers)
+    version = k8s.get_kubelet_version(None)
 
-    pod_init_containers_list.append(container_template)
-    pod["metadata"]["annotations"][init_containers_key] = \
-        json.dumps(pod_init_containers_list)
+    if version >= "v1.7.0":
+        pod["spec"]["initContainers"] = [container_template]
+    else:
+
+        init_containers_key = "pod.beta.kubernetes.io/init-containers"
+
+        if init_containers_key in pod["metadata"]["annotations"]:
+            init_containers = \
+                pod["metadata"]["annotations"][init_containers_key]
+            pod_init_containers_list = json.loads(init_containers)
+
+        pod_init_containers_list.append(container_template)
+        pod["metadata"]["annotations"][init_containers_key] = \
+            json.dumps(pod_init_containers_list)

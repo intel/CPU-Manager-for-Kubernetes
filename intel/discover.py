@@ -27,9 +27,21 @@ from . import k8s
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.
 def discover(conf_dir):
-    # Patch the node with the appropriate CMK OIR.
-    logging.debug("Patching the node with the appropriate CMK OIR.")
-    add_node_oir(conf_dir)
+
+    version = k8s.get_kubelet_version(None)
+    if version == "v1.8.0":
+        logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
+                      "version >=1.8.1 or rollback to previous versions")
+
+    if version >= "v1.8.1":
+        # Patch the node with the appropriate CMK ER.
+        logging.debug("Patching the node with the appropriate CMK ER.")
+        add_node_er(conf_dir)
+    else:
+        # Patch the node with the appropriate CMK OIR.
+        logging.debug("Patching the node with the appropriate CMK OIR.")
+        add_node_oir(conf_dir)
+
     # Add appropriate CMK label to the node.
     logging.debug("Adding appropriate CMK label to the node.")
     add_node_label()
@@ -50,6 +62,32 @@ def add_node_oir(conf_dir):
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
+    patch_body = [{
+        "op": "add",
+        "path": patch_path,
+        "value": num_slots
+    }]
+
+    try:
+        patch_k8s_node_status(patch_body)
+    except K8sApiException as err:
+        logging.error("Exception when patching node with OIR: {}"
+                      .format(err))
+        logging.error("Aborting discover ...")
+        sys.exit(1)
+
+
+# add_node_er patches the node with the appropriate CMK extended resources.
+def add_node_er(conf_dir):
+    c = config.Config(conf_dir)
+    with c.lock():
+        if "dataplane" not in c.pools():
+            raise KeyError("Dataplane pool does not exist")
+        if len(c.pool("dataplane").cpu_lists()) == 0:
+            raise KeyError("No CPU list in dataplane pool")
+        num_slots = len(c.pool("dataplane").cpu_lists())
+
+    patch_path = ("/status/capacity/cmk.intel.com~1dp-cores")
     patch_body = [{
         "op": "add",
         "path": patch_path,
@@ -90,11 +128,11 @@ def add_node_taint():
         logging.error("Aborting discover ...")
         sys.exit(1)
 
-    version_major, version_minor = k8s.get_kubelet_version(None)
+    version = k8s.get_kubelet_version(None)
     node_taints_list = []
     node_taints = []
 
-    if version_major >= 1 and version_minor >= 7:
+    if version >= "v1.7.0":
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -116,7 +154,7 @@ def add_node_taint():
         "effect": "NoSchedule"
     })
 
-    if version_major >= 1 and version_minor >= 7:
+    if version >= "v1.7.0":
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)
