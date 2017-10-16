@@ -82,6 +82,7 @@ def test_remove_all_report_tpr_success(caplog):
                                       "removed.".format(os.getenv("NODE_NAME"))
 
 
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.7.4"))
 def test_remove_all_report_crd_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
@@ -90,8 +91,6 @@ def test_remove_all_report_crd_success(caplog):
                MagicMock(return_value=0)), \
             patch('kubernetes.client.ExtensionsV1beta1Api',
                   MagicMock(return_value=0)), \
-            patch('intel.k8s.get_kubelet_version',
-                  MagicMock(return_value="v1.7.4")), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
                          MagicMock(return_value=mock)):
