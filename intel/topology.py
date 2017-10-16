@@ -268,4 +268,6 @@ def parse_isolcpus(cmdline):
                 else:
                     cpus.append(int(cpu_id))
 
+    # Get unique cpu_ids from list
+    cpus = list(set(cpus))
     return cpus
