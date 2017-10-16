@@ -24,7 +24,7 @@ from . import k8s
 
 
 # discover reads the CMK configuration file, patches kubernetes nodes with
-# appropriate number of CMK Opaque Integer Resource (OIR) or  slots and applies
+# appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.
 def discover(conf_dir):
 
