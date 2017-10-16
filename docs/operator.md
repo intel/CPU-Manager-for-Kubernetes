@@ -29,7 +29,7 @@ _Related:_
 - [Using the cmk command-line tool][doc-cli]
 
 ## System requirements.
-Kubernetes >= v1.5.0
+Kubernetes >= v1.5.0 (excluding v1.8.0, details below)
 
 ### Kubernetes preparation
 All of template manifests provided with CMK are using serviceaccount which is
@@ -54,6 +54,9 @@ CMK will detect the version Kubernetes itself and will be use [Custom Resource D
 if Kubernetes version is 1.7 else [Third Party Resource] to create Nodereport and Reconcilereport.
 
 Additionally [Taints][Taints] have been moved from alpha to beta and are no logner present in node `metadata` but directly in `spec`. Please note that if pod manifest has `nodeName: <nodename>` selector, taints tolerations are not needed.
+
+#### Kubernetes 1.8
+***Kubernetes 1.8.0 is not supported due to extended resources issue(it's impossible to create extended resource). Use Kubernetes 1.8.1+ instead.***
 
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
