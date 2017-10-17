@@ -261,7 +261,21 @@ def parse_isolcpus(cmdline):
 
         if key == "isolcpus":
             cpus_str = value.split(",")
-            for cpu_id in cpus_str:
-                cpus.append(int(cpu_id))
+            cpus += parse_cpus_from_isolcpus(cpus_str)
 
+    # Get unique cpu_ids from list
+    cpus = list(set(cpus))
+    return cpus
+
+
+def parse_cpus_from_isolcpus(cpus_str):
+    cpus = []
+    for cpu_id in cpus_str:
+        if "-" not in cpu_id:
+            cpus.append(int(cpu_id))
+            continue
+        cpu_range = cpu_id.split("-")
+        if len(cpu_range) != 2:
+            continue
+        cpus += range(int(cpu_range[0]), int(cpu_range[1])+1)
     return cpus

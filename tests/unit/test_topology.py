@@ -99,6 +99,20 @@ def test_parse_isolcpus_valid_input():
 
     assert topology.parse_isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11]
 
+    cmdline = ("BOOT_IMAGE=/boot/vmlinuz-4.4.14-040414-generic "
+               "root=/dev/md2 ro net.ifnames=0 "
+               "isolcpus=0,1,2,3,8,9,10,11,15-18")
+
+    assert topology.parse_isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11, 15,
+                                                16, 17, 18]
+
+    cmdline = ("BOOT_IMAGE=/boot/vmlinuz-4.4.14-040414-generic "
+               "root=/dev/md2 ro net.ifnames=0 "
+               "isolcpus=0,1,2,3,8,9,10,11,10-13")
+
+    assert topology.parse_isolcpus(cmdline) == [0, 1, 2, 3, 8, 9, 10, 11, 12,
+                                                13]
+
 
 def test_topology_isolated_one_socket():
     lscpu = """#The following is the parsable format, which can be fed to other
