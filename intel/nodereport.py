@@ -19,6 +19,7 @@ import os
 import time
 
 from kubernetes import config as k8sconfig, client as k8sclient
+from urllib3.exceptions import MaxRetryError
 from . import config, custom_resource, k8s, proc, third_party, topology
 
 
@@ -36,36 +37,40 @@ def nodereport(conf_dir, seconds, publish):
 
         if publish and report is not None:
             logging.debug("Publishing node report to Kubernetes API server")
-            k8sconfig.load_incluster_config()
-            v1beta = k8sclient.ExtensionsV1beta1Api()
+            try:
+                k8sconfig.load_incluster_config()
+                v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version = k8s.get_kubelet_version(None)
+                version = k8s.get_kubelet_version(None)
 
-            if version >= "v1.7.0":
-                node_report_type = \
-                    custom_resource.CustomResourceDefinitionType(
+                if version >= "v1.7.0":
+                    node_report_type = \
+                        custom_resource.CustomResourceDefinitionType(
+                            v1beta,
+                            "intel.com",
+                            "cmk-nodereport",
+                            ["cmk-nr"]
+                        )
+                    # custom_resource throws an exception if the environment
+                    # variable is not set.
+                    node_name = os.getenv("NODE_NAME")
+                    node_report = node_report_type.create(node_name)
+                    node_report.body["spec"]["report"] = report.as_dict()
+                    node_report.save()
+                else:
+                    node_report_type = third_party.ThirdPartyResourceType(
                         v1beta,
-                        "intel.com",
-                        "cmk-nodereport",
-                        ["cmk-nr"]
-                    )
-                # custom_resource throws an exception if the environment
-                # variable is not set.
-                node_name = os.getenv("NODE_NAME")
-                node_report = node_report_type.create(node_name)
-                node_report.body["spec"]["report"] = report.as_dict()
-                node_report.save()
-            else:
-                node_report_type = third_party.ThirdPartyResourceType(
-                    v1beta,
-                    "cmk.intel.com",
-                    "Nodereport")
-                # third_party throws an exception if the environment
-                # variable is not set.
-                node_name = os.getenv("NODE_NAME")
-                node_report = node_report_type.create(node_name)
-                node_report.body["report"] = report.as_dict()
-                node_report.save()
+                        "cmk.intel.com",
+                        "Nodereport")
+                    # third_party throws an exception if the environment
+                    # variable is not set.
+                    node_name = os.getenv("NODE_NAME")
+                    node_report = node_report_type.create(node_name)
+                    node_report.body["report"] = report.as_dict()
+                    node_report.save()
+            except MaxRetryError:
+                logging.error("Failed to publish node report to "
+                              "Kubernetes API server")
 
         if should_exit:
             break
