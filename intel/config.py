@@ -21,9 +21,10 @@ import threading
 import _thread
 
 
-# CMK_LOCK_TIMEOUT is interpreted as seconds.
 ENV_LOCK_TIMEOUT = "CMK_LOCK_TIMEOUT"
+# timeouts are in seconds
 DEFAULT_LOCK_TIMEOUT = 30
+API_CALL_TIMEOUT = 5
 
 
 def max_lock_seconds():

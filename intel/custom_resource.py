@@ -17,6 +17,7 @@ import time
 
 from http import client
 from kubernetes.client.rest import ApiException as K8sApiException
+from .config import API_CALL_TIMEOUT
 from .util import ldh_convert_check
 
 # Example usage:
@@ -96,7 +97,8 @@ class CustomResourceDefinitionType:
                 'POST',
                 self.header_params,
                 body=self.body,
-                auth_settings=self.auth_settings)
+                auth_settings=self.auth_settings,
+                _request_timeout=API_CALL_TIMEOUT)
 
         except K8sApiException as e:
             if e.status != client.CONFLICT:
@@ -115,7 +117,8 @@ class CustomResourceDefinitionType:
                 self.resource_path_crd_type,
                 'GET',
                 self.header_params,
-                auth_settings=self.auth_settings)
+                auth_settings=self.auth_settings,
+                _request_timeout=API_CALL_TIMEOUT)
 
         except K8sApiException as e:
             if e.status == client.CONFLICT or e.status == client.NOT_FOUND:
@@ -136,7 +139,8 @@ class CustomResourceDefinitionType:
                 self.resource_path_crd_type,
                 'DELETE',
                 self.header_params,
-                auth_settings=self.auth_settings)
+                auth_settings=self.auth_settings,
+                _request_timeout=API_CALL_TIMEOUT)
 
 
 class CustomResourceDefinition:
@@ -181,7 +185,8 @@ class CustomResourceDefinition:
             resource_path,
             'DELETE',
             self.resource_type.header_params,
-            auth_settings=self.resource_type.auth_settings)
+            auth_settings=self.resource_type.auth_settings,
+            _request_timeout=API_CALL_TIMEOUT)
 
     def create(self):
         """Create custom object"""
@@ -190,7 +195,8 @@ class CustomResourceDefinition:
             'POST',
             self.resource_type.header_params,
             body=self.body,
-            auth_settings=self.resource_type.auth_settings)
+            auth_settings=self.resource_type.auth_settings,
+            _request_timeout=API_CALL_TIMEOUT)
 
     def save(self):
         """Save custom object if not exists"""
