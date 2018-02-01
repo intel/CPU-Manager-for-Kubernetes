@@ -27,6 +27,6 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.2.1
+    image: cmk:v1.2.2
     name: cmk-cluster-init-pod
   restartPolicy: Never

@@ -128,7 +128,7 @@ for some reason.
 - The subcommands described below should be run in the same order.
 - The documentation in this section assumes that the `CMK` configuration directory is `/etc/cmk` and the `cmk`
 binary is installed on the host under `/opt/bin`.
-- In all the pod templates used in this section, the name of container image used is `cmk:v1.2.1`. It is expected that the
+- In all the pod templates used in this section, the name of container image used is `cmk:v1.2.2`. It is expected that the
 `cmk` container image is built and cached locally in the host. The `image` field will require modification if the
 container image is hosted remotely (e.g., in https://hub.docker.com/).
 
@@ -393,7 +393,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.2.1
+    image: cmk:v1.2.2
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     volumeMounts:

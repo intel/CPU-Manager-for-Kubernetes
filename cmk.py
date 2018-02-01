@@ -44,7 +44,7 @@ Options:
   --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
                         each host
                         [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>       CMK Docker image [default: cmk:v1.2.1].
+  --cmk-img=<img>       CMK Docker image [default: cmk:v1.2.2].
   --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
                         [default: IfNotPresent].
   --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
@@ -85,7 +85,7 @@ import sys
 def main():
     setup_logging()
 
-    args = docopt(__doc__, version="CMK v1.2.1")
+    args = docopt(__doc__, version="CMK v1.2.2")
     if args["cluster-init"]:
         clusterinit.cluster_init(args["--host-list"], args["--all-hosts"],
                                  args["--cmk-cmd-list"], args["--cmk-img"],
