@@ -18,6 +18,7 @@ import time
 
 from http import client
 from kubernetes.client.rest import ApiException as K8sApiException
+from .config import API_CALL_TIMEOUT
 from .util import ldh_convert_check
 
 
@@ -92,7 +93,8 @@ class ThirdPartyResourceType:
                 resource_path,
                 'GET',
                 header_params,
-                auth_settings=auth_settings)
+                auth_settings=auth_settings,
+                _request_timeout=API_CALL_TIMEOUT)
 
         except K8sApiException as e:
             if e.status == client.CONFLICT or e.status == client.NOT_FOUND:
@@ -148,7 +150,8 @@ class ThirdPartyResource:
             resource_path,
             'DELETE',
             self.header_params,
-            auth_settings=self.auth_settings)
+            auth_settings=self.auth_settings,
+            _request_timeout=API_CALL_TIMEOUT)
 
     def create(self):
         resource_path = "/".join([
@@ -166,7 +169,8 @@ class ThirdPartyResource:
             'POST',
             self.header_params,
             body=self.body,
-            auth_settings=self.auth_settings)
+            auth_settings=self.auth_settings,
+            _request_timeout=API_CALL_TIMEOUT)
 
     def save(self):
         try:

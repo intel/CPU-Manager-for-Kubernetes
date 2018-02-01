@@ -175,7 +175,7 @@ def test_k8s_get_namespaces():
         assert len(called_methods) == 1
         assert called_methods[0][0] == "list_namespace"
         assert len(called_methods[0][1]) == 0
-        assert len(called_methods[0][2]) == 0
+        assert len(called_methods[0][2]) == 1
 
 
 def test_k8s_get_kubelet_version():

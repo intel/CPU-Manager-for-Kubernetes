@@ -18,6 +18,7 @@ import os
 import time
 
 from kubernetes import config as k8sconfig, client as k8sclient
+from urllib3.exceptions import MaxRetryError
 from . import config, proc, third_party, custom_resource, k8s
 
 
@@ -41,34 +42,38 @@ def reconcile(conf_dir, seconds, publish):
         if publish and report is not None:
             logging.debug("Publishing reconcile report to "
                           "Kubernetes API server")
-            k8sconfig.load_incluster_config()
-            v1beta = k8sclient.ExtensionsV1beta1Api()
+            try:
+                k8sconfig.load_incluster_config()
+                v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version = k8s.get_kubelet_version(None)
+                version = k8s.get_kubelet_version(None)
 
-            if version >= "v1.7.0":
-                reconcile_report_type = \
-                    custom_resource.CustomResourceDefinitionType(
+                if version >= "v1.7.0":
+                    reconcile_report_type = \
+                        custom_resource.CustomResourceDefinitionType(
+                            v1beta,
+                            "intel.com",
+                            "cmk-reconcilereport",
+                            ["cmk-rr"]
+                        )
+
+                    node_name = os.getenv("NODE_NAME")
+                    reconcile_report = reconcile_report_type.create(node_name)
+                    reconcile_report.body["spec"]["report"] = report
+                    reconcile_report.save()
+                else:
+                    reconcile_report_type = third_party.ThirdPartyResourceType(
                         v1beta,
-                        "intel.com",
-                        "cmk-reconcilereport",
-                        ["cmk-rr"]
-                    )
+                        "cmk.intel.com",
+                        "Reconcilereport")
 
-                node_name = os.getenv("NODE_NAME")
-                reconcile_report = reconcile_report_type.create(node_name)
-                reconcile_report.body["spec"]["report"] = report
-                reconcile_report.save()
-            else:
-                reconcile_report_type = third_party.ThirdPartyResourceType(
-                    v1beta,
-                    "cmk.intel.com",
-                    "Reconcilereport")
-
-                node_name = os.getenv("NODE_NAME")
-                reconcile_report = reconcile_report_type.create(node_name)
-                reconcile_report.body["report"] = report
-                reconcile_report.save()
+                    node_name = os.getenv("NODE_NAME")
+                    reconcile_report = reconcile_report_type.create(node_name)
+                    reconcile_report.body["report"] = report
+                    reconcile_report.save()
+            except MaxRetryError:
+                logging.error("Failed to publish reconcile report to "
+                              "Kubernetes API server")
 
         if should_exit:
             break

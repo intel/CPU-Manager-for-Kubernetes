@@ -14,6 +14,7 @@
 
 import logging
 
+from .config import API_CALL_TIMEOUT
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
@@ -152,30 +153,39 @@ def get_container_template():
 def get_node_list(config, label_selector=None):
     k8s_api = client_from_config(config)
     if label_selector:
-        nodes = k8s_api.list_node(label_selector=label_selector).to_dict()
+        nodes = k8s_api.list_node(
+            label_selector=label_selector,
+            _request_timeout=API_CALL_TIMEOUT).to_dict()
     else:
-        nodes = k8s_api.list_node().to_dict()
+        nodes = k8s_api.list_node(_request_timeout=API_CALL_TIMEOUT).to_dict()
     return nodes["items"]
 
 
 # get_pod_list() returns the pod list in the current Kubernetes cluster.
 def get_pod_list(config):
     k8s_api = client_from_config(config)
-    return k8s_api.list_pod_for_all_namespaces().to_dict()
+    return k8s_api.list_pod_for_all_namespaces(
+        _request_timeout=API_CALL_TIMEOUT).to_dict()
 
 
 # create_pod() sends a request to the Kubernetes API server to create a
 # pod based on podspec.
 def create_pod(config, podspec, ns_name="default"):
     k8s_api = client_from_config(config)
-    return k8s_api.create_namespaced_pod(ns_name, podspec)
+    return k8s_api.create_namespaced_pod(
+        ns_name,
+        podspec,
+        _request_timeout=API_CALL_TIMEOUT)
 
 
 # create_ds() sends a request to the Kubernetes API server to create a
 # ds based on podspec.
 def create_ds(config, podspec, ns_name="default"):
     k8s_api = extensions_client_from_config(config)
-    return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
+    return k8s_api.create_namespaced_daemon_set(
+        ns_name,
+        podspec,
+        _request_timeout=API_CALL_TIMEOUT)
 
 
 # Create list of schedulable nodes.
@@ -197,7 +207,7 @@ def set_node_label(config, node, label, label_value):
         "value": label_value,
     }]
     k8s_api = client_from_config(config)
-    k8s_api.patch_node(node, patch_body)
+    k8s_api.patch_node(node, patch_body, _request_timeout=API_CALL_TIMEOUT)
 
 
 # Unset label from node.
@@ -207,7 +217,7 @@ def unset_node_label(config, node, label):
         "path": "/metadata/labels/%s" % label,
     }]
     k8s_api = client_from_config(config)
-    k8s_api.patch_node(node, patch_body)
+    k8s_api.patch_node(node, patch_body, _request_timeout=API_CALL_TIMEOUT)
 
 
 # Create namespace with generated namespace name.
@@ -215,32 +225,39 @@ def create_namespace(config, ns_name):
     metadata = {'name': ns_name}
     namespace = V1Namespace(metadata=metadata)
     k8s_api = client_from_config(config)
-    k8s_api.create_namespace(namespace)
+    k8s_api.create_namespace(namespace, _request_timeout=API_CALL_TIMEOUT)
 
 
 # Get available namespaces.
 def get_namespaces(config):
     k8s_api = client_from_config(config)
-    return k8s_api.list_namespace().to_dict()
+    return k8s_api.list_namespace(_request_timeout=API_CALL_TIMEOUT).to_dict()
 
 
 # Get kubelet version from node
 def get_kubelet_version(config):
     k8s_api = version_api_client_from_config(config)
-    version_info = k8s_api.get_code()
+    version_info = k8s_api.get_code(_request_timeout=API_CALL_TIMEOUT)
     return version_info.git_version
 
 
 # Delete namespace by name.
 def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespace(ns_name, delete_options)
+    k8s_api.delete_namespace(
+        ns_name,
+        delete_options,
+        _request_timeout=API_CALL_TIMEOUT)
 
 
 # Delete pod from namespace.
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespaced_pod(name, ns_name, body)
+    k8s_api.delete_namespaced_pod(
+        name,
+        ns_name,
+        body,
+        _request_timeout=API_CALL_TIMEOUT)
 
 
 # Delete ds from namespace.
@@ -252,15 +269,19 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
     k8s_api_ext = extensions_client_from_config(config)
     k8s_api_core = client_from_config(config)
 
-    k8s_api_ext.delete_namespaced_daemon_set(ds_name,
-                                             ns_name,
-                                             body,
-                                             grace_period_seconds=0,
-                                             orphan_dependents=False)
+    k8s_api_ext.delete_namespaced_daemon_set(
+        ds_name,
+        ns_name,
+        body,
+        grace_period_seconds=0,
+        orphan_dependents=False,
+        _request_timeout=API_CALL_TIMEOUT)
 
     # Pod in ds has fixed label so we use label selector
     data = k8s_api_core.list_namespaced_pod(
-        ns_name, label_selector="app={}".format(ds_name)).to_dict()
+        ns_name,
+        label_selector="app={}".format(ds_name),
+        _request_timeout=API_CALL_TIMEOUT).to_dict()
     # There should be only one pod
     for pod in data["items"]:
         logging.debug("Removing pod \"{}\"".format(pod["metadata"]["name"]))
