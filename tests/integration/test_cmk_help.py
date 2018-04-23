@@ -27,6 +27,7 @@ Usage:
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
+                   [--namespace=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
            [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
@@ -36,7 +37,7 @@ Usage:
               [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
+  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
 
 Options:
   -h --help             Show this screen.
@@ -75,4 +76,6 @@ Options:
                         for reading the `CMK_CPUS_ASSIGNED` environment
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
+  --namespace=<name>    Set the namespace to deploy pods to during the
+                        cluster-init deployment process. [default: default].
 """

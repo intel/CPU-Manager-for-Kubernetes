@@ -166,14 +166,14 @@ def get_pod_list(config):
 
 # create_pod() sends a request to the Kubernetes API server to create a
 # pod based on podspec.
-def create_pod(config, podspec, ns_name="default"):
+def create_pod(config, podspec, ns_name):
     k8s_api = client_from_config(config)
     return k8s_api.create_namespaced_pod(ns_name, podspec)
 
 
 # create_ds() sends a request to the Kubernetes API server to create a
 # ds based on podspec.
-def create_ds(config, podspec, ns_name="default"):
+def create_ds(config, podspec, ns_name):
     k8s_api = extensions_client_from_config(config)
     return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
 

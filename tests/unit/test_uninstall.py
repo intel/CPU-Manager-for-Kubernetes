@@ -450,7 +450,8 @@ def test_delete_cmk_pod_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.delete_cmk_pod(pod_base_name,
-                                     postfix=str(os.getenv("NODE_NAME")))
+                                     postfix=str(os.getenv("NODE_NAME")),
+                                     namespace="default")
         caplog_tuple = caplog.record_tuples
         exp_err = "Aborting uninstall: " \
                   "Exception when removing pod \"{}-{}\""\
@@ -468,7 +469,8 @@ def test_delete_cmk_pod_failure2(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.delete_cmk_pod(pod_base_name,
-                                     postfix=str(os.getenv("NODE_NAME")))
+                                     postfix=str(os.getenv("NODE_NAME")),
+                                     namespace="default")
         caplog_tuple = caplog.record_tuples
         exp_err = "Aborting uninstall: " \
                   "Exception when removing pod \"{}-{}\""\
@@ -485,7 +487,8 @@ def test_delete_cmk_pod_success(caplog):
     with patch('intel.k8s.delete_ds',
                MagicMock(side_effect=fake_api_exception)):
         uninstall.delete_cmk_pod(pod_base_name,
-                                 postfix=str(os.getenv("NODE_NAME")))
+                                 postfix=str(os.getenv("NODE_NAME")),
+                                 namespace="default")
         caplog_tuple = caplog.record_tuples
         assert \
             caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
@@ -503,7 +506,8 @@ def test_delete_cmk_pod_success2(caplog):
     with patch('intel.k8s.delete_pod',
                MagicMock(side_effect=fake_api_exception)):
         uninstall.delete_cmk_pod(pod_base_name,
-                                 postfix=str(os.getenv("NODE_NAME")))
+                                 postfix=str(os.getenv("NODE_NAME")),
+                                 namespace="default")
         caplog_tuple = caplog.record_tuples
         assert \
             caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(

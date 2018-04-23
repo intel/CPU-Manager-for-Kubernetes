@@ -17,26 +17,23 @@ kind: Pod
 metadata:
   labels:
     app: cmk-isolate-pod
-# Needed for k8s < 1.7
-#  annotations:
-#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-isolate-pod
+  name: cmk-isolate-pod-1
 spec:
-  serviceAccountName: cmk-serviceaccount
-# Needed for k8s >= 1.7
-#  tolerations:
-#  - operator: "Exists"
+  serviceAccountName: default 
+  tolerations:
+  - operator: "Exists"
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane echo -- Hello World DP!!!"
+          - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane --socket-id=1 /opt/bin/cmk-cores.sh"
     command:
     - "/bin/bash"
     - "-c"
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.2.2
+    image: ifconfig-img 
     name: cmk-isolate-dp
+    imagePullPolicy: IfNotPresent        
     resources:
       requests:
         pod.alpha.kubernetes.io/opaque-int-resource-cmk: '1'
@@ -49,14 +46,15 @@ spec:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=controlplane echo -- Hello World CP!!!"
+          - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=controlplane /opt/bin/cmk-cores.sh"
     command:
     - "/bin/bash"
     - "-c"
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.2.2
+    image: ifconfig-img
+    imagePullPolicy: IfNotPresent        
     name: cmk-isolate-cp
     volumeMounts:
     - mountPath: "/host/proc"
@@ -67,14 +65,15 @@ spec:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
+          - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra /opt/bin/cmk-cores.sh"
     command:
     - "/bin/bash"
     - "-c"
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.2.2
+    image: ifconfig-img
+    imagePullPolicy: IfNotPresent        
     name: cmk-isolate-infra
     volumeMounts:
     - mountPath: "/host/proc"

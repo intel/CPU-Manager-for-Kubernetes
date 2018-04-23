@@ -17,6 +17,7 @@ kind: Pod
 metadata:
   labels:
     app: cmk-uninstall-pod
+  namespace: cmk          
 # Needed for k8s < 1.7
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
@@ -24,14 +25,14 @@ metadata:
 spec:
   serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
-#  tolerations:
-#  - operator: "Exists"
+  tolerations:
+  - operator: "Exists"
 # Use nodeName to schedule on specific node
 #  nodeName: compute1
   containers:
   - args:
   # Uninstall canno't be run through cmk isolate
-    - "/cmk/cmk.py uninstall"
+    - "/cmk/cmk.py uninstall --namespace=cmk"
     command:
     - "/bin/bash"
     - "-c"
