@@ -15,6 +15,7 @@
 import json
 import logging
 import sys
+from pkg_resources import parse_version
 
 from kubernetes.client.rest import ApiException as K8sApiException
 
@@ -121,8 +122,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
-        version = k8s.get_kubelet_version(None)
-        if version >= "v1.7.0":
+        version = parse_version(k8s.get_kubelet_version(None))
+        if version >= parse_version("v1.7.0"):
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
         for cmd in cmd_list:
@@ -273,9 +274,9 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     container_template["env"].pop()
     pod_init_containers_list = []
 
-    version = k8s.get_kubelet_version(None)
+    version = parse_version(k8s.get_kubelet_version(None))
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         pod["spec"]["initContainers"] = [container_template]
     else:
 

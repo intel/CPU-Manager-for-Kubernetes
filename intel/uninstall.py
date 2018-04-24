@@ -18,6 +18,7 @@ import logging
 import os
 import shutil
 import sys
+from pkg_resources import parse_version
 
 from time import sleep
 from kubernetes.client.rest import ApiException as K8sApiException
@@ -65,9 +66,9 @@ def remove_binary(install_dir):
 
 
 def remove_all_report():
-    version = k8s.get_kubelet_version(None)
+    version = parse_version(k8s.get_kubelet_version(None))
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         remove_report_crd("cmk-nodereport", ["cmk-nr"])
         remove_report_crd("cmk-reconcilereport", ["cmk-rr"])
 
@@ -256,10 +257,10 @@ def remove_node_taint():
                       "\"{}\" obj: {}".format(node_name, err))
         sys.exit(1)
 
-    version = k8s.get_kubelet_version(None)
+    version = parse_version(k8s.get_kubelet_version(None))
     node_taints_list = []
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -274,7 +275,7 @@ def remove_node_taint():
     node_taints_list = \
         [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)

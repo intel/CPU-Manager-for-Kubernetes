@@ -17,6 +17,8 @@ import json
 import logging
 import os
 import sys
+from pkg_resources import parse_version
+
 
 from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
@@ -28,12 +30,12 @@ from . import k8s
 # the appropriate CMK node labels and taints.
 def discover(conf_dir):
 
-    version = k8s.get_kubelet_version(None)
-    if version == "v1.8.0":
+    version = parse_version(k8s.get_kubelet_version(None))
+    if version == parse_version("v1.8.0"):
         logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
                       "version >=1.8.1 or rollback to previous versions")
 
-    if version >= "v1.8.1":
+    if version >= parse_version("v1.8.1"):
         # Patch the node with the appropriate CMK ER.
         logging.debug("Patching the node with the appropriate CMK ER.")
         add_node_er(conf_dir)
@@ -128,11 +130,11 @@ def add_node_taint():
         logging.error("Aborting discover ...")
         sys.exit(1)
 
-    version = k8s.get_kubelet_version(None)
+    version = parse_version(k8s.get_kubelet_version(None))
     node_taints_list = []
     node_taints = []
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -154,7 +156,7 @@ def add_node_taint():
         "effect": "NoSchedule"
     })
 
-    if version >= "v1.7.0":
+    if version >= parse_version("v1.7.0"):
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)
