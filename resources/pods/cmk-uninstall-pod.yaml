@@ -22,6 +22,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-uninstall-pod
+  #namespace: user-supplied-namespace        
 spec:
   serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
