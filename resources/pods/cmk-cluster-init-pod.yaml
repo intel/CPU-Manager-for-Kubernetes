@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-cluster-init-pod
   name: cmk-cluster-init-pod
+  #namespace: user-supplied-namespace      
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:

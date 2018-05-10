@@ -24,6 +24,7 @@ Usage:
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
+                   [--namespace=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
            [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
@@ -33,7 +34,7 @@ Usage:
               [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
+  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
 
 Options:
   -h --help             Show this screen.
@@ -72,6 +73,8 @@ Options:
                         for reading the `CMK_CPUS_ASSIGNED` environment
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
+  --namespace=<name>    Set the namespace to deploy pods to during the
+                        cluster-init deployment process. [default: default].
 """
 from intel import (
     clusterinit, describe, discover, init, install,
@@ -93,7 +96,7 @@ def main():
                                  args["--install-dir"], args["--num-dp-cores"],
                                  args["--num-cp-cores"], args["--pull-secret"],
                                  args["--saname"], args["--dp-mode"],
-                                 args["--cp-mode"])
+                                 args["--cp-mode"], args["--namespace"])
         return
     if args["init"]:
         init.init(args["--conf-dir"],
@@ -126,7 +129,8 @@ def main():
         return
     if args["uninstall"]:
         uninstall.uninstall(args["--install-dir"],
-                            args["--conf-dir"])
+                            args["--conf-dir"],
+                            args["--namespace"])
         return
     if args["node-report"]:
         nodereport.nodereport(args["--conf-dir"],

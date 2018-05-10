@@ -28,19 +28,19 @@ from . import discover
 from . import k8s
 
 
-def uninstall(install_dir, conf_dir):
-    delete_cmk_pod("cmk-init-install-discover-pod",
+def uninstall(install_dir, conf_dir, namespace):
+    delete_cmk_pod("cmk-init-install-discover-pod", namespace,
                    postfix=os.getenv("NODE_NAME"))
-    delete_cmk_pod("cmk-reconcile-nodereport-ds",
+    delete_cmk_pod("cmk-reconcile-nodereport-ds", namespace,
                    postfix=os.getenv("NODE_NAME"))
 
-    delete_cmk_pod("cmk-node-report-ds-all")
-    delete_cmk_pod("cmk-reconcile-ds-all")
+    delete_cmk_pod("cmk-node-report-ds-all", namespace)
+    delete_cmk_pod("cmk-reconcile-ds-all", namespace)
 
-    delete_cmk_pod("cmk-cluster-init-pod")
-    delete_cmk_pod("cmk-discover-pod")
-    delete_cmk_pod("cmk-init-pod")
-    delete_cmk_pod("cmk-install-pod")
+    delete_cmk_pod("cmk-cluster-init-pod", namespace)
+    delete_cmk_pod("cmk-discover-pod", namespace)
+    delete_cmk_pod("cmk-init-pod", namespace)
+    delete_cmk_pod("cmk-install-pod", namespace)
 
     remove_all_report()
     remove_node_taint()
@@ -130,7 +130,7 @@ def remove_report_tpr(report_type):
         report_type, os.getenv("NODE_NAME")))
 
 
-def delete_cmk_pod(pod_base_name, postfix=None, namespace="default"):
+def delete_cmk_pod(pod_base_name, namespace, postfix=None,):
     if postfix:
         pod_name = "{}-{}".format(pod_base_name, postfix)
     else:

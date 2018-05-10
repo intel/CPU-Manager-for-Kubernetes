@@ -23,7 +23,7 @@ from intel import k8s
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_dp_cores, num_cp_cores,
-                 pull_secret, serviceaccount, dp_mode, cp_mode):
+                 pull_secret, serviceaccount, dp_mode, cp_mode, namespace):
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
@@ -64,11 +64,11 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     if cmk_cmd_init_list:
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode)
+                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode)
+                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -77,7 +77,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 # Note: Only one of cmd_list or cmd_init_list should be specified.
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
              install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-             pull_secret, serviceaccount, cp_mode, dp_mode):
+             pull_secret, serviceaccount, cp_mode, dp_mode, namespace):
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -86,7 +86,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
     run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode)
+                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -115,7 +115,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 # pod on each node provided by cmk_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode):
+                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace):
     pod = k8s.get_pod_template()
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
@@ -167,11 +167,11 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
         try:
             if cmd_list:
-                cr_pod_resp = k8s.create_ds(None, daemon_set)
+                cr_pod_resp = k8s.create_ds(None, daemon_set, namespace)
                 logging.debug("Response while creating ds for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
-                cr_pod_resp = k8s.create_pod(None, pod)
+                cr_pod_resp = k8s.create_pod(None, pod, namespace)
                 logging.debug("Response while creating pod for {} command(s): "
                               "{}".format(cmd_init_list, cr_pod_resp))
         except K8sApiException as err:
