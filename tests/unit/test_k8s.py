@@ -204,3 +204,27 @@ def test_k8s_core_client_from_config():
         # It should when we will use it to call Kubernetes API.
         client.list_node()
         assert err is not None
+
+
+def test_k8s_delete_ds():
+    mock_core = MagicMock()
+    mock_ext = MagicMock()
+    with patch('intel.k8s.client_from_config',
+               MagicMock(return_value=mock_core)), \
+        patch('intel.k8s.extensions_client_from_config',
+              MagicMock(return_value=mock_ext)):
+        k8s.delete_ds(None, "fake_ds")
+        method_calls_core = mock_core.method_calls
+        method_calls_ext = mock_ext.method_calls
+        assert method_calls_ext[0][0] == 'delete_namespaced_daemon_set'
+        assert method_calls_core[0][0] == 'list_namespaced_pod'
+
+
+def test_k8s_create_ds():
+    mock = MagicMock()
+    with patch('intel.k8s.extensions_client_from_config',
+               MagicMock(return_value=mock)):
+        k8s.create_ds(None, "test_podspec", "test_namespace")
+        called_methods = mock.method_calls
+        assert len(called_methods) == 1
+        assert called_methods[0][0] == "create_namespaced_daemon_set"

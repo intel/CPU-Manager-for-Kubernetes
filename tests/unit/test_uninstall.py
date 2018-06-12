@@ -509,9 +509,76 @@ def test_delete_cmk_pod_success2(caplog):
                                  postfix=str(os.getenv("NODE_NAME")),
                                  namespace="default")
         caplog_tuple = caplog.record_tuples
-        assert \
-            caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
+        assert caplog_tuple[-2][2] == "\"{}-{}\" does not exist".format(
                 pod_base_name, str(os.getenv("NODE_NAME")))
-        assert \
-            caplog_tuple[-1][2] == "\"{}-{}\" deleted".format(
+        assert caplog_tuple[-1][2] == "\"{}-{}\" deleted".format(
                 pod_base_name, str(os.getenv("NODE_NAME")))
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.10.0"))
+def test_remove_resource_tracking_er_removed(caplog):
+    mock = MagicMock()
+    with patch('intel.uninstall.remove_node_cmk_er', mock):
+        uninstall.remove_resource_tracking()
+        assert mock.called
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.6.0"))
+def test_remove_resource_tracking_oir_removed(caplog):
+    mock = MagicMock()
+    with patch('intel.uninstall.remove_node_cmk_oir', mock):
+        uninstall.remove_resource_tracking()
+        assert mock.called
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.8.0"))
+def test_remove_resource_tracking_unsupported(caplog):
+    uninstall.remove_resource_tracking()
+    caplog_tuple = caplog.record_tuples
+    assert caplog_tuple[-1][2] == "Unsupported Kubernetes version"
+
+
+def test_remove_node_cmk_er_success(caplog):
+    with patch('intel.discover.patch_k8s_node_status', MagicMock()):
+        uninstall.remove_node_cmk_er()
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-1][2] == "Removed node ERs"
+
+
+def test_remove_node_cmk_er_failure(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"reason\":\"fake reason\"}",
+                                      "{\"message\":\"nonexistant\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with patch('intel.discover.patch_k8s_node_status',
+               MagicMock(side_effect=fake_api_exception)):
+        uninstall.remove_node_cmk_er()
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-2][2] == "CMK ER does not exist."
+        assert caplog_tuple[-1][2] == "Removed node ERs"
+
+
+def test_remove_node_cmk_er_failure2(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "{\"reason\":\"fake reason\"}",
+                                      "{\"message\":\"fake message\"}")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with patch('intel.discover.patch_k8s_node_status',
+               MagicMock(side_effect=fake_api_exception)):
+        with pytest.raises(SystemExit):
+            uninstall.remove_node_cmk_er()
+        caplog_tuple = caplog.record_tuples
+        exp_err = "Aborting uninstall: Exception when removing ER: " \
+                  "{}".format(fake_api_exception)
+        assert caplog_tuple[-1][2] == exp_err
+
+
+def test_check_remove_conf_dir_failure2(caplog):
+    temp_dir = tempfile.mkdtemp()
+    conf_dir = os.path.join(temp_dir, "ok")
+    fake_exception = Exception('fake')
+    with patch('intel.config.Config', MagicMock(side_effect=fake_exception)):
+        with pytest.raises(SystemExit):
+            uninstall.check_remove_conf_dir(conf_dir)
+        caplog_tuple = caplog.record_tuples
+        exp_err = "Aborting uninstall: Unable to read the CMK configuration " \
+                  "directory at \"{}\": {}.".format(conf_dir, fake_exception)
+        assert caplog_tuple[-1][2] == exp_err
