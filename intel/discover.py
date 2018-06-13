@@ -32,6 +32,7 @@ def discover(conf_dir):
     if version == "v1.8.0":
         logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
                       "version >=1.8.1 or rollback to previous versions")
+        sys.exit(1)
 
     if version >= "v1.8.1":
         # Patch the node with the appropriate CMK ER.
