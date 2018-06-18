@@ -297,10 +297,10 @@ def remove_node_taint():
 
 
 def remove_resource_tracking():
-    version = k8s.get_kubelet_version(None)
-    if version == "v1.8.0":
+    version = parse_version(k8s.get_kubelet_version(None))
+    if version == parse_version("v1.8.0"):
         logging.warning("Unsupported Kubernetes version")
-    elif version >= "v1.8.1":
+    elif version >= parse_version("v1.8.1"):
         remove_node_cmk_er()
     else:
         remove_node_cmk_oir()
