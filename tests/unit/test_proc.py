@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from intel import proc
+from intel import proc, util
 import pytest
+import os
 
 
 def test_procfs_must_be_set(monkeypatch):
@@ -27,6 +28,31 @@ def test_procfs_must_be_set(monkeypatch):
 
     # And calling again, and should not fail.
     proc.procfs()
+
+
+def test_getpid_success(monkeypatch):
+    fake_procfs = os.path.join(util.cmk_root(), "tests", "data", "procfs")
+    monkeypatch.setenv(proc.ENV_PROC_FS, fake_procfs)
+    assert(1234 == proc.getpid())
+
+
+def test_process_cpus_allowed_success(monkeypatch):
+    fake_procfs = os.path.join(util.cmk_root(), "tests", "data", "procfs",
+                               "ok")
+    monkeypatch.setenv(proc.ENV_PROC_FS, fake_procfs)
+    fake_pid = 1234
+    fake_process = proc.Process(fake_pid)
+    assert(fake_process.cpus_allowed() == [0, 1, 2, 3])
+
+
+def test_process_cpus_allowed_failure(monkeypatch):
+    fake_procfs = os.path.join(util.cmk_root(), "tests", "data", "procfs",
+                               "no_cpus_allowed_list")
+    monkeypatch.setenv(proc.ENV_PROC_FS, fake_procfs)
+    fake_pid = 1234
+    fake_process = proc.Process(fake_pid)
+    with pytest.raises(ValueError):
+        fake_process.cpus_allowed()
 
 
 def test_unfold_empty_cpu_list():

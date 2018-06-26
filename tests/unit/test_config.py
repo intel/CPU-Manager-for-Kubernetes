@@ -98,3 +98,104 @@ def test_write_config():
         c0.remove_task(5)
         assert 5 not in c0.tasks()
         assert 6 in c0.tasks()
+
+
+def test_write_config_already_exists_error():
+    fake_path = os.path.join(tempfile.mkdtemp(), "fake_conf")
+    config.new(fake_path)
+    with pytest.raises(FileExistsError):
+        config.new(fake_path)
+
+
+def test_add_pool_already_exists_error():
+    c = config.new(os.path.join(tempfile.mkdtemp(), "fake_conf"))
+    with c.lock():
+        assert len(c.pools()) == 0
+        c.add_pool("foo", True)
+        assert len(c.pools()) == 1
+        with pytest.raises(KeyError):
+            c.add_pool("foo", True)
+        assert len(c.pools()) == 1
+
+
+def test_add_cpu_list_already_exists():
+    c = config.new(os.path.join(tempfile.mkdtemp(), "fake_conf"))
+    with c.lock():
+        foo = c.add_pool("foo", True)
+        foo.add_socket("0")
+        foo.add_cpu_list("0", "0-3")
+        assert len(foo.cpu_lists("0")) == 1
+        with pytest.raises(KeyError):
+            foo.add_cpu_list("0", "0-3")
+        # TODO: what about 0,1,2,3?
+        # with pytest.raises(KeyError):
+        #     foo.add_cpu_list("0", "0,1,2,3")
+        assert len(foo.cpu_lists("0")) == 1
+
+
+def test_pool_as_dict():
+    path = os.path.join(tempfile.mkdtemp(), "fake_conf")
+    c = config.new(path)
+    exp_result = {
+        'cpuLists': {
+            '0-3': {
+                'cpus': '0-3',
+                'tasks': [10]
+            },
+            '4-7': {
+                'cpus': '4-7',
+                'tasks': [11]
+            }
+        },
+        'exclusive': True,
+        'name': 'foo'
+    }
+    with c.lock():
+        foo = c.add_pool("foo", True)
+        foo.add_socket("0")
+        foo.add_socket("1")
+        c0 = foo.add_cpu_list("0", "0-3")
+        c1 = foo.add_cpu_list("1", "4-7")
+        c0.add_task(10)
+        c1.add_task(11)
+    assert exp_result == foo.as_dict()
+
+
+def test_config_as_dict():
+    path = os.path.join(tempfile.mkdtemp(), "fake_conf")
+    exp_result = {
+        'path': path,
+        'pools': {
+            'bar': {
+                'cpuLists': {
+                    '4-7': {
+                        'cpus': '4-7',
+                        'tasks': [6]
+                    }
+                },
+                'exclusive': True,
+                'name': 'bar'
+            },
+            'foo': {
+                'cpuLists': {
+                    '0-3': {
+                        'cpus': '0-3',
+                        'tasks': [5]
+                    }
+                },
+                'exclusive': False,
+                'name': 'foo'
+            }
+        }
+    }
+    c = config.new(path)
+    with c.lock():
+        foo = c.add_pool("foo", False)
+        bar = c.add_pool("bar", True)
+        foo.add_socket("0")
+        bar.add_socket("0")
+        c0 = foo.add_cpu_list("0", "0-3")
+        c1 = bar.add_cpu_list("0", "4-7")
+        c0.add_task(5)
+        c1.add_task(6)
+    assert exp_result == c.as_dict()

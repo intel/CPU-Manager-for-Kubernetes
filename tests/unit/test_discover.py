@@ -154,3 +154,108 @@ def test_discover_add_taint_failure2(caplog):
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[0][2] == exp_log_err
+
+
+def test_add_node_er_failure(caplog):
+    conf_dir = helpers.conf_dir("ok")
+    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with patch('intel.discover.patch_k8s_node_status',
+               MagicMock(side_effect=fake_api_exception)):
+        with pytest.raises(SystemExit):
+            discover.add_node_er(conf_dir)
+        exp_err = "Exception when patching node with OIR"
+        exp_log_err = get_expected_log_error(exp_err)
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-2][2] == exp_log_err
+        assert caplog_tuple[-1][2] == "Aborting discover ..."
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.10.0'))
+def test_discover_version_check(caplog):
+    conf_dir = helpers.conf_dir("ok")
+    with patch('intel.discover.add_node_er') as mock_er, \
+            patch('intel.discover.add_node_oir') as mock_oir, \
+            patch('intel.discover.add_node_label') as mock_label, \
+            patch('intel.discover.add_node_taint') as mock_taint:
+
+        discover.discover(conf_dir)
+
+        assert mock_er.called
+        assert not mock_oir.called
+        assert mock_label.called
+        assert mock_taint.called
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.6.0'))
+def test_discover_version_check2(caplog):
+    conf_dir = helpers.conf_dir("ok")
+    with patch('intel.discover.add_node_er') as mock_er, \
+            patch('intel.discover.add_node_oir') as mock_oir, \
+            patch('intel.discover.add_node_label') as mock_label, \
+            patch('intel.discover.add_node_taint') as mock_taint:
+
+        discover.discover(conf_dir)
+
+        assert not mock_er.called
+        assert mock_oir.called
+        assert mock_label.called
+        assert mock_taint.called
+
+
+@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.8.0'))
+def test_discover_version_check3(caplog):
+    conf_dir = helpers.conf_dir("ok")
+    with patch('intel.discover.add_node_er') as mock_er, \
+            patch('intel.discover.add_node_oir') as mock_oir, \
+            patch('intel.discover.add_node_label') as mock_label, \
+            patch('intel.discover.add_node_taint') as mock_taint:
+
+        with pytest.raises(SystemExit):
+            discover.discover(conf_dir)
+
+        # no resources should be created on unsupported cluster
+        assert not mock_er.called
+        assert not mock_oir.called
+        assert not mock_label.called
+        assert not mock_taint.called
+
+
+def test_discover_add_node_er_no_dp_pool_failure():
+    temp_dir = tempfile.mkdtemp()
+    conf_dir = os.path.join(temp_dir, "discover")
+
+    helpers.execute(
+        "cp",
+        ["-r",
+         helpers.conf_dir("ok"),
+         "{}".format(conf_dir)]
+    )
+    helpers.execute(
+        "rm",
+        ["-r",
+         "{}".format(os.path.join(conf_dir, "pools", "dataplane"))]
+    )
+
+    with pytest.raises(KeyError, message="Dataplane pool does not exist"):
+        discover.add_node_er(conf_dir)
+
+
+def test_discover_add_node_er_no_dp_cores_failure():
+    temp_dir = tempfile.mkdtemp()
+    conf_dir = os.path.join(temp_dir, "discover")
+
+    helpers.execute(
+        "cp",
+        ["-r",
+         helpers.conf_dir("ok"),
+         "{}".format(conf_dir)]
+    )
+    helpers.execute(
+        "rm",
+        ["-r",
+         "{}".format(os.path.join(conf_dir, "pools", "dataplane", "0"))]
+    )
+
+    with pytest.raises(KeyError, message="No CPU list in dataplane pool"):
+        discover.add_node_er(conf_dir)

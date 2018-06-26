@@ -345,3 +345,42 @@ def test_clusterinit_update_pod_with_init_container():
     pods = json.loads(pod_passed["metadata"]["annotations"][
                           "pod.beta.kubernetes.io/init-containers"])
     assert len(pods) == 2
+
+
+@patch('intel.clusterinit.run_cmd_pods', MagicMock())
+def test_clusterinit_run_pods_failure(caplog):
+    fake_exception = RuntimeError('fake')
+    with patch('intel.clusterinit.wait_for_pod_phase',
+               MagicMock(side_effect=fake_exception)):
+        with pytest.raises(SystemExit):
+            clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
+                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "2", ["fakenode"], "", "", "vertical",
+                                 "vertical", "default")
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-2][2] == "{}".format(fake_exception)
+        assert caplog_tuple[-1][2] == "Aborting cluster-init ..."
+
+
+def test_clusterinit_wait_for_pod_phase_error2(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with pytest.raises(SystemExit):
+        with patch('intel.k8s.get_pod_list',
+                   MagicMock(side_effect=fake_api_exception)):
+            clusterinit.wait_for_pod_phase("fakepod1", "Running")
+
+
+def test_clusterinit_get_cmk_node_list_all_hosts_error(caplog):
+    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_api_exception = K8sApiException(http_resp=fake_http_resp)
+    with pytest.raises(SystemExit):
+        with patch('intel.k8s.get_compute_nodes',
+                   MagicMock(side_effect=fake_api_exception)):
+            clusterinit.get_cmk_node_list(None, True)
+        exp_err = "Exception when getting the node list: {}"
+        exp_log_err = get_expected_log_error(exp_err)
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-2][2] == exp_log_err
+        exp_err = "Aborting cluster-init ..."
+        assert caplog_tuple[-1][2] == exp_err

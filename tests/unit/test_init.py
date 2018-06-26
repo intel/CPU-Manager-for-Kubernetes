@@ -269,3 +269,40 @@ def test_init_failure3(monkeypatch):
         assert err is not None
         expected_msg = "No more free cores left to assign for infra"
         assert err.value.args[0] == expected_msg
+
+
+def test_init_config_exists_error(monkeypatch, caplog):
+    # Set the procfs environment variable.
+    monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
+
+    sockets = topology.Platform({0: quad_core()})
+
+    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+        temp_dir = tempfile.mkdtemp()
+        # Init
+        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+
+        # Try to init again, configuration should already exist
+        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+
+        caplog_tuple = caplog.record_tuples
+        assert caplog_tuple[-1][2] == "Configuration directory already exists."
+
+
+def test_init_check_hugepages_error(caplog):
+    with patch('builtins.open', side_effect=FileNotFoundError):
+        init.check_hugepages()
+    caplog_tuple = caplog.record_tuples
+    assert caplog_tuple[-1][2] == ("meminfo file '%s' not found: skipping "
+                                   "huge pages check" % "/proc/meminfo")
+
+
+def test_init_check_assignment_error(monkeypatch, caplog):
+    monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=quad_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        with pytest.raises(SystemExit):
+            init.check_assignment(os.path.join(temp_dir, "init"), -1, -1)
