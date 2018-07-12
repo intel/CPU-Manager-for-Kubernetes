@@ -21,6 +21,7 @@ import signal
 import subprocess
 
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
+ENV_CPUS_INFRA = "CMK_CPUS_INFRA"
 
 
 def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
@@ -60,6 +61,14 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
     try:
         # Advertise assigned CPU IDs in the environment.
         os.environ[ENV_CPUS_ASSIGNED] = clist.cpus()
+
+        # Advertise infra pool CPU IDs
+        infra_pool = pools.get("infra")
+        if infra_pool is not None:
+            infra_clists = [cl.cpus()
+                            for cl
+                            in infra_pool.cpu_lists().values()]
+            os.environ[ENV_CPUS_INFRA] = ','.join(infra_clists)
 
         # We use psutil here (instead of the cmk provided
         # process abstraction) as we need to change the affinity of the current
