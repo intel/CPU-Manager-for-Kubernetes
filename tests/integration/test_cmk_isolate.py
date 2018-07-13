@@ -38,6 +38,19 @@ CMK_PROC_FS=/proc
 """
 
 
+def test_cmk_isolate_child_env_infra():
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("minimal_infra")),
+            "--pool=controlplane",
+            "env | grep CMK"]
+
+    assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
+CMK_CPUS_ASSIGNED=1
+CMK_CPUS_INFRA=0
+CMK_PROC_FS=/proc
+"""
+
+
 def test_cmk_isolate_shared():
     args = ["isolate",
             "--conf-dir={}".format(helpers.conf_dir("minimal")),
