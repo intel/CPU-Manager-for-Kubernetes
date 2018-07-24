@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  labels:
+    app: cmk-webhook-app
+  name: cmk-webhook-config
+webhooks:
+- clientConfig:
+    caBundle: BASE64_ENCODED_CERT
+    service:
+      name: cmk-webhook-service
+      namespace: default
+      path: /mutate
+  failurePolicy: Fail
+  name: cmk.intel.com
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - pods
+
