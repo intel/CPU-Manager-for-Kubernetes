@@ -78,6 +78,7 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
         # Advertise assigned CPU IDs in the environment.
+        clists.sort(key=lambda cl: cl.cpus())
         cpu_ids = ','.join([cl.cpus() for cl in clists])
         os.environ[ENV_CPUS_ASSIGNED] = cpu_ids
 
