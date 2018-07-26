@@ -186,3 +186,43 @@ def test_cmk_isolate_sigterm():
     cmk.wait()
     assert cmk.pid not in clist.tasks()
     helpers.execute("rm {}".format(fifo))
+
+
+def test_cmk_isolate_multiple_cores_exclusive():
+    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "2"}
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
+            "--pool=exclusive",
+            "env | grep CMK"]
+
+    assert helpers.execute(integration.cmk(), args, env) == b"""\
+CMK_CPUS_ASSIGNED=0,1
+CMK_PROC_FS=/proc
+CMK_NUM_CORES=2
+"""
+
+
+def test_cmk_isolate_multiple_cores_shared():
+    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "2"}
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
+            "--pool=shared",
+            "env | grep CMK"]
+
+    assert helpers.execute(integration.cmk(), args, env) == b"""\
+CMK_CPUS_ASSIGNED=0,1
+CMK_PROC_FS=/proc
+CMK_NUM_CORES=2
+"""
+
+
+def test_cmk_isolate_multiple_cores_failed():
+    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "3"}
+    args = ["isolate",
+            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
+            "--pool=exclusive",
+            "env | grep CMK"]
+
+    # should fail - there are only 2 cpuslists in that pool
+    with pytest.raises(subprocess.CalledProcessError):
+        assert helpers.execute(integration.cmk(), args, env)
