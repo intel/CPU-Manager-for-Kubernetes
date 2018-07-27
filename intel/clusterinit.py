@@ -15,6 +15,7 @@
 import json
 import logging
 import sys
+import yaml
 from pkg_resources import parse_version
 
 from kubernetes import client as k8sclient
@@ -216,8 +217,11 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
 
     configmap = k8sclient.V1ConfigMap()
     configmap_name = '-'.join([prefix, "configmap"])
-    webhook_config = get_default_webhook_config()
-    update_configmap(configmap, configmap_name, webhook_config)
+    configmap_data = {
+        "server.yaml": yaml.dump(get_default_webhook_server_config()),
+        "mutations.yaml": yaml.dump(get_default_webhook_mutations_config()),
+    }
+    update_configmap(configmap, configmap_name, configmap_data)
     try:
         k8s.create_config_map(None, configmap, namespace)
     except K8sApiException as err:
@@ -237,8 +241,8 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     pod = k8s.get_pod_template()
     pod_name = '-'.join([prefix, "pod"])
     update_pod_with_metadata(pod, pod_name, app_name)
-    update_pod_with_webhook_container(pod, conf_dir, install_dir, saname,
-                                      cmk_img, configmap_name, secret_name)
+    update_pod_with_webhook_container(pod, cmk_img, configmap_name,
+                                      secret_name)
     try:
         k8s.create_pod(None, pod, namespace)
     except K8sApiException as err:
@@ -377,21 +381,19 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
             json.dumps(pod_init_containers_list)
 
 
-def update_pod_with_webhook_container(pod, conf_dir, install_dir, saname,
-                                      cmk_img, configmap_name, secret_name):
+def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
+                                      secret_name):
     container = k8s.get_container_template()
-    args = ("/cmk/cmk.py webhook --conf-file /etc/config/webhook.yaml "
-            "--host-proc '/proc' --conf-dir {0} --install-dir {1} "
-            "--saname {2}".format(conf_dir, install_dir, saname))
+    args = ("/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml")
     container["args"] = [args]
     container["image"] = cmk_img
     container["name"] = "cmk-webhook"
     container["volumeMounts"].append({
-        'mountPath': '/etc/config',
+        'mountPath': '/etc/webhook',
         'name': 'configmap'
     })
     container["volumeMounts"].append({
-        'mountPath': '/etc/certs',
+        'mountPath': '/etc/ssl',
         'name': 'certs',
         'readOnly': True
     })
@@ -459,13 +461,80 @@ def update_mutatingwebhookconfiguration(config, name, app, webhook_name, cert,
     config.webhooks = [webhook]
 
 
-def get_default_webhook_config():
+def get_default_webhook_server_config():
     config = {
-        "webhook.yaml": """server:
-  binding-address: "0.0.0.0"
-  port: 443
-  cert: "/etc/certs/cert.pem"
-  key: "/etc/certs/key.pem"
-"""
+        "server": {
+            "binding-address": "0.0.0.0",
+            "port": 443,
+            "cert": "/etc/ssl/cert.pem",
+            "key": "/etc/ssl/key.pem",
+            "mutations": "/etc/webhook/mutations.yaml"
+        }
+    }
+    return config
+
+
+def get_default_webhook_mutations_config():
+    config = {
+        "mutations": {
+            "perPod": {
+                "metadata": {
+                    "annotations": {
+                        "cmk.intel.com/resources-injected": "true"
+                    }
+                },
+                "spec": {
+                    "serviceAccount": "cmk-serviceaccount",
+                    "tolerations": [
+                        {
+                            "operator": "Exists"
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "cmk-host-proc",
+                            "hostPath": {
+                                "path": "/proc"
+                            }
+                        },
+                        {
+                            "name": "cmk-config-dir",
+                            "hostPath": {
+                                "path": "/etc/cmk"
+                            }
+                        },
+                        {
+                            "name": "cmk-install-dir",
+                            "hostPath": {
+                                "path": "/opt/bin"
+                            }
+                        }
+                    ]
+                }
+            },
+            "perContainer": {
+                "env": [
+                    {
+                        "name": "CMK_PROC_FS",
+                        "value": "/host/proc"
+                    }
+                ],
+                "volumeMounts": [
+                    {
+                        "name": "cmk-host-proc",
+                        "mountPath": "/host/proc",
+                        "readOnly": True
+                    },
+                    {
+                        "name": "cmk-config-dir",
+                        "mountPath": "/etc/cmk"
+                    },
+                    {
+                        "name": "cmk-install-dir",
+                        "mountPath": "/opt/bin"
+                    }
+                ]
+            }
+        }
     }
     return config

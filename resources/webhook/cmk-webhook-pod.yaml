@@ -24,16 +24,16 @@ spec:
   - operator: "Exists"
   containers:
   - args:
-    - "/cmk/cmk.py webhook --conf-file /etc/config/webhook.yaml --host-proc '/proc' --conf-dir '/etc/cmk' --install-dir '/opt/bin' --saname cmk-serviceaccount"
+    - "/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml"
     command:
     - "/bin/bash"
     - "-c"
     image: cmk:v1.2.2
     name: cmk-webhook
     volumeMounts:
-    - mountPath: /etc/config
+    - mountPath: /etc/webhook
       name: cmk-webhook-configmap
-    - mountPath: /etc/certs
+    - mountPath: /etc/ssl
       name: cmk-webhook-certs
       readOnly: True
   restartPolicy: Never

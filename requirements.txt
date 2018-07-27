@@ -7,3 +7,4 @@ requests>=2.12, <3.0
 pytest<=3.3.2
 pytest-cov>=2.4.0
 cryptography>=2.3
+yamlreader==3.0.4

@@ -13,48 +13,52 @@
 # limitations under the License.
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from yamlreader import yaml_load, data_merge as merge, YamlReaderError
 import ssl
 import logging
 import json
 import base64
-import yaml
+import sys
 
 CMK_ER_NAME = 'cmk.intel.com/dp-cores'
-ENV_PROC_FS = 'CMK_PROC_FS'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
 
 class WebhookServerConfig(object):
-    def __init__(self, config_file_path):
-        default_config = {
-            'server': {
-                'binding-address': '127.0.0.1',
-                'port': 443,
-                'cert': '/etc/certs/cert.pem',
-                'key': '/etc/certs/key.pem'
-            }
-        }
+    def __init__(self):
+        self.server = {}
+
+    def load(self, filepath):
+        try:
+            config = yaml_load(filepath)
+        except IOError:
+            logging.error("Error opening config file {}."
+                          .format(filepath))
+            sys.exit(1)
 
         try:
-            config_file = open(config_file_path, 'r')
-            config = yaml.load(config_file)
-        except IOError:
-            logging.warning('Error opening config file. Loading defaults')
-            config = default_config
-
-        self.hostname = config.get('server', {}).get('binding-address')
-        self.port = config.get('server', {}).get('port')
-        self.cert = config.get('server', {}).get('cert')
-        self.key = config.get('server', {}).get('key')
+            self.address = config["server"]["binding-address"]
+            self.port = config["server"]["port"]
+            self.cert = config["server"]["cert"]
+            self.key = config["server"]["key"]
+            self.mutations = config["server"]["mutations"]
+        except KeyError as err:
+            logging.error("Error loading configuration: {}".format(str(err)))
+            sys.exit(1)
 
 
 class WebhookServer(HTTPServer):
-    def __init__(self, *args, **kwargs):
-        HTTPServer.__init__(self, *args, **kwargs)
-        self.host_proc_fs = None
-        self.config_dir = None
-        self.install_dir = None
-        self.sa_name = None
+    def __init__(self, config, handler_class):
+        self.config = config
+        try:
+            HTTPServer.__init__(self, (self.config.address, self.config.port),
+                                handler_class)
+            ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            ssl_context.load_cert_chain(self.config.cert, self.config.key)
+        except KeyError as err:
+            logging.error("Error applying server config {}.".format(str(err)))
+            sys.exit(1)
+        self.socket = ssl_context.wrap_socket(self.socket, server_side=True)
 
 
 class WebhookRequestHandler(BaseHTTPRequestHandler):
@@ -65,11 +69,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             admission_review = json.loads(post_data)
 
-            admission_review = mutate(admission_review,
-                                      self.server.host_proc_fs,
-                                      self.server.config_dir,
-                                      self.server.install_dir,
-                                      self.server.sa_name)
+            mutate(admission_review, self.server.config.mutations)
 
             response = json.dumps(admission_review)
 
@@ -82,34 +82,38 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         return
 
 
-def mutate(admission_review, host_proc_fs, config_dir, install_dir, sa_name):
+def load_mutations(filepath):
+    # load mutations from config file
+    try:
+        config = yaml_load(filepath)
+        mutations = config.get('mutations', {})
+    except IOError:
+        logging.error("Error loading mutations from file {}."
+                      .format(filepath))
+        sys.exit(1)
+    return mutations
+
+
+def mutate(admission_review, mutations_file):
     try:
         if admission_review['request']['kind']['kind'] == 'Pod':
             pod = admission_review['request']['object']
         else:
             raise KeyError
     except KeyError:
-        logging.error('not a pod')
+        logging.error("Resource is not a pod")
         return
 
     if is_mutation_required(pod):
-        # list of patches to apply on the pod
-        patches = []
+        mutations = load_mutations(mutations_file)
 
-        # annotate pod as modified
-        inject_annotation(patches, pod, 'cmk.intel.com/resources-injected',
-                          'true')
-
-        # inject volumes
-        inject_volume(patches, pod, 'cmk-host-proc', host_proc_fs)
-        inject_volume(patches, pod, 'cmk-config-dir', config_dir)
-        inject_volume(patches, pod, 'cmk-install-dir', install_dir)
-
-        # inject toleration
-        inject_toleration(patches, pod, 'operator', 'Exists')
-
-        # inject service account
-        inject_sa_name(patches, pod, sa_name)
+        # apply pod mutations
+        try:
+            merge(pod, mutations.get("perPod", {}))
+        except YamlReaderError as err:
+            logging.error("Error when applying pod mutations: "
+                          "{}".format(str(err)))
+            return
 
         for i in range(len(pod['spec']['containers'])):
             container = pod['spec']['containers'][i]
@@ -117,10 +121,15 @@ def mutate(admission_review, host_proc_fs, config_dir, install_dir, sa_name):
             if not is_container_mutation_required(container):
                 continue
 
-            # inject ENNV_PROC_FS variable
-            inject_env(container, ENV_PROC_FS, '/host/proc')
+            # apply container mutations
+            try:
+                merge(container, mutations.get("perContainer", {}))
+            except YamlReaderError as err:
+                logging.error("Error when applying container mutations: "
+                              "{}".format(str(err)))
+                return
 
-            # inject ENV_NUM_CORES variable
+            # always inject ENV_NUM_CORES variable
             # NOTE: priotize requests over limits
             if 'requests' in container['resources']:
                 num_cores = container['resources']['requests'][CMK_ER_NAME]
@@ -128,24 +137,16 @@ def mutate(admission_review, host_proc_fs, config_dir, install_dir, sa_name):
                 num_cores = container['resources']['limits'][CMK_ER_NAME]
             inject_env(container, ENV_NUM_CORES, num_cores)
 
-            # inject volume mounts
-            inject_volume_mount(container, 'cmk-host-proc',
-                                '/host/proc', True)
-            inject_volume_mount(container, 'cmk-config-dir',
-                                '/etc/cmk', False)
-            inject_volume_mount(container, 'cmk-install-dir',
-                                '/opt/bin', False)
-
             # replace original container with patched one
             pod['spec']['containers'][i] = container
 
-        # generate patch based on patched containers spec
-        patch_containers(patches, pod)
+        # generate patch based on modified pod spec
+        patch = generate_patch(pod)
 
         resp = {
             'allowed': True,
             'uid': admission_review['request']['uid'],
-            'patch': encode_patch(patches)
+            'patch': encode_patch(patch)
         }
 
     else:
@@ -157,87 +158,23 @@ def mutate(admission_review, host_proc_fs, config_dir, install_dir, sa_name):
 
     admission_review.pop('request')
     admission_review['response'] = resp
-    return admission_review
 
 
-def inject_annotation(patches, pod, key, value):
-    if 'annotations' not in pod['metadata']:
-        pod['annotations'] = []
-    elif key in pod['annotations']:
-        logging.debug('Annotation %s exists. Skipping', key)
-        return patches
-
-    patch = {
-        'op': 'add',
-        'path': '/metadata/annotations',
-        'value': {key: value}
-    }
-    patches.append(patch)
-    return patches
-
-
-def inject_sa_name(patches, pod, name):
-    if 'serviceAccountName' in pod['spec']:
-        logging.debug('serviceAccountName %s exists. Skipping', name)
-        return patches
-
-    patch = {
-        'op': 'add',
-        'path': '/spec/serviceAccountName',
-        'value': name
-    }
-    patches.append(patch)
-    return patches
-
-
-def patch_containers(patches, pod):
-    patch = {
-        'op': 'replace',
-        'path': '/spec/containers',
-        'value': pod['spec']['containers']
-    }
-    patches.append(patch)
-    return patches
-
-
-def inject_volume(patches, pod, name, host_path):
-    path = '/spec/volumes'
-    if 'volumes' not in pod:
-        path += '/-'
-    elif name in pod['spec']['volumes']:
-        logging.debug('Volume %s exists. Skipping...', name)
-        return patches
-
-    volume = {
-        'name': name,
-        'hostPath': {
-            'path': host_path
+def generate_patch(pod):
+    # NOTE: workaround for K8s API server not accepting '/' as a patch path
+    patch = [
+        {
+            'op': 'replace',
+            'path': '/metadata',
+            'value': pod['metadata']
+        },
+        {
+            'op': 'replace',
+            'path': '/spec',
+            'value': pod['spec']
         }
-    }
-    patch = {
-        'op': 'add',
-        'path': path,
-        'value': volume
-    }
-    patches.append(patch)
-    return patches
-
-
-def inject_toleration(patches, pod, key, value):
-    path = '/spec/tolerations'
-    if 'tolerations' not in pod:
-        path += '/-'
-    elif key in pod['spec']['tolerations']:
-        logging.debug('Toleration %s exists. Skipping...', key)
-        return patches
-
-    patch = {
-        'op': 'add',
-        'path': path,
-        'value': {key: value}
-    }
-    patches.append(patch)
-    return patches
+    ]
+    return patch
 
 
 def inject_env(container, name, value):
@@ -251,22 +188,6 @@ def inject_env(container, name, value):
         'name': name,
         'value': value
     })
-    return container
-
-
-def inject_volume_mount(container, name, path, read_only):
-    if 'volumeMounts' not in container:
-        container['volumeMounts'] = []
-    elif name in container['volumeMounts']:
-        logging.debug('Volume mount %s exists. Skipping...', name)
-        return container
-
-    container['volumeMounts'].append({
-        'name': name,
-        'mountPath': path,
-        'readOnly': read_only
-    })
-    return container
 
 
 def encode_patch(patch):
@@ -294,20 +215,11 @@ def is_mutation_required(pod):
     return False
 
 
-def webhook(config_file, host_proc_fs, config_dir, install_dir, sa_name):
-    config = WebhookServerConfig(config_file)
+def webhook(config_file):
+    config = WebhookServerConfig()
+    config.load(config_file)
 
-    webhook_server = WebhookServer((config.hostname, config.port),
-                                   WebhookRequestHandler)
-    webhook_server.host_proc_fs = host_proc_fs
-    webhook_server.config_dir = config_dir
-    webhook_server.install_dir = install_dir
-    webhook_server.sa_name = sa_name
-
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(config.cert, config.key)
-    webhook_server.socket = ssl_context.wrap_socket(webhook_server.socket,
-                                                    server_side=True)
+    webhook_server = WebhookServer(config, WebhookRequestHandler)
 
     try:
         webhook_server.serve_forever()

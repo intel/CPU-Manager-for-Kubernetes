@@ -35,8 +35,7 @@ Usage:
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
-  cmk webhook [--conf-file=<file>] [--host-proc=<dir>] [--conf-dir=<dir>]
-              [--install-dir=<dir>] [--saname=<name>]
+  cmk webhook [--conf-file=<file>]
 
 Options:
   -h --help             Show this screen.
@@ -140,11 +139,7 @@ def main():
                               args["--publish"])
         return
     if args["webhook"]:
-        webhook.webhook(args["--conf-file"],
-                        args["--host-proc"],
-                        args["--conf-dir"],
-                        args["--install-dir"],
-                        args["--saname"])
+        webhook.webhook(args["--conf-file"])
         return
 
 
