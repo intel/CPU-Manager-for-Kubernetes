@@ -24,6 +24,10 @@ CMK_ER_NAME = 'cmk.intel.com/dp-cores'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
 
+class MutationError(Exception):
+    pass
+
+
 class WebhookServerConfig(object):
     def __init__(self):
         self.server = {}
@@ -67,16 +71,18 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode('utf-8')
 
-            admission_review = json.loads(post_data)
+            try:
+                admission_review = json.loads(post_data)
+                mutate(admission_review, self.server.config.mutations)
+                response = json.dumps(admission_review)
 
-            mutate(admission_review, self.server.config.mutations)
-
-            response = json.dumps(admission_review)
-
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(response.encode('utf-8'))
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(response.encode('utf-8'))
+            except MutationError:
+                logging.error("Error mutating resource")
+                self.send_response(500)
         else:
             self.send_response(400)
         return
@@ -87,7 +93,7 @@ def load_mutations(filepath):
     try:
         config = yaml_load(filepath)
         mutations = config.get('mutations', {})
-    except IOError:
+    except YamlReaderError:
         logging.error("Error loading mutations from file {}."
                       .format(filepath))
         sys.exit(1)
@@ -102,7 +108,7 @@ def mutate(admission_review, mutations_file):
             raise KeyError
     except KeyError:
         logging.error("Resource is not a pod")
-        return
+        raise MutationError
 
     if is_mutation_required(pod):
         mutations = load_mutations(mutations_file)
@@ -113,7 +119,7 @@ def mutate(admission_review, mutations_file):
         except YamlReaderError as err:
             logging.error("Error when applying pod mutations: "
                           "{}".format(str(err)))
-            return
+            raise MutationError
 
         for i in range(len(pod['spec']['containers'])):
             container = pod['spec']['containers'][i]
@@ -127,7 +133,7 @@ def mutate(admission_review, mutations_file):
             except YamlReaderError as err:
                 logging.error("Error when applying container mutations: "
                               "{}".format(str(err)))
-                return
+                raise MutationError
 
             # always inject ENV_NUM_CORES variable
             # NOTE: priotize requests over limits
@@ -180,9 +186,10 @@ def generate_patch(pod):
 def inject_env(container, name, value):
     if 'env' not in container:
         container['env'] = []
-    elif name in container['env']:
-        logging.debug('Environmental variable %s exists. Skipping...', name)
-        return container
+    elif name in [env["name"] for env in container["env"]]:
+        logging.info("Environmental variable {} exists. Skipping..."
+                     .format(name))
+        return
 
     container['env'].append({
         'name': name,
