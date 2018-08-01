@@ -56,8 +56,42 @@ The figure illustrates a few important points:
 
 For a complete example, see the [cmk isolate pod template][isolate-template].
 
+### Pod configuration on the clusters with CMK mutating webhook (Kubernetes v1.9.0+)
+
+From Kubernetes v1.9.0 additional CMK component, `cmk webhook`, is deployed.
+It allows to simplify the above configuration and enables automatic injection
+of all requirements mentioned above such as volumes, service accounts, env vars etc.
+Minimal working example of a Pod manifest compatible with CMK deployed in this way
+is presented below:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+  name: cmk-isolate-pod
+spec:
+  containers:
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    image: cmk:v1.2.2
+    imagePullPolicy: "Never"
+    name: cmk-isolate-infra
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 1
+  restartPolicy: Never
+```
+For more details please see [webhook CLI manual][cmk-webhook] and
+[operator manual][doc-operator].
+
 [doc-config]: config.md
 [doc-operator]: operator.md
 [isolate-template]: ../resources/pods/cmk-isolate-pod.yaml
 [cmk-isolate]: cli.md#cmk-isolate
+[cmk-webhook]: cli.md#cmk-webhook
 [procfs]: http://man7.org/linux/man-pages/man5/proc.5.html
