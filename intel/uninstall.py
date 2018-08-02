@@ -177,7 +177,7 @@ def check_remove_conf_dir(conf_dir):
         # configuration directory, timeout is 5 seconds
         while retries:
             # Reconcile first before check
-            pending_pools = ["controlplane", "dataplane", "infra"]
+            pending_pools = ["shared", "exclusive", "infra"]
             sleep(1)
             logging.info("Running reconcile before removing config "
                          "dir, attempts left: {}.".format(retries))
@@ -333,11 +333,11 @@ def remove_node_cmk_er():
     logging.info("Removing node ERs")
     patch_body_capacity = [{
         "op": "remove",
-        "path": '/status/capacity/cmk.intel.com~1dp-cores'
+        "path": '/status/capacity/cmk.intel.com~1exclusive-cores'
     }]
     patch_body_allocatable = [{
         "op": "remove",
-        "path": '/status/allocatable/cmk.intel.com~1dp-cores'
+        "path": '/status/allocatable/cmk.intel.com~1exclusive-cores'
     }]
 
     try:

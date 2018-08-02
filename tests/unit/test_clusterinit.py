@@ -76,39 +76,41 @@ def test_clusterinit_invalid_image_pol():
     assert err.value.args[0] == expected_err_msg
 
 
-def test_clusterinit_invalid_dp_cores_failure1():
+def test_clusterinit_invalid_exclusive_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/etc/cmk", "/opt/bin", "-1", "2", "", "",
                                  "vertical", "vertical", "default")
-    expected_err_msg = "num_dp_cores cores should be a positive integer."
+    expected_err_msg = ("num_exclusive_cores cores should be a positive "
+                        "integer.")
     assert err.value.args[0] == expected_err_msg
 
 
-def test_clusterinit_invalid_dp_cores_failure2():
+def test_clusterinit_invalid_exclusive_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/etc/cmk", "/opt/bin", "3.5", "2", "", "",
                                  "vertical", "vertical", "default")
-    expected_err_msg = "num_dp_cores cores should be a positive integer."
+    expected_err_msg = ("num_exclusive_cores cores should be a positive "
+                        "integer.")
     assert err.value.args[0] == expected_err_msg
 
 
-def test_clusterinit_invalid_cp_cores_failure1():
+def test_clusterinit_invalid_shared_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/etc/cmk", "/opt/bin", "1", "2.5", "", "",
                                  "vertical", "vertical", "default")
-    expected_err_msg = "num_cp_cores cores should be a positive integer."
+    expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
 
-def test_clusterinit_invalid_cp_cores_failure2():
+def test_clusterinit_invalid_shared_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/etc/cmk", "/opt/bin", "1", "10.5", "", "",
                                  "vertical", "vertical", "default")
-    expected_err_msg = "num_cp_cores cores should be a positive integer."
+    expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
 

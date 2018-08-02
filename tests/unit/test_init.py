@@ -70,19 +70,19 @@ def test_init_success1(monkeypatch):
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
-        cldp = pools["dataplane"].cpu_lists()
-        clcp = pools["controlplane"].cpu_lists()
-        clinfra = pools["infra"].cpu_lists()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
-        assert "0,4" in cldp
-        assert "1,5" in cldp
-        assert "2,6" in clcp
-        assert "3,7" in clinfra
+        assert "0,4" in cl_exclusive
+        assert "1,5" in cl_exclusive
+        assert "2,6" in cl_shared
+        assert "3,7" in cl_infra
 
 
 def test_init_success1_isolcpus(monkeypatch):
@@ -97,19 +97,19 @@ def test_init_success1_isolcpus(monkeypatch):
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
-        cldp = pools["dataplane"].cpu_lists()
-        clcp = pools["controlplane"].cpu_lists()
-        clinfra = pools["infra"].cpu_lists()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
-        assert "1,5" in cldp
-        assert "2,6" in cldp
-        assert "3,7" in clcp
-        assert "0,4" in clinfra
+        assert "1,5" in cl_exclusive
+        assert "2,6" in cl_exclusive
+        assert "3,7" in cl_shared
+        assert "0,4" in cl_infra
 
 
 def test_init_success2(monkeypatch):
@@ -124,18 +124,18 @@ def test_init_success2(monkeypatch):
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
-        cldp = pools["dataplane"].cpu_lists()
-        clcp = pools["controlplane"].cpu_lists()
-        clinfra = pools["infra"].cpu_lists()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
-        assert "0,4" in cldp
-        assert "1,5,2,6" in clcp
-        assert "3,7" in clinfra
+        assert "0,4" in cl_exclusive
+        assert "1,5,2,6" in cl_shared
+        assert "3,7" in cl_infra
 
 
 def test_init_success2_isolcpus(monkeypatch):
@@ -149,18 +149,18 @@ def test_init_success2_isolcpus(monkeypatch):
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
-        cldp = pools["dataplane"].cpu_lists()
-        clcp = pools["controlplane"].cpu_lists()
-        clinfra = pools["infra"].cpu_lists()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
-        assert "1,5" in cldp
-        assert "2,6,3,7" in clcp
-        assert "0,4" in clinfra
+        assert "1,5" in cl_exclusive
+        assert "2,6,3,7" in cl_shared
+        assert "0,4" in cl_infra
 
 
 def test_init_success3(monkeypatch):
@@ -175,18 +175,18 @@ def test_init_success3(monkeypatch):
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
-        cldp = pools["dataplane"].cpu_lists()
-        clcp = pools["controlplane"].cpu_lists()
-        clinfra = pools["infra"].cpu_lists()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
-        assert cldp["0,4"]
-        assert clcp["1,5"]
-        assert clinfra["2,6,3,7"]
+        assert cl_exclusive["0,4"]
+        assert cl_shared["1,5"]
+        assert cl_infra["2,6,3,7"]
 
 
 def test_init_failure1(monkeypatch):
@@ -236,7 +236,7 @@ def test_init_failure2(monkeypatch):
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
                       "vertical")
         assert err is not None
-        expected_msg = "No more free cores left to assign for controlplane"
+        expected_msg = "No more free cores left to assign for shared"
         assert err.value.args[0] == expected_msg
 
 

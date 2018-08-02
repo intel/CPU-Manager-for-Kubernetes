@@ -30,11 +30,11 @@ etc
 └── cmk
     ├── lock
     └── pools
-        ├── controlplane
+        ├── shared
         │   ├── 3,11
         │   │   └── tasks
         │   └── exclusive
-        ├── dataplane
+        ├── exclusive
         │   ├── 4,12
         │   │   └── tasks
         │   ├── 5,13

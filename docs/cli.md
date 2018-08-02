@@ -26,12 +26,13 @@ Usage:
   cmk --version
   cmk cluster-init (--host-list=<list>|--all-hosts) [--cmk-cmd-list=<list>]
                    [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
-                   [--install-dir=<dir>] [--num-dp-cores=<num>]
-                   [--num-cp-cores=<num>] [--pull-secret=<name>]
-                   [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
-                   [--namespace=<name>]
-  cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
-           [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
+                   [--install-dir=<dir>] [--num-exclusive-cores=<num>]
+                   [--num-shared-cores=<num>] [--pull-secret=<name>]
+                   [--saname=<name>] [--shared-mode=<mode>]
+                   [--exclusive-mode=<mode>] [--namespace=<name>]
+  cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
+           [--num-shared-cores=<num>] [--socket-id=<num>]
+           [--shared-mode=<mode>] [--exclusive-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -43,44 +44,46 @@ Usage:
   cmk webhook [--conf-file=<file>]
 
 Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --host-list=<list>    Comma seperated list of Kubernetes nodes to prepare
-                        for CMK software.
-  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
-  --cmk-cmd-list=<list> Comma seperated list of CMK sub-commands to run on
-                        each host
-                        [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>       CMK Docker image [default: cmk:v1.2.2].
-  --cmk-img-pol=<pol>   Image pull policy for the CMK Docker image
-                        [default: IfNotPresent].
-  --conf-dir=<dir>      CMK configuration directory [default: /etc/cmk].
-  --install-dir=<dir>   CMK install directory [default: /opt/bin].
-  --interval=<seconds>  Number of seconds to wait between rerunning.
-                        If set to 0, will only run once. [default: 0]
-  --num-dp-cores=<num>  Number of data plane cores [default: 4].
-  --num-cp-cores=<num>  Number of control plane cores [default: 1].
-  --pool=<pool>         Pool name: either infra, controlplane or dataplane.
-  --cp-mode=<mode>      Control plane core allocation mode. Possible modes:
-                        packed and spread [default: packed].
-  --dp-mode=<mode>      Data plane core allocation mode. Possible modes:
-                        packed and spread [default: packed].
-  --publish             Whether to publish reports to the Kubernetes
-                        API server.
-  --pull-secret=<name>  Name of secret used for pulling Docker images from
-                        restricted Docker registry.
-  --saname=<name>       ServiceAccount name to pass
-                        [default: cmk-serviceaccount].
-  --socket-id=<num>     ID of socket where allocated core should come from.
-                        If it's set to -1 then child command will be assigned
-                        to any socket [default: -1].
-  --no-affinity         Do not set cpu affinity before forking the child
-                        command. In this mode the user program is responsible
-                        for reading the `CMK_CPUS_ASSIGNED` environment
-                        variable and moving a subset of its own processes
-                        and/or tasks to the assigned CPUs.
-  --namespace=<name>    Set the namespace to deploy pods to during the
-                        cluster-init deployment process. [default: default].
+  -h --help                    Show this screen.
+  --version                    Show version.
+  --host-list=<list>           Comma seperated list of Kubernetes nodes to
+                               prepare for CMK software.
+  --all-hosts                  Prepare all Kubernetes nodes for the CMK
+                               software.
+  --cmk-cmd-list=<list>        Comma seperated list of CMK sub-commands to run
+                               on each host
+                               [default: init,reconcile,install,discover,nodereport].
+  --cmk-img=<img>              CMK Docker image [default: cmk:v1.2.2].
+  --cmk-img-pol=<pol>          Image pull policy for the CMK Docker image
+                               [default: IfNotPresent].
+  --conf-dir=<dir>             CMK configuration directory [default: /etc/cmk].
+  --install-dir=<dir>          CMK install directory [default: /opt/bin].
+  --interval=<seconds>         Number of seconds to wait between rerunning.
+                               If set to 0, will only run once. [default: 0]
+  --num-exclusive-cores=<num>  Number of cores in exclusive pool. [default: 4].
+  --num-shared-cores=<num>     Number of cores in shared pool. [default: 1].
+  --pool=<pool>                Pool name: either infra, shared or exclusive.
+  --shared-mode=<mode>         Shared pool core allocation mode. Possible
+                               modes: packed and spread [default: packed].
+  --exclusive-mode=<mode>      Exclusive pool core allocation mode. Possible
+                               modes: packed and spread [default: packed].
+  --publish                    Whether to publish reports to the Kubernetes
+                               API server.
+  --pull-secret=<name>         Name of secret used for pulling Docker images
+                               from restricted Docker registry.
+  --saname=<name>              ServiceAccount name to pass
+                               [default: cmk-serviceaccount].
+  --socket-id=<num>            ID of socket where allocated core should come
+                               from. If it's set to -1 then child command will
+                               be assigned to any socket [default: -1].
+  --no-affinity                Do not set cpu affinity before forking the child
+                               command. In this mode the user program is
+                               responsible for reading the `CMK_CPUS_ASSIGNED`
+                               environment variable and moving a subset of its
+                               own processes and/or tasks to the assigned CPUs.
+  --namespace=<name>           Set the namespace to deploy pods to during the
+                               cluster-init deployment process.
+                               [default: default].
 ```
 
 ## Global configuration
@@ -100,8 +103,8 @@ Options:
 ### `cmk init`
 
 Initializes the cmk configuration directory customized for NFV workloads,
-including three pools: _infra_, _controlplane_ and _dataplane_. The
-_dataplane_ pool is EXCLUSIVE while the _controlplane_ and _infra_ pools
+including three pools: _infra_, _shared_ and _exclusive_. The
+_exclusive_ pool is EXCLUSIVE while the _shared_ and _infra_ pools
 are SHARED.
 
 Processor topology is discovered using [`lscpu`][lscpu].
@@ -121,13 +124,13 @@ However, this does not prevent other system tasks from running on reserved CPUs.
 The recommended way to resolve this problem is to use the [`isolcpus`][isolcpus] Linux kernel parameter.
 
 CMK init discovers the value of `isolcpus` by inspecting `/proc/cmdline`.
-These isolated CPU IDs are used to construct the dataplane and controlplane pools.
+These isolated CPU IDs are used to construct the exclusive and shared pools.
  In this way, the process scheduler will avoid co-scheduling other tasks there.
  If no isolated CPUs are available, CMK will continue to operate but the only guarantee is that pools are assigned in
  a core granular manner.
 
-The number of _fully isolated cores_ should match the number of requested dataplane plus
-controlplane cores. A core is fully isolated if all the logical cpu ids for the core are
+The number of _fully isolated cores_ should match the number of requested exclusive plus
+shared cores. A core is fully isolated if all the logical cpu ids for the core are
 in the `isolcpus` list.
 
 ##### Example
@@ -159,7 +162,7 @@ The `lscpu -p` output from this system could be:
 15,7,0,0,,7,7,7,0
 ```
 
-We assign 4 cores to the dataplane pool, 1 core to the controlplane pool and the rest to the infra pool.
+We assign 4 cores to the exclusive pool, 1 core to the shared pool and the rest to the infra pool.
 Therefore, 5 physical cores must be isolated. These are the default values for `cmk init`.
 
 On a Ubuntu 16.04 server, `/etc/default/grub` contains:
@@ -178,9 +181,9 @@ update-grub
 
 and reboot the system.
 
-After this, running `cmk init --num-dp-cores=4 --num-cp-cores=1` will allocate
-the first 4 cores (cpu id 0, 8, 1, 9, 2, 10, 3 and 11) for the dataplane pool,
-the next core (cpu id 4, 12) for the controlplane pool and the rest (cpu id 5,13,6,14,7,15) to the infra pool
+After this, running `cmk init --num-exclusive-cores=4 --num-shared-cores=1` will allocate
+the first 4 cores (cpu id 0, 8, 1, 9, 2, 10, 3 and 11) for the exclusive pool,
+the next core (cpu id 4, 12) for the shared pool and the rest (cpu id 5,13,6,14,7,15) to the infra pool
 
 ##### Caveats
 
@@ -190,10 +193,10 @@ CPUs may be stranded, i.e. not be utilized, if they are not isolated
  `isolcpus=0,1` will result in two stranded cpus where data and control containers may or may not land.
 In this case, CMK will emit warnings such as `WARNING:root:Physical core 1 is partially isolated`.
 
-Similarily, even fully isolated cores in excess of the number of dataplane
-plus controlplane cores will be stranded i.e. CMK will not assign any
+Similarily, even fully isolated cores in excess of the number of exclusive
+plus shared cores will be stranded i.e. CMK will not assign any
 left over isolated cores to the infra pool. In this case, CMK will emit warnings such as
-`WARNING:root:Not all isolated cores will be used by data and controlplane.`.
+`WARNING:root:Not all isolated cores will be used by data and shared pools.`.
 
 **Args:**
 
@@ -203,16 +206,16 @@ _None_
 
 - `--conf-dir=<dir>` Path to the CMK configuration directory. This
   directory must either not exist or be an empty directory.
-- `--num-dp-cores=<num>` Number of (physical) processor cores to include
-  in the dataplane pool.
-- `--num-dp-cores=<num>` Number of (physical) processor cores to include
-  in the controlplane pool.
+- `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
+  in the exclusive pool.
+- `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
+  in the shared pool.
 
 **Example:**
 
 ```shell
 $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk init --conf-dir=/etc/cmk --num-dp-cores=4 --num-cp-cores=1
+  cmk init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
 ```
 
 -------------------------------------------------------------------------------
@@ -222,7 +225,7 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
 Advertises the appropriate number of `CMK` [Opaque Integer Resource (OIR)][oir-docs]
 slots, node label and node taint to the Kubernetes node. The number of
 OIR slots advertised is equal to the number of cpu lists under the
-__dataplane__ pool, as determined by examining the `CMK` configuration directory.
+__exclusive__ pool, as determined by examining the `CMK` configuration directory.
 For more information about the config format on disk, refer to
 the [`cmk` configuration directory][doc-config].
 
@@ -236,7 +239,7 @@ operator's manual can be used to run the discover Pod.
 OIR.
 - The node will be labeled with `"cmk.intel.com/cmk-node": "true"` label.
 - The node will be tainted with `cmk=true:NoSchedule` taint.
-- The `CMK` configuration directory should exist and contain the dataplane
+- The `CMK` configuration directory should exist and contain the exclusive
 pool to run `cmk discover`.
 
 **Args:**
@@ -275,7 +278,7 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
 {
   "path": "/etc/cmk",
   "pools": {
-    "controlplane": {
+    "shared": {
       "cpuLists": {
         "3,11": {
           "cpus": "3,11",
@@ -288,9 +291,9 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
         }
       },
       "exclusive": false,
-      "name": "controlplane"
+      "name": "shared"
     },
-    "dataplane": {
+    "exclusive": {
       "cpuLists": {
         "4,12": {
           "cpus": "4,12",
@@ -318,7 +321,7 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
         }
       },
       "exclusive": true,
-      "name": "dataplane"
+      "name": "exclusive"
     },
     "infra": {
       "cpuLists": {
@@ -491,7 +494,7 @@ to be set._
 **Flags:**
 
 - `--conf-dir=<dir>` Path to the CMK configuration directory.
-- `--pool=<pool>`    Pool name: either _infra_, _controlplane_ or _dataplane_.
+- `--pool=<pool>`    Pool name: either _infra_, _shared_ or _exclusive_.
 - `--no-affinity`    Do not set cpu affinity before forking the child
                      command. In this mode the user program is responsible
                      for reading the `CMK_CPUS_ASSIGNED` environment
@@ -785,7 +788,7 @@ $ kubectl get cmk-nodereport cmk-02-zzwt7w -o json
             "description": {                                                                                                                                                                                       
                 "path": "/etc/cmk",                                                                                                                                                                                
                 "pools": {                                                                                                                                                                                         
-                    "controlplane": {                                                                                                                                                                              
+                    "shared": {                                                                                                                                                                              
                         "cpuLists": {                                                                                                                                                                              
                             "2": {                                                                                                                                                                                 
                                 "cpus": "2",                                                                                                                                                                       
@@ -793,9 +796,9 @@ $ kubectl get cmk-nodereport cmk-02-zzwt7w -o json
                             }                                                                                                                                                                                      
                         },                                                                                                                                                                                         
                         "exclusive": false,                                                                                                                                                                        
-                        "name": "controlplane"                                                                                                                                                                     
+                        "name": "shared"                                                                                                                                                                     
                     },                                                                                                                                                                                             
-                    "dataplane": {                                                                                                                                                                                 
+                    "exclusive": {                                                                                                                                                                                 
                         "cpuLists": {                                                                                                                                                                              
                             "0": {                                                                                                                                                                                 
                                 "cpus": "0",                                                                                                                                                                       
@@ -807,7 +810,7 @@ $ kubectl get cmk-nodereport cmk-02-zzwt7w -o json
                             }                                                                                                                                                                                      
                         },                                                                                                                                                                                         
                         "exclusive": true,                                                                                                                                                                         
-                        "name": "dataplane"                                                                                                                                                                        
+                        "name": "exclusive"                                                                                                                                                                        
                     },
                     "infra": {                                                                                                                                                                                     
                         "cpuLists": {                                                                                                                                                                              
@@ -1008,10 +1011,10 @@ _None_
   [default: IfNotPresent].
 - `--conf-dir=<dir>` Path to the CMK configuration directory. This
   directory must either not exist or be an empty directory.
-- `--num-dp-cores=<num>` Number of (physical) processor cores to include
-  in the dataplane pool.
-- `--num-cp-cores=<num>` Number of (physical) processor cores to include
-  in the controlplane pool.
+- `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
+  in the exclusive pool.
+- `--num-shared-cores=<num>` Number of (physical) processor cores to include
+  in the shared pool.
 - `--pull-secret=<name>`  Name of secret used for pulling Docker images from
   restricted Docker registry.
 
@@ -1019,7 +1022,7 @@ _None_
 
 ```shell
 $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk cluster-init --conf-dir=/etc/cmk --num-dp-cores=4 --num-cp-cores=1
+  cmk cluster-init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
 ```
 
 -------------------------------------------------------------------------------

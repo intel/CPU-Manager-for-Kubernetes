@@ -17,19 +17,19 @@ import logging
 import sys
 
 
-def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
-         cp_allocation_mode):
+def init(conf_dir, num_exclusive_cores, num_shared_cores,
+         exclusive_allocation_mode, shared_allocation_mode):
     check_hugepages()
 
     logging.info("Writing config to {}.".format(conf_dir))
-    logging.info("Requested data plane cores = {}.".format(num_dp_cores))
-    logging.info("Requested control plane cores = {}.".format(num_cp_cores))
+    logging.info("Requested exclusive cores = {}.".format(num_exclusive_cores))
+    logging.info("Requested shared cores = {}.".format(num_shared_cores))
 
     try:
         c = config.new(conf_dir)
     except FileExistsError:
         logging.info("Configuration directory already exists.")
-        check_assignment(conf_dir, num_dp_cores, num_cp_cores)
+        check_assignment(conf_dir, num_exclusive_cores, num_shared_cores)
         return
 
     platform = topology.discover()
@@ -37,7 +37,7 @@ def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
     # List of intel.topology.Core objects.
     cores = platform.get_cores()
 
-    check_isolated_cores(platform, num_dp_cores, num_cp_cores)
+    check_isolated_cores(platform, num_exclusive_cores, num_shared_cores)
 
     if platform.has_isolated_cores():
         logging.info("Isolated physical cores: {}".format(
@@ -45,33 +45,34 @@ def init(conf_dir, num_dp_cores, num_cp_cores, dp_allocation_mode,
 
         '''
         Following core lists depends on selected policies. If operator sets
-        same policies for data plane and control plane pools those lists will
+        same policies for exclusive and shared pools those lists will
         be the same.
         '''
-        isolated_cores_dp = platform.get_isolated_cores(
-            mode=dp_allocation_mode)
-        isolated_cores_cp = platform.get_isolated_cores(
-            mode=cp_allocation_mode)
+        isolated_cores_exclusive = platform.get_isolated_cores(
+            mode=exclusive_allocation_mode)
+        isolated_cores_shared = platform.get_isolated_cores(
+            mode=shared_allocation_mode)
 
         infra_cores = platform.get_shared_cores()
 
-        assign(isolated_cores_dp, "dataplane", count=num_dp_cores)
-        assign(isolated_cores_cp, "controlplane", count=num_cp_cores)
+        assign(isolated_cores_exclusive, "exclusive",
+               count=num_exclusive_cores)
+        assign(isolated_cores_shared, "shared", count=num_shared_cores)
         assign(infra_cores, "infra")
     else:
         logging.info("No isolated physical cores detected: allocating "
-                     "control plane and data plane from full core list")
+                     "shared and exclusive cores from full core list")
 
-        cores_dp = platform.get_cores(mode=dp_allocation_mode)
-        cores_cp = platform.get_cores(mode=cp_allocation_mode)
+        cores_exclusive = platform.get_cores(mode=exclusive_allocation_mode)
+        cores_shared = platform.get_cores(mode=shared_allocation_mode)
 
-        assign(cores_dp, "dataplane", count=num_dp_cores)
-        assign(cores_cp, "controlplane", count=num_cp_cores)
+        assign(cores_exclusive, "exclusive", count=num_exclusive_cores)
+        assign(cores_shared, "shared", count=num_shared_cores)
         assign(cores, "infra")
 
     with c.lock():
-        write_exclusive_pool("dataplane", platform, c)
-        write_shared_pool("controlplane", platform, c)
+        write_exclusive_pool("exclusive", platform, c)
+        write_shared_pool("shared", platform, c)
         write_shared_pool("infra", platform, c)
 
 
@@ -94,28 +95,28 @@ def check_hugepages():
                      meminfo_path)
 
 
-def check_assignment(conf_dir, num_dp_cores, num_cp_cores):
+def check_assignment(conf_dir, num_exclusive_cores, num_shared_cores):
     c = config.Config(conf_dir)
 
-    num_dp_lists = len(c.pool("dataplane").cpu_lists())
-    num_cp_lists = len(c.pool("controlplane").cpu_lists())
+    num_exclusive_lists = len(c.pool("exclusive").cpu_lists())
+    num_shared_lists = len(c.pool("shared").cpu_lists())
 
     alloc_error = None
 
-    if num_dp_lists is not num_dp_cores:
+    if num_exclusive_lists is not num_exclusive_cores:
         alloc_error = True
-        logging.error("{} dataplane cores ({} requested)".format(
-            num_dp_lists, num_dp_cores))
-    if num_cp_lists is not num_cp_cores:
+        logging.error("{} exclusive cores ({} requested)".format(
+            num_exclusive_lists, num_exclusive_cores))
+    if num_shared_lists is not num_shared_cores:
         alloc_error = True
-        logging.error("{} controlplane cores ({} requested)".format(
-            num_cp_lists, num_cp_cores))
+        logging.error("{} shared cores ({} requested)".format(
+            num_shared_lists, num_shared_cores))
 
     if alloc_error:
         sys.exit(1)
 
 
-def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
+def check_isolated_cores(platform, num_exclusive_cores, num_shared_cores):
     isolated_cores = platform.get_isolated_cores()
     cores = platform.get_cores()
     num_isolated_cores = len(isolated_cores)
@@ -129,19 +130,19 @@ def check_isolated_cores(platform, num_dp_cores, num_cp_cores):
                 break
 
     if num_isolated_cores > 0:
-        required_isolated_cores = (num_dp_cores + num_cp_cores)
+        required_isolated_cores = (num_exclusive_cores + num_shared_cores)
 
         if num_isolated_cores < required_isolated_cores:
             logging.error(
-                "Cannot use isolated cores for data plane and control plane "
+                "Cannot use isolated cores for exclusive and shared "
                 "cores: not enough isolated cores %d compared to requested %d"
                 % (num_isolated_cores, required_isolated_cores))
             sys.exit(1)
 
         if num_isolated_cores != required_isolated_cores:
             logging.warning(
-                "Not all isolated cores will be used by data and "
-                "control plane. %d isolated but only %d used" %
+                "Not all isolated cores will be used by exclusive and "
+                "shared pools. %d isolated but only %d used" %
                 (num_isolated_cores, required_isolated_cores))
 
 

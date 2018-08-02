@@ -149,10 +149,10 @@ container image is hosted remotely (e.g., in https://hub.docker.com/).
 The `CMK` nodes in the kubernetes cluster should be initialized in order to be used with the CMK software using
 [`cmk-init`][cmk-init]. To initialize the `CMK` nodes, the [cmk-init-pod template][init-template] can be used.
 
-`cmk init` takes the `--conf-dir`, `--num-dp-cores` and the `--num-cp-cores` flags. In the
+`cmk init` takes the `--conf-dir`, `--num-exclusive-cores` and the `--num-shared-cores` flags. In the
 [cmk-init-pod template][init-template], the values to these flags can be modified. The value for `--conf-dir` can be
-set by changing the `path` value of the `hostPath` for the `cmk-conf-dir`. The value for `--num-dp-cores` and
-`--num-cp-cores` can be set by changing the values for the `NUM_DP_CORES` and `NUM_CP_CORES` environment variables,
+set by changing the `path` value of the `hostPath` for the `cmk-conf-dir`. The value for `--num-exclusive-cores` and
+`--num-shared-cores` can be set by changing the values for the `NUM_EXCLUSIVE_CORES` and `NUM_SHARED_CORES` environment variables,
 respectively.
 
 Values that might require modification in the [cmk-init-pod template][init-template] are shown as snippets below:
@@ -167,18 +167,18 @@ Values that might require modification in the [cmk-init-pod template][init-templ
 
 ```yml
     env:
-    - name: NUM_DP_CORES
-      # Change this to modify the value passed to `--num-dp-cores` flag.
+    - name: NUM_EXCLUSIVE_CORES
+      # Change this to modify the value passed to `--num-exclusive-cores` flag.
       value: '4'
-    - name: NUM_CP_CORES
-      # Change this to modify the value passed to `--num-cp-cores` flag.
+    - name: NUM_SHARED_CORES
+      # Change this to modify the value passed to `--num-shared-cores` flag.
       value: '1'
 ```
 
 #### Advertising `CMK` Opaque Integer Resource (OIR) slots
 All the `CMK` nodes in the Kubernetes cluster should be patched with `CMK` [OIR][oir-docs] slots using
-[`cmk discover`][cmk-discover]. The OIR slots are advertised as the dataplane pools need to be allocated exclusively.
-The number of slots advertised should be equal to the number of cpu lists under the __dataplane__ pool, as determined
+[`cmk discover`][cmk-discover]. The OIR slots are advertised as the exclusive pools need to be allocated exclusively.
+The number of slots advertised should be equal to the number of cpu lists under the __exclusive__ pool, as determined
 by examining the `CMK` configuration directory. [cmk-discover-pod template][discover-template] can be used to
 advertise the `CMK` OIR slots.
 
@@ -258,7 +258,7 @@ spec:
   containers:
     resources:
       requests:
-        cmk.intel.com/dp-cores: 2
+        cmk.intel.com/exclusive-cores: 2
 ...
 ```
 
@@ -282,7 +282,7 @@ recommended. After meeting that requirement, steps to deploy webhook are as foll
 
 ### Multi socket support (experimental)
 `CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
-across pools. To prevent a situation, where __dataplane__ pool or __controlplane__ pool are spawned only on a single socket
+across pools. To prevent a situation, where __exclusive__ pool or __shared__ pool are spawned only on a single socket
 operator is able to use one of two `mode` policies: `packed` and `spread`. Those policies define how cores are assigned to
 specific pool:
 
@@ -298,19 +298,19 @@ _Note: This policy is not topology aware, so there is a possibility that one poo
 
 _Note: This policy is topology aware, so CMK will try to spread pools on each socket._
 
-To select appropriate `mode` operator can select it during initialization with `--cp-mode` or `--dp-mode` parameters.
+To select appropriate `mode` operator can select it during initialization with `--shared-mode` or `--exclusive-mode` parameters.
 Those parameters can be used with `cluster-init` and `init`. If operator use two different modes, then those policies
-will be mixed. In that case __dataplane__ pool is resolving before __controlplane__ pool.
+will be mixed. In that case __exclusive__ pool is resolving before __shared__ pool.
 
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
 World [cmk-isolate-pod template][isolate-template] describes a simple Pod with three containers requesting CPUs from
-the __dataplane__, __controlplane__ and the __infra__ pools, respectively, using [`cmk isolate`][cmk-isolate]. The
+the __exclusive__, __shared__ and the __infra__ pools, respectively, using [`cmk isolate`][cmk-isolate]. The
 `pool` is requested by passing the desired value to the `--pool` flag when using `cmk isolate` as described in the
 [documentation][cmk-isolate].
 
 `cmk isolate` can use `--socket-id` flag to target on which socket application should be spawned. This flag is optional,
-suitable only for __dataplane__ pool and if it's not used `cmk isolate` will use first not reserved core.
+suitable only for __exclusive__ pool and if it's not used `cmk isolate` will use first not reserved core.
 
 `cmk isolate` also takes the `--conf-dir` and `--install-dir` flags. In the [cmk-isolate-pod template][isolate-template],
 the values for `--conf-dir` and `--install-dir` can be modified by changing the `path` values of the `hostPath`.
@@ -332,8 +332,8 @@ below:
 
 Notes:
 - The Hello World cmk-isolate-pod consumes the `pod.alpha.kubernetes.io/opaque-int-resource-cmk` Opaque Integer
-Resource (OIR) only in the container isolated using the __dataplane__ pool. The `CMK` software assumes that only
-container isolated using the __dataplane__ pool requests the OIR and each of these containers should consume exactly
+Resource (OIR) only in the container isolated using the __exclusive__ pool. The `CMK` software assumes that only
+container isolated using the __exclusive__ pool requests the OIR and each of these containers should consume exactly
 one OIR. This restricts the number of pods that can land on a Kubernetes node to the expected value.
 - The `cmk isolate` Hello World Pod should only be run after following the instructions provided in the
 [`Setting up the cluster`][cluster-setup] section.
@@ -410,7 +410,7 @@ kubectl get node cmk-02-zzwt7w -o json | jq .status.capacity
     "alpha.kubernetes.io/nvidia-gpu": "0",
     "cpu": "16",
     "memory": "14778328Ki",
-    "cmk.intel.com/dp-cores": "4",
+    "cmk.intel.com/exclusive-cores": "4",
     "pods": "110"
 }
 ```
@@ -488,7 +488,7 @@ spec:
   nodeName: NODENAME
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
@@ -498,7 +498,7 @@ spec:
     name: cmk-isolate-infra
     resources:
       requests:
-        cmk.intel.com/dp-cores: 1
+        cmk.intel.com/exclusive-cores: 1
   restartPolicy: Never
 ```
 - Run `kubectl create -f <file-name>`, where `<file-name>` is the name of the Pod manifest file with nodeName field

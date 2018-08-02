@@ -29,7 +29,7 @@ spec:
 #  - operator: "Exists"
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane echo -- Hello World DP!!!"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive echo -- Hello World Exclusive!!!"
     command:
     - "/bin/bash"
     - "-c"
@@ -37,7 +37,7 @@ spec:
     - name: CMK_PROC_FS
       value: "/host/proc"
     image: cmk:v1.2.2
-    name: cmk-isolate-dp
+    name: cmk-isolate-exclusive
     resources:
       requests:
         pod.alpha.kubernetes.io/opaque-int-resource-cmk: '1'
@@ -50,7 +50,7 @@ spec:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=controlplane echo -- Hello World CP!!!"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
     command:
     - "/bin/bash"
     - "-c"
@@ -58,7 +58,7 @@ spec:
     - name: CMK_PROC_FS
       value: "/host/proc"
     image: cmk:v1.2.2
-    name: cmk-isolate-cp
+    name: cmk-isolate-shared
     volumeMounts:
     - mountPath: "/host/proc"
       name: host-proc
