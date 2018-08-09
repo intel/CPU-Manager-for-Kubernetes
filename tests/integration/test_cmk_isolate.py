@@ -210,7 +210,7 @@ def test_cmk_isolate_multiple_cores_shared():
             "env | grep CMK"]
 
     assert helpers.execute(integration.cmk(), args, env) == b"""\
-CMK_CPUS_ASSIGNED=0,1
+CMK_CPUS_ASSIGNED=0
 CMK_PROC_FS=/proc
 CMK_NUM_CORES=2
 """

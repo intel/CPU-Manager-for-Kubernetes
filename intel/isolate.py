@@ -64,10 +64,9 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
             # If that ceases to hold in the future, we could explore population
             # or load-based spreading. Keeping it simple for now.
             try:
-                clists = random.sample(list(pool.cpu_lists().values()), n_cpus)
-            except ValueError:
-                raise SystemError("Not enough free cpu lists in pool {}"
-                                  .format(pool_name))
+                clists = [random.choice(list(pool.cpu_lists().values()))]
+            except IndexError:
+                raise SystemError("No cpu lists in pool {}".format(pool_name))
 
         if not clists:
             raise SystemError("No free cpu lists in pool {}".format(pool_name))
