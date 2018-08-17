@@ -84,7 +84,7 @@ def client_from_config(config):
         k8sconfig.load_incluster_config()
         return k8sclient.CoreV1Api()
     else:
-        client = k8sclient.ApiClient(config=config)
+        client = k8sclient.ApiClient(configuration=config)
         return k8sclient.CoreV1Api(api_client=client)
 
 
@@ -93,7 +93,7 @@ def extensions_client_from_config(config):
         k8sconfig.load_incluster_config()
         return k8sclient.ExtensionsV1beta1Api()
     else:
-        client = k8sclient.ApiClient(config=config)
+        client = k8sclient.ApiClient(configuration=config)
         return k8sclient.ExtensionsV1beta1Api(api_client=client)
 
 
@@ -102,8 +102,17 @@ def version_api_client_from_config(config):
         k8sconfig.load_incluster_config()
         return k8sclient.VersionApi()
     else:
-        client = k8sclient.ApiClient(config=config)
+        client = k8sclient.ApiClient(configuration=config)
         return k8sclient.VersionApi(api_client=client)
+
+
+def admissionregistartion_api_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.AdmissionregistrationV1beta1Api()
+    else:
+        client = k8sclient.ApiClient(configuration=config)
+        return k8sclient.AdmissionregistrationV1beta1Api(api_client=client)
 
 
 def get_container_template():
@@ -176,6 +185,26 @@ def create_pod(config, podspec, ns_name):
 def create_ds(config, podspec, ns_name):
     k8s_api = extensions_client_from_config(config)
     return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
+
+
+def create_service(config, spec, ns_name):
+    k8s_api = client_from_config(config)
+    return k8s_api.create_namespaced_service(ns_name, spec)
+
+
+def create_config_map(config, spec, ns_name):
+    k8s_api = client_from_config(config)
+    return k8s_api.create_namespaced_config_map(ns_name, spec)
+
+
+def create_secret(config, spec, ns_name):
+    k8s_api = client_from_config(config)
+    return k8s_api.create_namespaced_secret(ns_name, spec)
+
+
+def create_mutating_webhook_configuration(config, spec):
+    k8s_api = admissionregistartion_api_client_from_config(config)
+    return k8s_api.create_mutating_webhook_configuration(spec)
 
 
 # Create list of schedulable nodes.
@@ -266,3 +295,24 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
         logging.debug("Removing pod \"{}\"".format(pod["metadata"]["name"]))
         delete_pod(None, pod["metadata"]["name"], ns_name)
     return
+
+
+def delete_service(config, name, ns_name="default"):
+    k8s_api = client_from_config(config)
+    return k8s_api.delete_namespaced_service(name, ns_name)
+
+
+def delete_config_map(config, name, ns_name="default", body=V1DeleteOptions()):
+    k8s_api = client_from_config(config)
+    return k8s_api.delete_namespaced_config_map(name, ns_name, body)
+
+
+def delete_secret(config, name, ns_name="default", body=V1DeleteOptions()):
+    k8s_api = client_from_config(config)
+    return k8s_api.delete_namespaced_secret(name, ns_name, body)
+
+
+def delete_mutating_webhook_configuration(config, name,
+                                          body=V1DeleteOptions()):
+    k8s_api = admissionregistartion_api_client_from_config(config)
+    return k8s_api.delete_mutating_webhook_configuration(name, body)

@@ -316,7 +316,9 @@ def test_clusterinit_dont_pass_serviceaccountname():
 def test_clusterinit_update_pod_with_init_container():
     pod_passed = k8sclient.V1Pod(
         metadata=k8sclient.V1ObjectMeta(annotations={}),
-        spec=k8sclient.V1PodSpec(),
+        spec=k8sclient.V1PodSpec(containers=[
+            k8sclient.V1Container(name="cmk")
+        ]),
         status=k8sclient.V1PodStatus()).to_dict()
     cmd = "cmd"
     cmk_img = "cmk_img"

@@ -58,6 +58,19 @@ Additionally [Taints][Taints] have been moved from alpha to beta and are no logn
 #### Kubernetes 1.8
 ***Kubernetes 1.8.0 is not supported due to extended resources issue(it's impossible to create extended resource). Use Kubernetes 1.8.1+ instead.***
 
+#### Kubernetes 1.9
+From Kubernetes 1.9.0 mutating admission controller is being used to update any pod which
+definition contains any container requesting CMK Extended Resources. CMK webhook modifies
+it by injecting environmental variable `CMK_NUM_CORES` with its value set to a number of cores
+specified in the Extended Resource request. This allows `cmk isolate` to assign multiple
+CPU cores to given process.
+On top of that webhook applies additional changes to the pod which are defined in
+the configuration file. By default, configuration deployed during `cmk cluster-init` adds
+CMK installation and configuration directories and host /proc filesystem volumes, CMK
+service account, tolerations required for a pod to be scheduled on the CMK enabled node
+and appropriately annotates pod. Containers specifications are updated with volume mounts
+(referencing volumes added to the pod) and environmental variable `CMK_PROC_FS`.
+
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.
@@ -232,6 +245,40 @@ below:
       path: "/opt/bin"
     name: cmk-install-dir
 ```
+
+#### Run `cmk webhook` (Kubernetes v1.9.0+ only)
+`cmk webhook` is used to run mutating admission webhook server. Whenever there's a requestto create a new pod,
+the webhook can capture that request, check whether any of the containers requests or limits number of the CMK
+Extended Resources and update pod and its container specification appropriately. This allows to simplify deployment
+of workloads taking advantage of CMK, by reducing the number of requirements to the minimum.
+
+```
+...
+spec:
+  containers:
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 2
+...
+```
+
+In order to deploy CMK mutating webhook a number of resources needs to be created on
+the cluster. But even before that, operator needs to have X509 private key and TLS
+certificate in PEM format generated. Certificates can be self-signed, although using
+ceritificates signed by proper CA or [Kubernetes Certificates API][k8s-ca] is highly
+recommended. After meeting that requirement, steps to deploy webhook are as follows:
+1. Certificates in PEM format should be then encoded to Base64 format and
+   placed in the [Mutating Admission Configuration][webhook-config-template] and
+   [Secret][webhook-secret-template] templates.
+2. Update [config map template][webhook-configmap-template]. Config map contains 2
+   configuration files `server.yaml` and `mutations.yaml`. Configuration options are
+   described in the [cmk command-line tool documentation][doc-cli].
+3. Create [secret][webhook-secret-template], [service][webhook-service-template] and
+   [config map][webhook-configmap-template] using `kubectl create -f ...` command.
+4. Run `cmk webhook` pod defined in the [webhook pod template][webhook-pod-template] using
+   `kubectl create -f ...` command.
+5. If the `cmk webhook` pod is running correctly, create
+   [Mutating Admission Configuration][webhook-config-template] object.
 
 ### Multi socket support (experimental)
 `CMK` is able to use multiple sockets. During cluster initialization, `init` module will distribute cores from all sockets
@@ -426,6 +473,94 @@ If you using third part resources (kubernetes 1.6.x and older versions)
 If you using custom resources definition (kubernetes 1.7.x and newer versions)
 `kubectl get cmk-nodereport <node-name> -o json | jq .spec.report.description.pools.infra`
 
+### Validating CMK mutating webhook (Kubernetes v1.9.0+)
+
+- Follow all the above steps, but use simplified Pod manifest:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+  name: cmk-isolate-pod
+spec:
+  # Change this to the <node-name> you want to test.
+  nodeName: NODENAME
+  containers:
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    image: cmk:v1.2.2
+    imagePullPolicy: "Never"
+    name: cmk-isolate-infra
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 1
+  restartPolicy: Never
+```
+- Run `kubectl create -f <file-name>`, where `<file-name>` is the name of the Pod manifest file with nodeName field
+substituted as mentioned in the previous section.
+- Run `kubectl get pod cmk-isolate-pod  -o json | jq .metadata.annotations` and verify that annotation has been
+added:
+```
+{
+  "cmk.intel.com/resources-injected": "true"
+}
+```
+- Run `kubectl get pod cmk-isolate-pod  -o json | jq .spec.volumes` and verify that extra volumes have been
+injected:
+```
+[
+  {
+    "name": "default-token-xfd8q",
+    "secret": {
+      "defaultMode": 420,
+      "secretName": "default-token-xfd8q"
+    }
+  },
+  {
+    "hostPath": {
+      "path": "/proc",
+      "type": ""
+    },
+    "name": "cmk-host-proc"
+  },
+  {
+    "hostPath": {
+      "path": "/etc/cmk",
+      "type": ""
+    },
+    "name": "cmk-config-dir"
+  },
+  {
+    "hostPath": {
+      "path": "/opt/bin",
+      "type": ""
+    },
+    "name": "cmk-install-dir"
+  }
+]
+```
+- Run `kubectl get pod cmk-isolate-pod  -o json | jq .spec.containers[0].env` and verify that
+env variables have been added to the container spec:
+```
+[
+  {
+    "name": "CMK_PROC_FS",
+    "value": "/host/proc"
+  },
+  {
+    "name": "CMK_NUM_CORES",
+    "value": "1"
+  }
+]
+
+```
+
+
 ## Troubleshooting and recovery
 If running `cmk cluster-init` using the [cmk-cluster-init-pod template][cluster-init-template] ends up in an error,
 the recommended way to start troubleshooting is to look at the logs using `kubectl logs POD_NAME [CONTAINER_NAME] -f`.
@@ -458,6 +593,11 @@ can help to fine-grain the deletion for specific node.
 [install-template]: ../resources/pods/cmk-install-pod.yaml
 [isolate-template]: ../resources/pods/cmk-isolate-pod.yaml
 [cluster-init-template]: ../resources/pods/cmk-cluster-init-pod.yaml
+[webhook-pod-template]: ../resources/webhook/cmk-webhook-pod.yaml
+[webhook-service-template]: ../resources/webhook/cmk-webhook-service.yaml
+[webhook-secret-template]: ../resources/webhook/cmk-webhook-certs.yaml
+[webhook-configmap-template]: ../resources/webhook/cmk-webhook-configmap.yaml
+[webhook-config-template]: ../resources/webhook/cmk-webhook-config.yaml
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
 [cluster-init-op-manual]: #prepare-cmk-nodes-by-running-cmk-cluster-init
 [indvidual-pods-op-manual]: #prepare-cmk-nodes-by-running-each-cmk-subcommand-as-a-pod
@@ -470,3 +610,4 @@ can help to fine-grain the deletion for specific node.
 [Third Party Resource]: https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-third-party-resource/
 [migrate]: https://kubernetes.io/docs/tasks/access-kubernetes-api/migrate-third-party-resource/
 [Taints]: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+[k8s-ca]: https://kubernetes.io/docs/concepts/cluster-administration/certificates/

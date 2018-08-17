@@ -100,6 +100,10 @@ Please refer to the [`cmk node-report` documentation][cmk-node-report].
 
 Please refer to the [`cmk reconcile` documentation][cmk-reconcile].
 
+### Mutating webhook (Kubernetes v1.9.0+)
+
+Please refer to the [`cmk webhook` documentation][cmk-webhook].
+
 ## Known issues
 
 | Issue                      | Description                                    |
@@ -111,6 +115,7 @@ Please refer to the [`cmk reconcile` documentation][cmk-reconcile].
 
 [cmk-node-report]: cli.md#cmk-node-report
 [cmk-reconcile]: cli.md#cmk-reconcile
+[cmk-webhook]: cli.md#cmk-webhook
 [doc-config]: config.md
 [doc-cli]: cli.md
 [doc-operator]: operator.md

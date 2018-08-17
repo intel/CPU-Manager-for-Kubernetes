@@ -122,6 +122,19 @@ if Kubernetes version is 1.7 else <a href="https://kubernetes.io/docs/tasks/acce
 <h4>
 <a id="user-content-kubernetes-18" class="anchor" href="#kubernetes-18" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kubernetes 1.8</h4>
 <p><em><strong>Kubernetes 1.8.0 is not supported due to extended resources issue(it's impossible to create extended resource). Use Kubernetes 1.8.1+ instead.</strong></em></p>
+<h4>
+<a id="user-content-kubernetes-19" class="anchor" href="#kubernetes-19" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kubernetes 1.9</h4>
+<p>From Kubernetes 1.9.0 mutating admission controller is being used to update any pod which
+definition contains any container requesting CMK Extended Resources. CMK webhook modifies
+it by injecting environmental variable <code>CMK_NUM_CORES</code> with its value set to a number of cores
+specified in the Extended Resource request. This allows <code>cmk isolate</code> to assign multiple
+CPU cores to given process.
+On top of that webhook applies additional changes to the pod which are defined in
+the configuration file. By default, configuration deployed during <code>cmk cluster-init</code> adds
+CMK installation and configuration directories and host /proc filesystem volumes, CMK
+service account, tolerations required for a pod to be scheduled on the CMK enabled node
+and appropriately annotates pod. Containers specifications are updated with volume mounts
+(referencing volumes added to the pod) and environmental variable <code>CMK_PROC_FS</code>.</p>
 <h2>
 <a id="user-content-setting-up-the-cluster" class="anchor" href="#setting-up-the-cluster" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setting up the cluster.</h2>
 <p><a href="https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding" rel="nofollow">https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding</a>
@@ -291,6 +304,39 @@ below:</p>
       <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK installation dir in the host file system.</span>
       <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/opt/bin<span class="pl-pds">"</span></span>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span></pre></div>
+<h4>
+<a id="user-content-run-cmk-webhook-kubernetes-v190-only" class="anchor" href="#run-cmk-webhook-kubernetes-v190-only" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run <code>cmk webhook</code> (Kubernetes v1.9.0+ only)</h4>
+<p><code>cmk webhook</code> is used to run mutating admission webhook server. Whenever there's a requestto create a new pod,
+the webhook can capture that request, check whether any of the containers requests or limits number of the CMK
+Extended Resources and update pod and its container specification appropriately. This allows to simplify deployment
+of workloads taking advantage of CMK, by reducing the number of requirements to the minimum.</p>
+<pre><code>...
+spec:
+  containers:
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 2
+...
+</code></pre>
+<p>In order to deploy CMK mutating webhook a number of resources needs to be created on
+the cluster. But even before that, operator needs to have X509 private key and TLS
+certificate in PEM format generated. Certificates can be self-signed, although using
+ceritificates signed by proper CA or <a href="https://kubernetes.io/docs/concepts/cluster-administration/certificates/" rel="nofollow">Kubernetes Certificates API</a> is highly
+recommended. After meeting that requirement, steps to deploy webhook are as follows:</p>
+<ol>
+<li>Certificates in PEM format should be then encoded to Base64 format and
+placed in the <a href="../resources/webhook/cmk-webhook-config.yaml">Mutating Admission Configuration</a> and
+<a href="../resources/webhook/cmk-webhook-certs.yaml">Secret</a> templates.</li>
+<li>Update <a href="../resources/webhook/cmk-webhook-configmap.yaml">config map template</a>. Config map contains 2
+configuration files <code>server.yaml</code> and <code>mutations.yaml</code>. Configuration options are
+described in the <a href="cli.html">cmk command-line tool documentation</a>.</li>
+<li>Create <a href="../resources/webhook/cmk-webhook-certs.yaml">secret</a>, <a href="../resources/webhook/cmk-webhook-service.yaml">service</a> and
+<a href="../resources/webhook/cmk-webhook-configmap.yaml">config map</a> using <code>kubectl create -f ...</code> command.</li>
+<li>Run <code>cmk webhook</code> pod defined in the <a href="../resources/webhook/cmk-webhook-pod.yaml">webhook pod template</a> using
+<code>kubectl create -f ...</code> command.</li>
+<li>If the <code>cmk webhook</code> pod is running correctly, create
+<a href="../resources/webhook/cmk-webhook-config.yaml">Mutating Admission Configuration</a> object.</li>
+</ol>
 <h3>
 <a id="user-content-multi-socket-support-experimental" class="anchor" href="#multi-socket-support-experimental" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Multi socket support (experimental)</h3>
 <p><code>CMK</code> is able to use multiple sockets. During cluster initialization, <code>init</code> module will distribute cores from all sockets
@@ -475,6 +521,96 @@ If you using custom resources definition (kubernetes 1.7.x and newer versions)
 <code>kubectl get cmk-nodereport &lt;node-name&gt; -o json | jq .spec.report.description.pools.infra</code>
 </li>
 </ul>
+<h3>
+<a id="user-content-validating-cmk-mutating-webhook-kubernetes-v190" class="anchor" href="#validating-cmk-mutating-webhook-kubernetes-v190" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Validating CMK mutating webhook (Kubernetes v1.9.0+)</h3>
+<ul>
+<li>Follow all the above steps, but use simplified Pod manifest:</li>
+</ul>
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+  name: cmk-isolate-pod
+spec:
+  # Change this to the &lt;node-name&gt; you want to test.
+  nodeName: NODENAME
+  containers:
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    image: cmk:v1.2.2
+    imagePullPolicy: "Never"
+    name: cmk-isolate-infra
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 1
+  restartPolicy: Never
+</code></pre>
+<ul>
+<li>Run <code>kubectl create -f &lt;file-name&gt;</code>, where <code>&lt;file-name&gt;</code> is the name of the Pod manifest file with nodeName field
+substituted as mentioned in the previous section.</li>
+<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .metadata.annotations</code> and verify that annotation has been
+added:</li>
+</ul>
+<pre><code>{
+  "cmk.intel.com/resources-injected": "true"
+}
+</code></pre>
+<ul>
+<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .spec.volumes</code> and verify that extra volumes have been
+injected:</li>
+</ul>
+<pre><code>[
+  {
+    "name": "default-token-xfd8q",
+    "secret": {
+      "defaultMode": 420,
+      "secretName": "default-token-xfd8q"
+    }
+  },
+  {
+    "hostPath": {
+      "path": "/proc",
+      "type": ""
+    },
+    "name": "cmk-host-proc"
+  },
+  {
+    "hostPath": {
+      "path": "/etc/cmk",
+      "type": ""
+    },
+    "name": "cmk-config-dir"
+  },
+  {
+    "hostPath": {
+      "path": "/opt/bin",
+      "type": ""
+    },
+    "name": "cmk-install-dir"
+  }
+]
+</code></pre>
+<ul>
+<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .spec.containers[0].env</code> and verify that
+env variables have been added to the container spec:</li>
+</ul>
+<pre><code>[
+  {
+    "name": "CMK_PROC_FS",
+    "value": "/host/proc"
+  },
+  {
+    "name": "CMK_NUM_CORES",
+    "value": "1"
+  }
+]
+
+</code></pre>
 <h2>
 <a id="user-content-troubleshooting-and-recovery" class="anchor" href="#troubleshooting-and-recovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Troubleshooting and recovery</h2>
 <p>If running <code>cmk cluster-init</code> using the <a href="../resources/pods/cmk-cluster-init-pod.yaml">cmk-cluster-init-pod template</a> ends up in an error,

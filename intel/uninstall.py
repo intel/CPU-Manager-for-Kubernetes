@@ -50,6 +50,8 @@ def uninstall(install_dir, conf_dir, namespace):
     check_remove_conf_dir(conf_dir)
     remove_binary(install_dir)
 
+    remove_webhook_resources("cmk-webhook", namespace)
+
     remove_node_label()
 
 
@@ -349,3 +351,21 @@ def remove_node_cmk_er():
             sys.exit(1)
         logging.warning("CMK ER does not exist.")
     logging.info("Removed node ERs")
+
+
+def remove_webhook_resources(prefix, namespace):
+    version = parse_version(k8s.get_kubelet_version(None))
+    if version >= parse_version("v1.9.0"):
+        try:
+            k8s.delete_mutating_webhook_configuration(
+                                            None, "{}-config".format(prefix))
+            k8s.delete_secret(None, "{}-certs".format(prefix), namespace)
+            k8s.delete_config_map(None, "{}-configmap".format(prefix),
+                                  namespace)
+            k8s.delete_service(None, "{}-service".format(prefix), namespace)
+            delete_cmk_pod("cmk-webhook-pod", namespace)
+        except K8sApiException as err:
+            logging.error("Aborting uninstall: Exception when removing "
+                          "webhook: {}".format(err))
+            sys.exit(1)
+        logging.info("Removed webhook resources")

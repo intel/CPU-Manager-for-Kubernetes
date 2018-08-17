@@ -113,6 +113,37 @@ them to build <code>cmk</code> into their images. By default these docs assume t
 binary is available on the host filesystem at <code>/opt/bin/cmk</code>.</li>
 </ul>
 <p>For a complete example, see the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk isolate pod template</a>.</p>
+<h3>
+<a id="user-content-pod-configuration-on-the-clusters-with-cmk-mutating-webhook-kubernetes-v190" class="anchor" href="#pod-configuration-on-the-clusters-with-cmk-mutating-webhook-kubernetes-v190" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pod configuration on the clusters with CMK mutating webhook (Kubernetes v1.9.0+)</h3>
+<p>From Kubernetes v1.9.0 additional CMK component, <code>cmk webhook</code>, is deployed.
+It allows to simplify the above configuration and enables automatic injection
+of all requirements mentioned above such as volumes, service accounts, env vars etc.
+Minimal working example of a Pod manifest compatible with CMK deployed in this way
+is presented below:</p>
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+  name: cmk-isolate-pod
+spec:
+  containers:
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    image: cmk:v1.2.2
+    imagePullPolicy: "Never"
+    name: cmk-isolate-infra
+    resources:
+      requests:
+        cmk.intel.com/dp-cores: 1
+  restartPolicy: Never
+</code></pre>
+<p>For more details please see <a href="cli.html#cmk-webhook">webhook CLI manual</a> and
+<a href="operator.html">operator manual</a>.</p>
 
               </article>
             </div>

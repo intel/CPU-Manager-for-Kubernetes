@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
 import json
 import logging
 import sys
+import yaml
 from pkg_resources import parse_version
 
+from kubernetes import client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 
-from intel import k8s
+from intel import k8s, util
 
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
@@ -70,6 +72,12 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
                  pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
+
+    # Run mutating webhook admission controller on supported cluster
+    version = parse_version(k8s.get_kubelet_version(None))
+    if version >= parse_version("v1.9.0"):
+        deploy_webhook(namespace, conf_dir, install_dir, serviceaccount,
+                       cmk_img)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -186,6 +194,82 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             sys.exit(1)
 
 
+# deploy_webhook() creates mutating webhook admission controller configuration,
+# pod and all required resources.
+def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
+    prefix = "cmk-webhook"
+
+    service_name = '-'.join([prefix, "service"])
+    cert, key = util.generate_secrets(service_name, namespace)
+
+    app_name = '-'.join([prefix, "app"])
+
+    secret_data = {"cert.pem": cert, "key.pem": key}
+    secret_name = '-'.join([prefix, "certs"])
+    secret = k8sclient.V1Secret()
+    update_secret(secret, secret_name, secret_data, "Opaque")
+    try:
+        k8s.create_secret(None, secret, namespace)
+    except K8sApiException as err:
+        logging.error("Exception when creating secret: {}".format(err))
+        logging.error("Aborting webhook deployment ...")
+        sys.exit(1)
+
+    configmap = k8sclient.V1ConfigMap()
+    configmap_name = '-'.join([prefix, "configmap"])
+    configmap_data = {
+        "server.yaml": yaml.dump(get_default_webhook_server_config()),
+        "mutations.yaml": yaml.dump(get_default_webhook_mutations_config()),
+    }
+    update_configmap(configmap, configmap_name, configmap_data)
+    try:
+        k8s.create_config_map(None, configmap, namespace)
+    except K8sApiException as err:
+        logging.error("Exception when creating config map: {}".format(err))
+        logging.error("Aborting webhook deployment ...")
+        sys.exit(1)
+
+    service = k8sclient.V1Service()
+    update_service(service, service_name, app_name, 443)
+    try:
+        k8s.create_service(None, service, namespace)
+    except K8sApiException as err:
+        logging.error("Exception when creating service: {}".format(err))
+        logging.error("Aborting webhook deployment ...")
+        sys.exit(1)
+
+    pod = k8s.get_pod_template()
+    pod_name = '-'.join([prefix, "pod"])
+    update_pod_with_metadata(pod, pod_name, app_name)
+    update_pod_with_webhook_container(pod, cmk_img, configmap_name,
+                                      secret_name)
+    try:
+        k8s.create_pod(None, pod, namespace)
+    except K8sApiException as err:
+        logging.error("Exception when creating webhook pod: {}".format(err))
+        logging.error("Aborting webhook deployment ...")
+        sys.exit(1)
+
+    config = k8sclient.V1beta1MutatingWebhookConfiguration()
+    config_name = '-'.join([prefix, "config"])
+    update_mutatingwebhookconfiguration(config,
+                                        config_name,
+                                        app_name,
+                                        "cmk.intel.com",
+                                        cert,
+                                        service_name,
+                                        "/mutate",
+                                        namespace,
+                                        "Fail")
+    try:
+        k8s.create_mutating_webhook_configuration(None, config)
+    except K8sApiException as err:
+        logging.error("Exception when creating webhook configuration: {}"
+                      .format(err))
+        logging.error("Aborting webhook deployment ...")
+        sys.exit(1)
+
+
 # get_cmk_node_list() returns a list of nodes based on either host_list or
 # all_hosts.
 def get_cmk_node_list(host_list, all_hosts):
@@ -247,6 +331,11 @@ def update_pod_with_pull_secret(pod, pull_secret):
     pod["spec"]["imagePullSecrets"] = [{"name": pull_secret}]
 
 
+def update_pod_with_metadata(pod, name, app):
+    pod["metadata"]["name"] = name
+    pod["metadata"]["labels"] = {"app": app}
+
+
 # update_pod_with_container() updates the pod template with a container using
 # the provided options.
 def update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args):
@@ -290,3 +379,162 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
         pod_init_containers_list.append(container_template)
         pod["metadata"]["annotations"][init_containers_key] = \
             json.dumps(pod_init_containers_list)
+
+
+def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
+                                      secret_name):
+    container = k8s.get_container_template()
+    args = ("/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml")
+    container["args"] = [args]
+    container["image"] = cmk_img
+    container["name"] = "cmk-webhook"
+    container["volumeMounts"].append({
+        'mountPath': '/etc/webhook',
+        'name': 'configmap'
+    })
+    container["volumeMounts"].append({
+        'mountPath': '/etc/ssl',
+        'name': 'certs',
+        'readOnly': True
+    })
+    pod["spec"]["volumes"].append({
+        'name': 'configmap',
+        'configMap': {
+            'name': configmap_name
+        }
+    })
+    pod["spec"]["volumes"].append({
+        'name': 'certs',
+        'secret': {
+            'secretName': secret_name
+         }
+    })
+    pod["spec"]["tolerations"] = [{"operator": "Exists"}]
+    pod["spec"]["containers"].append(container)
+    pod["spec"].pop("nodeName")
+
+
+def update_secret(secret, name, data, secret_type):
+    secret.metadata = k8sclient.V1ObjectMeta()
+    secret.metadata.name = name
+    secret.data = data
+    secret.type = secret_type
+
+
+def update_configmap(configmap, name, data):
+    configmap.metadata = k8sclient.V1ObjectMeta()
+    configmap.metadata.name = name
+    configmap.data = data
+
+
+def update_service(service, name, app, port):
+    service.metadata = k8sclient.V1ObjectMeta()
+    service.metadata.name = name
+    service.metadata.labels = {"app": app}
+    service.spec = k8sclient.V1ServiceSpec()
+    service.spec.selector = {"app": app}
+    service_port = k8sclient.V1ServicePort(port=port, target_port=port)
+    service.spec.ports = [service_port]
+
+
+def update_mutatingwebhookconfiguration(config, name, app, webhook_name, cert,
+                                        service, path, namespace,
+                                        failure_policy):
+    config.metadata = k8sclient.V1ObjectMeta()
+    config.metadata.name = name
+    config.metadata.labels = {"app": app}
+    client_config = k8sclient.V1beta1WebhookClientConfig(
+        ca_bundle=cert,
+        service=k8sclient.AdmissionregistrationV1beta1ServiceReference(
+            name=service,
+            namespace=namespace,
+            path=path))
+    webhook = k8sclient.V1beta1Webhook(name=webhook_name,
+                                       client_config=client_config,
+                                       failure_policy=failure_policy)
+    webhook.rules = [{
+        "apiGroups": [""],
+        "apiVersions": ["v1"],
+        "operations": ["CREATE"],
+        "resources": ["pods"]
+    }]
+    config.webhooks = [webhook]
+
+
+def get_default_webhook_server_config():
+    config = {
+        "server": {
+            "binding-address": "0.0.0.0",
+            "port": 443,
+            "cert": "/etc/ssl/cert.pem",
+            "key": "/etc/ssl/key.pem",
+            "mutations": "/etc/webhook/mutations.yaml"
+        }
+    }
+    return config
+
+
+def get_default_webhook_mutations_config():
+    config = {
+        "mutations": {
+            "perPod": {
+                "metadata": {
+                    "annotations": {
+                        "cmk.intel.com/resources-injected": "true"
+                    }
+                },
+                "spec": {
+                    "serviceAccount": "cmk-serviceaccount",
+                    "tolerations": [
+                        {
+                            "operator": "Exists"
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "cmk-host-proc",
+                            "hostPath": {
+                                "path": "/proc"
+                            }
+                        },
+                        {
+                            "name": "cmk-config-dir",
+                            "hostPath": {
+                                "path": "/etc/cmk"
+                            }
+                        },
+                        {
+                            "name": "cmk-install-dir",
+                            "hostPath": {
+                                "path": "/opt/bin"
+                            }
+                        }
+                    ]
+                }
+            },
+            "perContainer": {
+                "env": [
+                    {
+                        "name": "CMK_PROC_FS",
+                        "value": "/host/proc"
+                    }
+                ],
+                "volumeMounts": [
+                    {
+                        "name": "cmk-host-proc",
+                        "mountPath": "/host/proc",
+                        "readOnly": True
+                    },
+                    {
+                        "name": "cmk-config-dir",
+                        "mountPath": "/etc/cmk"
+                    },
+                    {
+                        "name": "cmk-install-dir",
+                        "mountPath": "/opt/bin"
+                    }
+                ]
+            }
+        }
+    }
+    return config

@@ -1,0 +1,46 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-webhook-app
+  name: cmk-webhook-pod
+  #namespace: user-supplied-namespace
+spec:
+  tolerations:
+  - operator: "Exists"
+  containers:
+  - args:
+    - "/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml"
+    command:
+    - "/bin/bash"
+    - "-c"
+    image: cmk:v1.2.2
+    name: cmk-webhook
+    volumeMounts:
+    - mountPath: /etc/webhook
+      name: cmk-webhook-configmap
+    - mountPath: /etc/ssl
+      name: cmk-webhook-certs
+      readOnly: True
+  restartPolicy: Never
+  volumes:
+  - name: cmk-webhook-configmap
+    configMap:
+      name: cmk-webhook-configmap
+  - name: cmk-webhook-certs
+    secret:
+      secretName: cmk-webhook-certs

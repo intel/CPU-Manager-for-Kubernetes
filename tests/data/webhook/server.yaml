@@ -1,0 +1,6 @@
+server:
+  binding-address: "0.0.0.0"
+  port: 443
+  cert: "/etc/ssl/cert.pem"
+  key: "/etc/ssl/key.pem"
+  mutations: "/etc/webhook/mutations.yaml"

@@ -38,6 +38,7 @@ Usage:
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
+  cmk webhook [--conf-file=<file>]
 
 Options:
   -h --help             Show this screen.

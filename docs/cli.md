@@ -29,6 +29,7 @@ Usage:
                    [--install-dir=<dir>] [--num-dp-cores=<num>]
                    [--num-cp-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--cp-mode=<mode>] [--dp-mode=<mode>]
+                   [--namespace=<name>]
   cmk init [--conf-dir=<dir>] [--num-dp-cores=<num>] [--num-cp-cores=<num>]
            [--socket-id=<num>] [--cp-mode=<mode>] [--dp-mode=<mode>]
   cmk discover [--conf-dir=<dir>]
@@ -38,7 +39,8 @@ Usage:
               [-- <args> ...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>]
+  cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
+  cmk webhook [--conf-file=<file>]
 
 Options:
   -h --help             Show this screen.
@@ -77,6 +79,8 @@ Options:
                         for reading the `CMK_CPUS_ASSIGNED` environment
                         variable and moving a subset of its own processes
                         and/or tasks to the assigned CPUs.
+  --namespace=<name>    Set the namespace to deploy pods to during the
+                        cluster-init deployment process. [default: default].
 ```
 
 ## Global configuration
@@ -978,6 +982,14 @@ are expected to be one of `init`, `discover`, `install`, `reconcile`, `noderepor
 If `init` subcommand is specified, it expected to be the first command
 in `--cmk-cmd-list`.
 - `--cmk-img-pol` should be one of `Never`, `IfNotPresent`, `Always`.
+- If Kubernetes version is v1.9.0 or above, Mutating Admission Webhook and its
+dependencies (mutating admission configuration, secret, config map and service) are
+also deployed. `cmk cluster-init` will create an X509 private key and self-signed
+TLS certificate, which can be replaced. Base64 encoded key and certificate are
+stored in `cmk-webhook-certs` secret object. After updating them, `cmk-webhook-pod`
+should be restarted to load new  Additionally certificate is stored in
+the `cmk-webhook-config` MutatingWebhookConfiguration object and in such scenario,
+it needs to be updated as well.
 
 **Args:**
 
@@ -1023,6 +1035,8 @@ Removes `cmk` from a node. Uninstall process reverts `cmk cluster-init`:
  - removes cmk node OIR if present
  - removes `--conf-dir=<dir>` if present and no processes are running that use `cmk isolate`
  - removes cmk binary from `--install-dir=<dir>`, if binary is not present then throws an error
+ - removes `cmk-webhook-pod` along with other webhook dependencies (mutating admission
+ configuration, secret, config map and service), if CMK was installed on a cluster with mutating admission controller API
 
 
 **Notes:**
@@ -1055,6 +1069,109 @@ $ docker run -it \
 
 -------------------------------------------------------------------------------
 
+### `cmk webhook`
+
+Runs webhook server application which can be called by Mutating Admission Controller in
+the API server. When the user tries to create a pod which definition contains any container
+requesting CMK Extended Resources, CMK webhook modifies it by injecting environmental
+variable `CMK_NUM_CORES` with its value set to a number of cores specified in the Extended
+Resource request. This allows `cmk isolate` to assign multiple CPU cores to given process.
+Beyond that, the webhook applies additional modifications to the pod which are defined in
+the mutations configuration file in YAML format. Mutations can be applied per pod or per
+container. Default configuration deployed during `cmk cluster-init` adds CMK installation
+and configuration directories and host /proc filesystem volumes, CMK service account,
+tolerations required for the pod to be scheduled on the CMK enabled node and approprietly
+annotates pod.
+Containers specifications are updated with volume mounts (referencing volumes added to
+the pod) and environmental variable `CMK_PROC_FS`.
+
+Server configuration is loaded once during `cmk webhook` startup. Example server
+configuration:
+```
+server:
+  binding-address: "0.0.0.0"
+  port: 443
+  cert: "/etc/ssl/cert.pem"
+  key: "/etc/ssl/key.pem"
+  mutations: "/etc/webhook/mutations.yaml"
+```
+| Key | Description |
+| :- | :- |
+| `binding-address` | The IP address on which to advertise the webhook server. |
+| `port` | The port on which to serve HTTPS with authentication and authorization. |
+| `cert` | SSL certification file used to secure communication with API server. |
+| `key` | The path to the file that contains the current private key matching `cert` file. |
+| `mutations` | The path to the file containing definition of mutations applied to pod and containers. |
+
+Example mutations config file:
+```
+mutations:
+  perPod:
+    metadata:
+      annotations:
+        cmk.intel.com/resources-injected: "true"
+    spec:
+      serviceAccount: cmk-serviceaccount
+      tolerations:
+      - operator: Exists
+      volumes:
+      - name: cmk-host-proc
+        hostPath:
+          path: "/proc"
+      - name: cmk-config-dir
+        hostPath:
+          path: "/etc/cmk"
+      - name: cmk-install-dir
+        hostPath:
+          path: "/opt/bin"
+  perContainer:
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    volumeMounts:
+    - name: cmk-host-proc
+      mountPath: /host/proc
+      readOnly: true
+    - name: cmk-config-dir
+      mountPath: /etc/cmk
+    - name: cmk-install-dir
+      mountPath: /opt/bin
+```
+| Key | Description |
+| :- | :- |
+| `perPod` | Pod specification in the same format as regular [Kubernetes V1 API Pod][v1-pod] object. Note that it contains only elements, which need to be added (or updated) on top of the original pod specification. |
+| `perContainer` | Container specification in the same format as regular [Kubernetes V1 API Container][v1-container] object. Note that it contains only elements, which need to be added (or updated) on top of the original container specification. |
+
+Mutations configuration is loaded from the file on each mutation request, so it can be
+modified during webhook server runtime.
+
+**Notes:**
+
+Mutating admission webhook requires Kubernetes 1.9.0 or newer. Mutating Admission Controller
+API is in beta in Kubernetes 1.9 and is enabled by default. In order to make Kubernetes API
+server send admission review requests to the CMK webhook server,
+MutatingAdmissionConfiguration object needs to be created on the Kubernetes cluster.
+
+**Args:**
+
+_None_
+
+**Flags:**
+
+- `--conf-file=<path>` Path to the webhook configuration file.
+
+**Example:**
+
+```sh
+$ docker run -it \
+--volume=/etc/cmk:/etc/cmk:rw \
+--volume=/opt/bin:/opt/bin:rw \
+--volume=/etc/webhook:/etc/webhook:rw \
+--volume=/etc/ssl:/etc/ssl:rw \
+  cmk webhook --conf-file=/etc/webhook/server.yaml
+```
+
+-------------------------------------------------------------------------------
 
 [cpu-list]: http://man7.org/linux/man-pages/man7/cpuset.7.html#FORMATS
 [doc-config]: config.md
@@ -1068,3 +1185,5 @@ $ docker run -it \
 [cluster-init-op-manual]: operator.md#prepare-cmk-nodes-by-running-cmk-cluster-init
 [oir-docs]: http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature
 [isolcpus]: https://github.com/torvalds/linux/blob/master/Documentation/admin-guide/kernel-parameters.txt#L1669
+[v1-pod]:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#pod-v1-core
+[v1-container]:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#container-v1-core

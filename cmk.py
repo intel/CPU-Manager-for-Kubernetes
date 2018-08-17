@@ -35,6 +35,7 @@ Usage:
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
+  cmk webhook [--conf-file=<file>]
 
 Options:
   -h --help             Show this screen.
@@ -78,7 +79,7 @@ Options:
 """
 from intel import (
     clusterinit, describe, discover, init, install,
-    isolate, nodereport, reconcile, uninstall)
+    isolate, nodereport, reconcile, uninstall, webhook)
 from docopt import docopt
 import logging
 import os
@@ -136,6 +137,9 @@ def main():
         nodereport.nodereport(args["--conf-dir"],
                               int(args["--interval"]),
                               args["--publish"])
+        return
+    if args["webhook"]:
+        webhook.webhook(args["--conf-file"])
         return
 
 

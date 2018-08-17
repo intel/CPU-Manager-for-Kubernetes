@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cmk-webhook-configmap
+  #namespace: user-supplied-namespace
+data:
+  server.yaml: |
+    server:
+      binding-address: "0.0.0.0"
+      port: 443
+      cert: "/etc/ssl/cert.pem"
+      key: "/etc/ssl/key.pem"
+      mutations: "/etc/webhook/mutations.yaml"
+  mutations.yaml: |
+    mutations:
+      perPod:
+        metadata:
+          annotations:
+            cmk.intel.com/resources-injected: "true"
+        spec:
+          serviceAccount: cmk-serviceaccount
+          tolerations:
+          - operator: Exists
+          volumes:
+          - name: cmk-host-proc
+            hostPath:
+              path: "/proc"
+          - name: cmk-config-dir
+            hostPath:
+              path: "/etc/cmk"
+          - name: cmk-install-dir
+            hostPath:
+              path: "/opt/bin"
+      perContainer:
+        env:
+        - name: CMK_PROC_FS
+          value: "/host/proc"
+        volumeMounts:
+        - name: cmk-host-proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: cmk-config-dir
+          mountPath: /etc/cmk
+        - name: cmk-install-dir
+          mountPath: /opt/bin
