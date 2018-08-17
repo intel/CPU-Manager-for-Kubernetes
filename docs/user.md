@@ -30,6 +30,11 @@ The only CMK CLI subcommand users (pod authors) need to know about is
 on the host file system to acquire and bookkeep an assigned subset of CPUs
 a command should run on.
 
+By default `cmk isolate` allocates a single CPU core. In order to request
+multiple CPU cores, the environmental variable `CMK_NUM_CORES` can be set.
+`cmk isolate` consumes its value and based on that allocates a number
+of requested CPUs.
+
 **ALERT:** It's easy to accidentally break out of `cmk isolate` with a malformed
 shell command in user pod specs. For example:
 `cmk isolate echo foo && sleep 100` isolates _only the execution of `echo`_!

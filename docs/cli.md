@@ -87,6 +87,7 @@ Options:
 | `CMK_PROC_FS`         | Path to the [procfs] to consult for pid information. `cmk isolate` and `cmk reconcile` require access to the host's process information in `/proc`. |
 | `CMK_LOG_LEVEL`       | Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO. |
 | `CMK_DEV_LSCPU_SYSFS` | Path to the system root to be used by `lscpu` for enumerating the cpu topology. NOTE: should only be used for development purposes. |
+| `CMK_NUM_CORES` | Sets number of cores to be allocated by `cmk isolate`. If not set, "1" is being used as default. |
 
 ## Subcommands
 
@@ -444,12 +445,20 @@ Constrains a command to the CPUs corresponding to an available CPU list
 in a supplied pool.
 
 If the requested pool is exclusive, the command may fail if there are no
-unallocated CPU lists in the pool. An unallocated CPU list is one where the
-`tasks` file is empty; see [the `cmk` configuration format][doc-config] for
-details.)
+unallocated CPU lists in the pool or there are not enough free CPU lists
+in that pool. An unallocated CPU list is one where the `tasks` file is empty;
+see [the `cmk` configuration format][doc-config] for details.)
 
-If the requested pool is non-exclusive, any CPU list in that pool may be
+If the requested pool is non-exclusive, any CPU lists in that pool may be
 chosen, regardless of current allocations.
+
+`cmk isolate` consumes environmental variable `CMK_NUM_CORES`, reads its value
+and based on it, allocates a number of available CPU lists, regardless of
+its exclusiveness. For exclusive pools first `CMK_NUM_CORES` CPU lists are
+allocated. For non-exclusive pools `CMK_NUM_CORES` CPU lists are chosen
+randomly. `CMK_NUM_CORES` should be a positive integer, otherwise the command
+will fail. If `CMK_NUM_CORES` variable is not set, a single CPU list will be
+allocated by default.
 
 `cmk isolate` writes its own PID into the selected `tasks` file before
 executing the command in a sub-shell. When the subprocess exits, the program
@@ -493,6 +502,7 @@ $ docker run -it \
   --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
   -e "CMK_PROC_FS=/host/proc" \
+  -e "CMK_NUM_CORES=1" \
   centos /host/opt/bin/cmk isolate --pool=infra sleep -- inf
 ```
 
