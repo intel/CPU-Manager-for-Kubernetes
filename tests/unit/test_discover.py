@@ -21,7 +21,7 @@ import tempfile
 from unittest.mock import patch, MagicMock
 
 
-def test_discover_no_dp():
+def test_discover_no_exclusive():
     temp_dir = tempfile.mkdtemp()
     conf_dir = os.path.join(temp_dir, "discover")
 
@@ -34,16 +34,16 @@ def test_discover_no_dp():
     helpers.execute(
         "rm",
         ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "dataplane"))]
+         "{}".format(os.path.join(conf_dir, "pools", "exclusive"))]
     )
 
     with pytest.raises(KeyError) as err:
         discover.add_node_oir(conf_dir)
-    expected_msg = "Dataplane pool does not exist"
+    expected_msg = "Exclusive pool does not exist"
     assert err.value.args[0] == expected_msg
 
 
-def test_discover_no_cldp():
+def test_discover_no_cl_exclusive():
     temp_dir = tempfile.mkdtemp()
     conf_dir = os.path.join(temp_dir, "discover")
 
@@ -57,12 +57,12 @@ def test_discover_no_cldp():
         "rm",
         ["-r",
          "{}".format(os.path.join(conf_dir, "pools",
-                                  "dataplane", "*"))]
+                                  "exclusive", "*"))]
     )
 
     with pytest.raises(KeyError) as err:
         discover.add_node_oir(conf_dir)
-    expected_msg = "No CPU list in dataplane pool"
+    expected_msg = "No CPU list in exclusive pool"
     assert err.value.args[0] == expected_msg
 
 
@@ -221,7 +221,7 @@ def test_discover_version_check3(caplog):
         assert not mock_taint.called
 
 
-def test_discover_add_node_er_no_dp_pool_failure():
+def test_discover_add_node_er_no_exclusive_pool_failure():
     temp_dir = tempfile.mkdtemp()
     conf_dir = os.path.join(temp_dir, "discover")
 
@@ -234,14 +234,14 @@ def test_discover_add_node_er_no_dp_pool_failure():
     helpers.execute(
         "rm",
         ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "dataplane"))]
+         "{}".format(os.path.join(conf_dir, "pools", "exclusive"))]
     )
 
-    with pytest.raises(KeyError, message="Dataplane pool does not exist"):
+    with pytest.raises(KeyError, message="Exclusive pool does not exist"):
         discover.add_node_er(conf_dir)
 
 
-def test_discover_add_node_er_no_dp_cores_failure():
+def test_discover_add_node_er_no_exclusive_cores_failure():
     temp_dir = tempfile.mkdtemp()
     conf_dir = os.path.join(temp_dir, "discover")
 
@@ -254,8 +254,8 @@ def test_discover_add_node_er_no_dp_cores_failure():
     helpers.execute(
         "rm",
         ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "dataplane", "0"))]
+         "{}".format(os.path.join(conf_dir, "pools", "exclusive", "0"))]
     )
 
-    with pytest.raises(KeyError, message="No CPU list in dataplane pool"):
+    with pytest.raises(KeyError, message="No CPU list in exclusive pool"):
         discover.add_node_er(conf_dir)

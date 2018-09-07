@@ -48,7 +48,7 @@ $ cmk init
 ```
 
 Please note that the default settings require at least six physical cores
-(four for data plane, one for control plane and one for infra).
-To change these settings, use the `--num-dp-cores` and `--num-cp-cores` flags.
+(four for exclusive pool, one for shared and one for infra).
+To change these settings, use the `--num-exclusive-cores` and `--num-shared-cores` flags.
 
 [doc-init]: cli.md#cmk-init

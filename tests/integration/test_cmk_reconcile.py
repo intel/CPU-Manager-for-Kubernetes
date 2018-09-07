@@ -30,11 +30,11 @@ def test_cmk_reconcile(monkeypatch):
 
     c = config.Config(os.path.join(temp_dir, "reconcile"))
     pools = c.pools()
-    cldp = pools["dataplane"].cpu_lists()
-    clcp = pools["controlplane"].cpu_lists()
-    cldp["5,13"].add_task(1)
-    cldp["6,14"].add_task(1789101112)
-    clcp["3,11"].add_task(1234561231)
+    cl_exclusive = pools["exclusive"].cpu_lists()
+    cl_shared = pools["shared"].cpu_lists()
+    cl_exclusive["5,13"].add_task(1)
+    cl_exclusive["6,14"].add_task(1789101112)
+    cl_shared["3,11"].add_task(1234561231)
 
     assert helpers.execute(
         integration.cmk(),
@@ -45,42 +45,42 @@ def test_cmk_reconcile(monkeypatch):
     {
       "cpus": "3,11",
       "pid": 1000,
-      "pool": "controlplane"
+      "pool": "shared"
     },
     {
       "cpus": "3,11",
       "pid": 1001,
-      "pool": "controlplane"
+      "pool": "shared"
     },
     {
       "cpus": "3,11",
       "pid": 1002,
-      "pool": "controlplane"
+      "pool": "shared"
     },
     {
       "cpus": "3,11",
       "pid": 1003,
-      "pool": "controlplane"
+      "pool": "shared"
     },
     {
       "cpus": "4,12",
       "pid": 2000,
-      "pool": "dataplane"
+      "pool": "exclusive"
     },
     {
       "cpus": "5,13",
       "pid": 2001,
-      "pool": "dataplane"
+      "pool": "exclusive"
     },
     {
       "cpus": "6,14",
       "pid": 2002,
-      "pool": "dataplane"
+      "pool": "exclusive"
     },
     {
       "cpus": "7,15",
       "pid": 2003,
-      "pool": "dataplane"
+      "pool": "exclusive"
     },
     {
       "cpus": "0-2,8-10",
@@ -100,12 +100,12 @@ def test_cmk_reconcile(monkeypatch):
     {
       "cpus": "3,11",
       "pid": 1234561231,
-      "pool": "controlplane"
+      "pool": "shared"
     },
     {
       "cpus": "6,14",
       "pid": 1789101112,
-      "pool": "dataplane"
+      "pool": "exclusive"
     }
   ]
 }
@@ -114,17 +114,7 @@ def test_cmk_reconcile(monkeypatch):
     expected_output = """{
   "path": """ + "\"" + temp_dir + """/reconcile",
   "pools": {
-    "controlplane": {
-      "cpuLists": {
-        "3,11": {
-          "cpus": "3,11",
-          "tasks": []
-        }
-      },
-      "exclusive": false,
-      "name": "controlplane"
-    },
-    "dataplane": {
+    "exclusive": {
       "cpuLists": {
         "4,12": {
           "cpus": "4,12",
@@ -146,7 +136,7 @@ def test_cmk_reconcile(monkeypatch):
         }
       },
       "exclusive": true,
-      "name": "dataplane"
+      "name": "exclusive"
     },
     "infra": {
       "cpuLists": {
@@ -157,6 +147,16 @@ def test_cmk_reconcile(monkeypatch):
       },
       "exclusive": false,
       "name": "infra"
+    },
+    "shared": {
+      "cpuLists": {
+        "3,11": {
+          "cpus": "3,11",
+          "tasks": []
+        }
+      },
+      "exclusive": false,
+      "name": "shared"
     }
   }
 }

@@ -41,7 +41,7 @@ CMK_PROC_FS=/proc
 def test_cmk_isolate_child_env_infra():
     args = ["isolate",
             "--conf-dir={}".format(helpers.conf_dir("minimal_infra")),
-            "--pool=controlplane",
+            "--pool=shared",
             "env | grep CMK"]
 
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
@@ -76,7 +76,7 @@ def test_cmk_isolate_exclusive():
 def test_cmk_isolate_saturated():
     args = ["isolate",
             "--conf-dir={}".format(helpers.conf_dir("saturated")),
-            "--pool=dataplane",
+            "--pool=exclusive",
             "echo",
             "--",
             "foo"]
@@ -84,7 +84,7 @@ def test_cmk_isolate_saturated():
     with pytest.raises(subprocess.CalledProcessError):
         assert helpers.execute(integration.cmk(), args, proc_env)
     # with pytest.raises(subprocess.CalledProcessError) as exinfo:
-    #     assert b"No free cpu lists in pool dataplane" in exinfo.value.output
+    #     assert b"No free cpu lists in pool exclusive" in exinfo.value.output
 
 
 def test_cmk_isolate_pid_bookkeeping():

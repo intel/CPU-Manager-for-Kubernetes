@@ -97,7 +97,7 @@ The assigned CPUs are wrongly freed early when <code>cmk</code> returns. To avoi
 situation, avoid forking in the shell command, or alternately isolate a shell
 and wrap your complex command:
 <code>cmk isolate --pool=&lt;pool&gt; /bin/bash -- -c "foo &amp;&amp; bar || baz"</code></p>
-<p><a href="images/user-container.svg" target="_blank"><img src="images/user-container.svg" alt="User container diagram" style="max-width:100%;"></a></p>
+<p><a href="images/user-container.svg" target="_blank" rel="noopener noreferrer"><img src="images/user-container.svg" alt="User container diagram" style="max-width:100%;"></a></p>
 <p>The figure illustrates a few important points:</p>
 <ul>
 <li>The <a href="config.html">CMK configuration directory</a> must be mounted into the
@@ -129,7 +129,7 @@ metadata:
 spec:
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
@@ -139,7 +139,7 @@ spec:
     name: cmk-isolate-infra
     resources:
       requests:
-        cmk.intel.com/dp-cores: 1
+        cmk.intel.com/exclusive-cores: 1
   restartPolicy: Never
 </code></pre>
 <p>For more details please see <a href="cli.html#cmk-webhook">webhook CLI manual</a> and

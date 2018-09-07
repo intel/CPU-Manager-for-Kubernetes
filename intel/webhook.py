@@ -20,7 +20,7 @@ import json
 import base64
 import sys
 
-CMK_ER_NAME = 'cmk.intel.com/dp-cores'
+CMK_ER_NAME = 'cmk.intel.com/exclusive-cores'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
 

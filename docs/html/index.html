@@ -75,7 +75,7 @@
                 
 <h1>
 <a id="user-content-cpu-manager-for-kubernetes" class="anchor" href="#cpu-manager-for-kubernetes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CPU Manager for Kubernetes</h1>
-<p><a href="https://travis-ci.org/Intel-Corp/CPU-Manager-for-Kubernetes" rel="nofollow"><img src="https://camo.githubusercontent.com/999b265b53dc19d8af5d1e659b13ea4f889ac8f1/68747470733a2f2f7472617669732d63692e6f72672f496e74656c2d436f72702f4350552d4d616e616765722d666f722d4b756265726e657465732e7376673f6272616e63683d6d6173746572" alt="Build Status" data-canonical-src="https://travis-ci.org/Intel-Corp/CPU-Manager-for-Kubernetes.svg?branch=master" style="max-width:100%;"></a></p>
+<p><a href="https://travis-ci.org/intel/CPU-Manager-for-Kubernetes" rel="nofollow"><img src="https://camo.githubusercontent.com/57603eaed6d504552aa6c49dd22edcfddaf03954/68747470733a2f2f7472617669732d63692e6f72672f696e74656c2f4350552d4d616e616765722d666f722d4b756265726e657465732e7376673f6272616e63683d6d6173746572" alt="Build Status" data-canonical-src="https://travis-ci.org/intel/CPU-Manager-for-Kubernetes.svg?branch=master" style="max-width:100%;"></a></p>
 <h2>
 <a id="user-content-overview" class="anchor" href="#overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
 <p>This project provides basic core affinity for NFV-style workloads on top
@@ -117,56 +117,69 @@ constraining workloads to specific CPUs.</p>
 </table>
 <h2>
 <a id="user-content-usage-summary" class="anchor" href="#usage-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage summary</h2>
-<pre><code>cmk.
-
-Usage:
+<pre><code>Usage:
   cmk (-h | --help)
   cmk --version
   cmk cluster-init (--host-list=&lt;list&gt;|--all-hosts) [--cmk-cmd-list=&lt;list&gt;]
                    [--cmk-img=&lt;img&gt;] [--cmk-img-pol=&lt;pol&gt;] [--conf-dir=&lt;dir&gt;]
-                   [--install-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;]
-                   [--num-cp-cores=&lt;num&gt;] [--pull-secret=&lt;name&gt;]
-                   [--saname=&lt;name&gt;]
-  cmk init [--conf-dir=&lt;dir&gt;] [--num-dp-cores=&lt;num&gt;] [--num-cp-cores=&lt;num&gt;]
+                   [--install-dir=&lt;dir&gt;] [--num-exclusive-cores=&lt;num&gt;]
+                   [--num-shared-cores=&lt;num&gt;] [--pull-secret=&lt;name&gt;]
+                   [--saname=&lt;name&gt;] [--shared-mode=&lt;mode&gt;]
+                   [--exclusive-mode=&lt;mode&gt;] [--namespace=&lt;name&gt;]
+  cmk init [--conf-dir=&lt;dir&gt;] [--num-exclusive-cores=&lt;num&gt;]
+           [--num-shared-cores=&lt;num&gt;] [--socket-id=&lt;num&gt;]
+           [--shared-mode=&lt;mode&gt;] [--exclusive-mode=&lt;mode&gt;]
   cmk discover [--conf-dir=&lt;dir&gt;]
   cmk describe [--conf-dir=&lt;dir&gt;]
   cmk reconcile [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
-  cmk isolate [--conf-dir=&lt;dir&gt;] --pool=&lt;pool&gt; &lt;command&gt; [-- &lt;args&gt; ...]
-              [--no-affinity]
+  cmk isolate [--conf-dir=&lt;dir&gt;] [--socket-id=&lt;num&gt;] --pool=&lt;pool&gt; &lt;command&gt;
+              [-- &lt;args&gt; ...][--no-affinity]
   cmk install [--install-dir=&lt;dir&gt;]
   cmk node-report [--conf-dir=&lt;dir&gt;] [--publish] [--interval=&lt;seconds&gt;]
-  cmk uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;]
+  cmk uninstall [--install-dir=&lt;dir&gt;] [--conf-dir=&lt;dir&gt;] [--namespace=&lt;name&gt;]
+  cmk webhook [--conf-file=&lt;file&gt;]
 
 Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --host-list=&lt;list&gt;    Comma seperated list of Kubernetes nodes to prepare
-                        for CMK software.
-  --all-hosts           Prepare all Kubernetes nodes for the CMK software.
-  --cmk-cmd-list=&lt;list&gt; Comma seperated list of CMK sub-commands to run on
-                        each host
-                        [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=&lt;img&gt;       CMK Docker image [default: cmk:v1.2.2].
-  --cmk-img-pol=&lt;pol&gt;   Image pull policy for the CMK Docker image
-                        [default: IfNotPresent].
-  --conf-dir=&lt;dir&gt;      CMK configuration directory [default: /etc/cmk].
-  --install-dir=&lt;dir&gt;   CMK install directory [default: /opt/bin].
-  --interval=&lt;seconds&gt;  Number of seconds to wait between rerunning.
-                        If set to 0, will only run once. [default: 0]
-  --num-dp-cores=&lt;num&gt;  Number of data plane cores [default: 4].
-  --num-cp-cores=&lt;num&gt;  Number of control plane cores [default: 1].
-  --pool=&lt;pool&gt;         Pool name: either infra, controlplane or dataplane.
-  --publish             Whether to publish reports to the Kubernetes
-                        API server.
-  --pull-secret=&lt;name&gt;  Name of secret used for pulling Docker images from
-                        restricted Docker registry.
-  --saname=&lt;name&gt;       ServiceAccount name to pass
-                        [default: cmk-serviceaccount].
-  --no-affinity         Do not set cpu affinity before forking the child
-                        command. In this mode the user program is responsible
-                        for reading the `CMK_CPUS_ASSIGNED` environment
-                        variable and moving a subset of its own processes
-                        and/or tasks to the assigned CPUs.
+  -h --help                    Show this screen.
+  --version                    Show version.
+  --host-list=&lt;list&gt;           Comma seperated list of Kubernetes nodes to
+                               prepare for CMK software.
+  --all-hosts                  Prepare all Kubernetes nodes for the CMK
+                               software.
+  --cmk-cmd-list=&lt;list&gt;        Comma seperated list of CMK sub-commands to run
+                               on each host
+                               [default: init,reconcile,install,discover,nodereport].
+  --cmk-img=&lt;img&gt;              CMK Docker image [default: cmk:v1.2.2].
+  --cmk-img-pol=&lt;pol&gt;          Image pull policy for the CMK Docker image
+                               [default: IfNotPresent].
+  --conf-dir=&lt;dir&gt;             CMK configuration directory [default: /etc/cmk].
+  --install-dir=&lt;dir&gt;          CMK install directory [default: /opt/bin].
+  --interval=&lt;seconds&gt;         Number of seconds to wait between rerunning.
+                               If set to 0, will only run once. [default: 0]
+  --num-exclusive-cores=&lt;num&gt;  Number of cores in exclusive pool. [default: 4].
+  --num-shared-cores=&lt;num&gt;     Number of cores in shared pool. [default: 1].
+  --pool=&lt;pool&gt;                Pool name: either infra, shared or exclusive.
+  --shared-mode=&lt;mode&gt;         Shared pool core allocation mode. Possible
+                               modes: packed and spread [default: packed].
+  --exclusive-mode=&lt;mode&gt;      Exclusive pool core allocation mode. Possible
+                               modes: packed and spread [default: packed].
+  --publish                    Whether to publish reports to the Kubernetes
+                               API server.
+  --pull-secret=&lt;name&gt;         Name of secret used for pulling Docker images
+                               from restricted Docker registry.
+  --saname=&lt;name&gt;              ServiceAccount name to pass
+                               [default: cmk-serviceaccount].
+  --socket-id=&lt;num&gt;            ID of socket where allocated core should come
+                               from. If it's set to -1 then child command will
+                               be assigned to any socket [default: -1].
+  --no-affinity                Do not set cpu affinity before forking the child
+                               command. In this mode the user program is
+                               responsible for reading the `CMK_CPUS_ASSIGNED`
+                               environment variable and moving a subset of its
+                               own processes and/or tasks to the assigned CPUs.
+  --namespace=&lt;name&gt;           Set the namespace to deploy pods to during the
+                               cluster-init deployment process.
+                               [default: default].
 </code></pre>
 <p><em>For detailed usage information about each subcommand, see
 <a href="docs/cli.html">Using the cmk command-line tool</a>.</em></p>

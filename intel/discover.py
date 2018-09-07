@@ -57,11 +57,11 @@ def discover(conf_dir):
 def add_node_oir(conf_dir):
     c = config.Config(conf_dir)
     with c.lock():
-        if "dataplane" not in c.pools():
-            raise KeyError("Dataplane pool does not exist")
-        if len(c.pool("dataplane").cpu_lists()) == 0:
-            raise KeyError("No CPU list in dataplane pool")
-        num_slots = len(c.pool("dataplane").cpu_lists())
+        if "exclusive" not in c.pools():
+            raise KeyError("Exclusive pool does not exist")
+        if len(c.pool("exclusive").cpu_lists()) == 0:
+            raise KeyError("No CPU list in exclusive pool")
+        num_slots = len(c.pool("exclusive").cpu_lists())
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
@@ -84,13 +84,13 @@ def add_node_oir(conf_dir):
 def add_node_er(conf_dir):
     c = config.Config(conf_dir)
     with c.lock():
-        if "dataplane" not in c.pools():
-            raise KeyError("Dataplane pool does not exist")
-        if len(c.pool("dataplane").cpu_lists()) == 0:
-            raise KeyError("No CPU list in dataplane pool")
-        num_slots = len(c.pool("dataplane").cpu_lists())
+        if "exclusive" not in c.pools():
+            raise KeyError("Exclusive pool does not exist")
+        if len(c.pool("exclusive").cpu_lists()) == 0:
+            raise KeyError("No CPU list in exclusive pool")
+        num_slots = len(c.pool("exclusive").cpu_lists())
 
-    patch_path = ("/status/capacity/cmk.intel.com~1dp-cores")
+    patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")
     patch_body = [{
         "op": "add",
         "path": patch_path,

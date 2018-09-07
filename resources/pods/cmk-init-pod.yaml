@@ -22,18 +22,18 @@ spec:
   serviceAccountName: cmk-serviceaccount
   containers:
   - args:
-    - "/cmk/cmk.py init --conf-dir=/etc/cmk --num-dp-cores=$NUM_DP_CORES --num-cp-cores=$NUM_CP_CORES"
+    - "/cmk/cmk.py init --conf-dir=/etc/cmk --num-exclusive-cores=$NUM_EXCLUSIVE_CORES --num-shared-cores=$NUM_SHARED_CORES"
     command:
     - "/bin/bash"
     - "-c"
     env:
     - name: CMK_PROC_FS
       value: '/proc'
-    - name: NUM_DP_CORES
-      # Change this to modify the value passed to `--num-dp-cores` flag.
+    - name: NUM_EXCLUSIVE_CORES
+      # Change this to modify the value passed to `--num-exclusive-cores` flag.
       value: '4'
-    - name: NUM_CP_CORES
-      # Change this to modify the value passed to `--num-cp-cores` flag.
+    - name: NUM_SHARED_CORES
+      # Change this to modify the value passed to `--num-shared-cores` flag.
       value: '1'
     image: cmk:v1.2.2
     name: cmk-init-pod

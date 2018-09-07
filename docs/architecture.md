@@ -73,7 +73,7 @@ cluster already configured for CMK, see the
 
 1. Interoperate well with the `isolcpus` kernel parameter. When
    initializing the CMK configuration directory, prefer to align
-   dataplane CPU lists with fully-isolated physical cores.
+   exclusive CPU lists with fully-isolated physical cores.
 
 1. Provide sufficient observability tooling to quickly assess the
    current configuration and health status of the CMK system.
@@ -110,7 +110,7 @@ Please refer to the [`cmk webhook` documentation][cmk-webhook].
 | :------------------------- | :--------------------------------------------- |
 | Potential race between scheduler and pool state. | If a pod that consumes an exclusive opaque integer resource crashes in a way that prevents the `isolate` launcher from releasing the assigned cores, then although the OIR becomes available, the next invocation of `isolate` may not be able to safely make an allocation. This could occur for a number of reasons, most likely among them are: child process fails to terminate within the allowed grace period after receiving the TERM signal (Kubelet follows up with KILL) or receiving KILL from the kernel OOM (out-of-memory) killer. In this case, `isolate` must crash with a nonzero exit status. This will appear to the operator as a failed pod launch, and the scheduler will try to reschedule the pod. This condition will persist on that node until `reconcile` runs, at which point it will observe that the container's PID is invalid and free the cores for reuse by updating the `tasks` file. |
 | Potential conflict with kernel PID reuse. | This should be extremely rare in practice, but it relates to the above scenario. If a PID of a `cmk` subcommand leaks as described above and is recycled by the kernel before `reconcile` runs, then when `reconcile` does run, it will see that the PID refers to a running process and will not remove that PID from the `tasks` file. There is currently no mitigation in place to protect against this scenario. |
-| CMK `init` flag values for `--num-cp-cores` and `--num-dp-cores` must be positive integers. | Zero is unsupported by the tool chain. |
+| CMK `init` flag values for `--num-shared-cores` and `--num-exclusive-cores` must be positive integers. | Zero is unsupported by the tool chain. |
 | The flag values for `--interval` (used in `cmk reconcile` and `cmk node-report`) must be integers. | Fractional seconds are not supported by the tool chain. |
 
 [cmk-node-report]: cli.md#cmk-node-report

@@ -42,8 +42,8 @@ def test_config_pools():
     with c.lock():
         pools = c.pools()
         assert len(pools) == 3
-        assert "controlplane" in pools
-        assert "dataplane" in pools
+        assert "shared" in pools
+        assert "exclusive" in pools
         assert "infra" in pools
 
 
@@ -51,8 +51,8 @@ def test_pool_name():
     c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
-        assert pools["controlplane"].name() == "controlplane"
-        assert pools["dataplane"].name() == "dataplane"
+        assert pools["shared"].name() == "shared"
+        assert pools["exclusive"].name() == "exclusive"
         assert pools["infra"].name() == "infra"
 
 
@@ -60,8 +60,8 @@ def test_pool_exclusive():
     c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
-        assert not pools["controlplane"].exclusive()
-        assert pools["dataplane"].exclusive()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
         assert not pools["infra"].exclusive()
 
 
@@ -69,8 +69,8 @@ def test_pool_cpu_lists():
     c = config.Config(helpers.conf_dir("ok"))
     with c.lock():
         pools = c.pools()
-        print(pools["dataplane"].cpu_lists())
-        clists = pools["dataplane"].cpu_lists()
+        print(pools["exclusive"].cpu_lists())
+        clists = pools["exclusive"].cpu_lists()
 
         assert len(clists) == 4
         assert len(clists["4,12"].tasks()) == 1

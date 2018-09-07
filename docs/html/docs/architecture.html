@@ -155,7 +155,7 @@ container.</p>
 <li>
 <p>Interoperate well with the <code>isolcpus</code> kernel parameter. When
 initializing the CMK configuration directory, prefer to align
-dataplane CPU lists with fully-isolated physical cores.</p>
+exclusive CPU lists with fully-isolated physical cores.</p>
 </li>
 <li>
 <p>Provide sufficient observability tooling to quickly assess the
@@ -166,13 +166,13 @@ current configuration and health status of the CMK system.</p>
 <a id="user-content-high-level-processes" class="anchor" href="#high-level-processes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>High level processes</h2>
 <h3>
 <a id="user-content-initialization" class="anchor" href="#initialization" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Initialization</h3>
-<p><a href="images/cmk-init.svg" target="_blank"><img src="images/cmk-init.svg" alt="CMK init" style="max-width:100%;"></a></p>
+<p><a href="images/cmk-init.svg" target="_blank" rel="noopener noreferrer"><img src="images/cmk-init.svg" alt="CMK init" style="max-width:100%;"></a></p>
 <h3>
 <a id="user-content-discovery" class="anchor" href="#discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Discovery</h3>
-<p><a href="images/cmk-discover.svg" target="_blank"><img src="images/cmk-discover.svg" alt="CMK discover" style="max-width:100%;"></a></p>
+<p><a href="images/cmk-discover.svg" target="_blank" rel="noopener noreferrer"><img src="images/cmk-discover.svg" alt="CMK discover" style="max-width:100%;"></a></p>
 <h3>
 <a id="user-content-isolation" class="anchor" href="#isolation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Isolation</h3>
-<p><a href="images/cmk-isolate.svg" target="_blank"><img src="images/cmk-isolate.svg" alt="CMK isolate" style="max-width:100%;"></a></p>
+<p><a href="images/cmk-isolate.svg" target="_blank" rel="noopener noreferrer"><img src="images/cmk-isolate.svg" alt="CMK isolate" style="max-width:100%;"></a></p>
 <h3>
 <a id="user-content-monitoring" class="anchor" href="#monitoring" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Monitoring</h3>
 <p>Please refer to the <a href="cli.html#cmk-node-report"><code>cmk node-report</code> documentation</a>.</p>
@@ -201,7 +201,7 @@ current configuration and health status of the CMK system.</p>
 <td align="left">This should be extremely rare in practice, but it relates to the above scenario. If a PID of a <code>cmk</code> subcommand leaks as described above and is recycled by the kernel before <code>reconcile</code> runs, then when <code>reconcile</code> does run, it will see that the PID refers to a running process and will not remove that PID from the <code>tasks</code> file. There is currently no mitigation in place to protect against this scenario.</td>
 </tr>
 <tr>
-<td align="left">CMK <code>init</code> flag values for <code>--num-cp-cores</code> and <code>--num-dp-cores</code> must be positive integers.</td>
+<td align="left">CMK <code>init</code> flag values for <code>--num-shared-cores</code> and <code>--num-exclusive-cores</code> must be positive integers.</td>
 <td align="left">Zero is unsupported by the tool chain.</td>
 </tr>
 <tr>

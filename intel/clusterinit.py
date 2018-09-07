@@ -25,8 +25,9 @@ from intel import k8s, util
 
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
-                 conf_dir, install_dir, num_dp_cores, num_cp_cores,
-                 pull_secret, serviceaccount, dp_mode, cp_mode, namespace):
+                 conf_dir, install_dir, num_exclusive_cores, num_shared_cores,
+                 pull_secret, serviceaccount, exclusive_mode, shared_mode,
+                 namespace):
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
@@ -50,11 +51,13 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
         raise RuntimeError("Image pull policy should be one of {}"
                            .format(valid_img_pol_list))
 
-    # Check if num_dp_cores and num_cp_cores are positive integers.
-    if not num_dp_cores.isdigit():
-        raise RuntimeError("num_dp_cores cores should be a positive integer.")
-    if not num_cp_cores.isdigit():
-        raise RuntimeError("num_cp_cores cores should be a positive integer.")
+    # Check if num_exclusive_cores and num_shared_cores are positive integers.
+    if not num_exclusive_cores.isdigit():
+        raise RuntimeError("num_exclusive_cores cores should be a positive "
+                           "integer.")
+    if not num_shared_cores.isdigit():
+        raise RuntimeError("num_shared_cores cores should be a positive "
+                           "integer.")
 
     # Split the cmk_cmd_list based on whether the cmd should be run as
     # one-shot job or long-running daemons.
@@ -66,12 +69,14 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     # provided options.
     if cmk_cmd_init_list:
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
+                 install_dir, num_exclusive_cores, num_shared_cores,
+                 cmk_node_list, pull_secret, serviceaccount, shared_mode,
+                 exclusive_mode, namespace)
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
+                 install_dir, num_exclusive_cores, num_shared_cores,
+                 cmk_node_list, pull_secret, serviceaccount, shared_mode,
+                 exclusive_mode, namespace)
 
     # Run mutating webhook admission controller on supported cluster
     version = parse_version(k8s.get_kubelet_version(None))
@@ -85,8 +90,9 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 # on pod_phase_name.
 # Note: Only one of cmd_list or cmd_init_list should be specified.
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
-             install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-             pull_secret, serviceaccount, cp_mode, dp_mode, namespace):
+             install_dir, num_exclusive_cores, num_shared_cores, cmk_node_list,
+             pull_secret, serviceaccount, shared_mode, exclusive_mode,
+             namespace):
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -94,8 +100,9 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                      .format(cmd_init_list))
 
     run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace)
+                 install_dir, num_exclusive_cores, num_shared_cores,
+                 cmk_node_list, pull_secret, serviceaccount, shared_mode,
+                 exclusive_mode, namespace)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -123,8 +130,9 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 # run_cmd_pods() makes the appropriate changes to pod templates and runs the
 # pod on each node provided by cmk_node_list.
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
-                 install_dir, num_dp_cores, num_cp_cores, cmk_node_list,
-                 pull_secret, serviceaccount, cp_mode, dp_mode, namespace):
+                 install_dir, num_exclusive_cores, num_shared_cores,
+                 cmk_node_list, pull_secret, serviceaccount, shared_mode,
+                 exclusive_mode, namespace):
     pod = k8s.get_pod_template()
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
@@ -147,9 +155,11 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         for cmd in cmd_init_list:
             args = ""
             if cmd == "init":
-                args = ("/cmk/cmk.py init --num-dp-cores={} "
-                        "--num-cp-cores={} --cp-mode={} --dp-mode={}")\
-                    .format(num_dp_cores, num_cp_cores, cp_mode, dp_mode)
+                args = ("/cmk/cmk.py init --num-exclusive-cores={} "
+                        "--num-shared-cores={} --shared-mode={} "
+                        "--exclusive-mode={}")\
+                    .format(num_exclusive_cores, num_shared_cores, shared_mode,
+                            exclusive_mode)
                 # If init is the only cmd in cmd_init_list, it should be run
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.
