@@ -231,10 +231,10 @@ container image is hosted remotely (e.g., in <a href="https://hub.docker.com/" r
 </h4>
 <p>The <code>CMK</code> nodes in the kubernetes cluster should be initialized in order to be used with the CMK software using
 <a href="cli.html#cmk-init"><code>cmk-init</code></a>. To initialize the <code>CMK</code> nodes, the <a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a> can be used.</p>
-<p><code>cmk init</code> takes the <code>--conf-dir</code>, <code>--num-dp-cores</code> and the <code>--num-cp-cores</code> flags. In the
+<p><code>cmk init</code> takes the <code>--conf-dir</code>, <code>--num-exclusive-cores</code> and the <code>--num-shared-cores</code> flags. In the
 <a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a>, the values to these flags can be modified. The value for <code>--conf-dir</code> can be
-set by changing the <code>path</code> value of the <code>hostPath</code> for the <code>cmk-conf-dir</code>. The value for <code>--num-dp-cores</code> and
-<code>--num-cp-cores</code> can be set by changing the values for the <code>NUM_DP_CORES</code> and <code>NUM_CP_CORES</code> environment variables,
+set by changing the <code>path</code> value of the <code>hostPath</code> for the <code>cmk-conf-dir</code>. The value for <code>--num-exclusive-cores</code> and
+<code>--num-shared-cores</code> can be set by changing the values for the <code>NUM_EXCLUSIVE_CORES</code> and <code>NUM_SHARED_CORES</code> environment variables,
 respectively.</p>
 <p>Values that might require modification in the <a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a> are shown as snippets below:</p>
 <div class="highlight highlight-source-yaml"><pre>  <span class="pl-ent">volumes</span>:
@@ -243,17 +243,17 @@ respectively.</p>
       <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
 <div class="highlight highlight-source-yaml"><pre>    <span class="pl-ent">env</span>:
-    - <span class="pl-ent">name</span>: <span class="pl-s">NUM_DP_CORES</span>
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the value passed to `--num-dp-cores` flag.</span>
+    - <span class="pl-ent">name</span>: <span class="pl-s">NUM_EXCLUSIVE_CORES</span>
+      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the value passed to `--num-exclusive-cores` flag.</span>
       <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">'</span>4<span class="pl-pds">'</span></span>
-    - <span class="pl-ent">name</span>: <span class="pl-s">NUM_CP_CORES</span>
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the value passed to `--num-cp-cores` flag.</span>
+    - <span class="pl-ent">name</span>: <span class="pl-s">NUM_SHARED_CORES</span>
+      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the value passed to `--num-shared-cores` flag.</span>
       <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">'</span>1<span class="pl-pds">'</span></span></pre></div>
 <h4>
 <a id="user-content-advertising-cmk-opaque-integer-resource-oir-slots" class="anchor" href="#advertising-cmk-opaque-integer-resource-oir-slots" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Advertising <code>CMK</code> Opaque Integer Resource (OIR) slots</h4>
 <p>All the <code>CMK</code> nodes in the Kubernetes cluster should be patched with <code>CMK</code> <a href="http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature" rel="nofollow">OIR</a> slots using
-<a href="cli.html#cmk-discover"><code>cmk discover</code></a>. The OIR slots are advertised as the dataplane pools need to be allocated exclusively.
-The number of slots advertised should be equal to the number of cpu lists under the <strong>dataplane</strong> pool, as determined
+<a href="cli.html#cmk-discover"><code>cmk discover</code></a>. The OIR slots are advertised as the exclusive pools need to be allocated exclusively.
+The number of slots advertised should be equal to the number of cpu lists under the <strong>exclusive</strong> pool, as determined
 by examining the <code>CMK</code> configuration directory. <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a> can be used to
 advertise the <code>CMK</code> OIR slots.</p>
 <p><code>cmk discover</code> takes the <code>--conf-dir</code> flag. In the <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a>, the value for
@@ -315,7 +315,7 @@ spec:
   containers:
     resources:
       requests:
-        cmk.intel.com/dp-cores: 2
+        cmk.intel.com/exclusive-cores: 2
 ...
 </code></pre>
 <p>In order to deploy CMK mutating webhook a number of resources needs to be created on
@@ -340,33 +340,33 @@ described in the <a href="cli.html">cmk command-line tool documentation</a>.</li
 <h3>
 <a id="user-content-multi-socket-support-experimental" class="anchor" href="#multi-socket-support-experimental" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Multi socket support (experimental)</h3>
 <p><code>CMK</code> is able to use multiple sockets. During cluster initialization, <code>init</code> module will distribute cores from all sockets
-across pools. To prevent a situation, where <strong>dataplane</strong> pool or <strong>controlplane</strong> pool are spawned only on a single socket
+across pools. To prevent a situation, where <strong>exclusive</strong> pool or <strong>shared</strong> pool are spawned only on a single socket
 operator is able to use one of two <code>mode</code> policies: <code>packed</code> and <code>spread</code>. Those policies define how cores are assigned to
 specific pool:</p>
 <ul>
 <li>
 <strong>packed</strong> mode will put cores in the following order:</li>
 </ul>
-<p><a href="images/cmk-packed-mode.png" target="_blank"><img src="images/cmk-packed-mode.png" alt="CMK packed mode" style="max-width:100%;"></a></p>
+<p><a href="images/cmk-packed-mode.png" target="_blank" rel="noopener noreferrer"><img src="images/cmk-packed-mode.png" alt="CMK packed mode" style="max-width:100%;"></a></p>
 <p><em>Note: This policy is not topology aware, so there is a possibility that one pool won't spread on multiple sockets.</em></p>
 <ul>
 <li>
 <strong>spread</strong> mode will put following cores order:</li>
 </ul>
-<p><a href="images/cmk-spread-mode.png" target="_blank"><img src="images/cmk-spread-mode.png" alt="CMK spread mode" style="max-width:100%;"></a></p>
+<p><a href="images/cmk-spread-mode.png" target="_blank" rel="noopener noreferrer"><img src="images/cmk-spread-mode.png" alt="CMK spread mode" style="max-width:100%;"></a></p>
 <p><em>Note: This policy is topology aware, so CMK will try to spread pools on each socket.</em></p>
-<p>To select appropriate <code>mode</code> operator can select it during initialization with <code>--cp-mode</code> or <code>--dp-mode</code> parameters.
+<p>To select appropriate <code>mode</code> operator can select it during initialization with <code>--shared-mode</code> or <code>--exclusive-mode</code> parameters.
 Those parameters can be used with <code>cluster-init</code> and <code>init</code>. If operator use two different modes, then those policies
-will be mixed. In that case <strong>dataplane</strong> pool is resolving before <strong>controlplane</strong> pool.</p>
+will be mixed. In that case <strong>exclusive</strong> pool is resolving before <strong>shared</strong> pool.</p>
 <h2>
 <a id="user-content-running-the-cmk-isolate-hello-world-pod" class="anchor" href="#running-the-cmk-isolate-hello-world-pod" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Running the <code>cmk isolate</code> Hello World Pod</h2>
 <p>After following the instructions in the previous section, the cluster is ready to run the <code>Hello World</code> Pod. The Hello
 World <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a> describes a simple Pod with three containers requesting CPUs from
-the <strong>dataplane</strong>, <strong>controlplane</strong> and the <strong>infra</strong> pools, respectively, using <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a>. The
+the <strong>exclusive</strong>, <strong>shared</strong> and the <strong>infra</strong> pools, respectively, using <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a>. The
 <code>pool</code> is requested by passing the desired value to the <code>--pool</code> flag when using <code>cmk isolate</code> as described in the
 <a href="cli.html#cmk-isolate">documentation</a>.</p>
 <p><code>cmk isolate</code> can use <code>--socket-id</code> flag to target on which socket application should be spawned. This flag is optional,
-suitable only for <strong>dataplane</strong> pool and if it's not used <code>cmk isolate</code> will use first not reserved core.</p>
+suitable only for <strong>exclusive</strong> pool and if it's not used <code>cmk isolate</code> will use first not reserved core.</p>
 <p><code>cmk isolate</code> also takes the <code>--conf-dir</code> and <code>--install-dir</code> flags. In the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a>,
 the values for <code>--conf-dir</code> and <code>--install-dir</code> can be modified by changing the <code>path</code> values of the <code>hostPath</code>.</p>
 <p>Values that might require modification in the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a> are shown as snippets
@@ -383,8 +383,8 @@ below:</p>
 <p>Notes:</p>
 <ul>
 <li>The Hello World cmk-isolate-pod consumes the <code>pod.alpha.kubernetes.io/opaque-int-resource-cmk</code> Opaque Integer
-Resource (OIR) only in the container isolated using the <strong>dataplane</strong> pool. The <code>CMK</code> software assumes that only
-container isolated using the <strong>dataplane</strong> pool requests the OIR and each of these containers should consume exactly
+Resource (OIR) only in the container isolated using the <strong>exclusive</strong> pool. The <code>CMK</code> software assumes that only
+container isolated using the <strong>exclusive</strong> pool requests the OIR and each of these containers should consume exactly
 one OIR. This restricts the number of pods that can land on a Kubernetes node to the expected value.</li>
 <li>The <code>cmk isolate</code> Hello World Pod should only be run after following the instructions provided in the
 <a href="#setting-up-the-cluster"><code>Setting up the cluster</code></a> section.</li>
@@ -457,7 +457,7 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
     <span class="pl-s"><span class="pl-pds">"</span>alpha.kubernetes.io/nvidia-gpu<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>0<span class="pl-pds">"</span></span>,
     <span class="pl-s"><span class="pl-pds">"</span>cpu<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>16<span class="pl-pds">"</span></span>,
     <span class="pl-s"><span class="pl-pds">"</span>memory<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>14778328Ki<span class="pl-pds">"</span></span>,
-    <span class="pl-s"><span class="pl-pds">"</span>cmk.intel.com/dp-cores<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>4<span class="pl-pds">"</span></span>,
+    <span class="pl-s"><span class="pl-pds">"</span>cmk.intel.com/exclusive-cores<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>4<span class="pl-pds">"</span></span>,
     <span class="pl-s"><span class="pl-pds">"</span>pods<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>110<span class="pl-pds">"</span></span>
 }</pre></div>
 <ul>
@@ -537,7 +537,7 @@ spec:
   nodeName: NODENAME
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
@@ -547,7 +547,7 @@ spec:
     name: cmk-isolate-infra
     resources:
       requests:
-        cmk.intel.com/dp-cores: 1
+        cmk.intel.com/exclusive-cores: 1
   restartPolicy: Never
 </code></pre>
 <ul>

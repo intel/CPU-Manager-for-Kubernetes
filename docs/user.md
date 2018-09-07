@@ -78,7 +78,7 @@ metadata:
 spec:
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=dataplane sleep -- 10000"
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
@@ -88,7 +88,7 @@ spec:
     name: cmk-isolate-infra
     resources:
       requests:
-        cmk.intel.com/dp-cores: 1
+        cmk.intel.com/exclusive-cores: 1
   restartPolicy: Never
 ```
 For more details please see [webhook CLI manual][cmk-webhook] and

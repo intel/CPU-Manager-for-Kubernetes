@@ -48,14 +48,14 @@ def test_cmk_init_exists():
 def test_cmk_init_wrong_assignment():
     args = ["init",
             "--socket-id=-1",
-            "--num-dp-cores=1",
-            "--num-cp-cores=1",
+            "--num-exclusive-cores=1",
+            "--num-shared-cores=1",
             "--conf-dir={}".format(helpers.conf_dir("ok"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
         helpers.execute(integration.cmk(), args, proc_env_ok)
 
-    assert "ERROR:root:4 dataplane cores (1 requested)" in str(e.value.output)
+    assert "ERROR:root:4 exclusive cores (1 requested)" in str(e.value.output)
 
 
 def test_cmk_init_insufficient_isolated_cores():
@@ -72,7 +72,7 @@ def test_cmk_init_insufficient_isolated_cores():
 
     assert (
         "ERROR:root:Cannot use isolated cores for "
-        "data plane and control plane cores: not enough isolated") in \
+        "exclusive and shared cores: not enough isolated") in \
         str(e.value.output)
 
 
@@ -84,15 +84,15 @@ def test_cmk_init_isolated_cores_mismatch():
 
     args = ["init",
             "--socket-id=-1",
-            "--num-dp-cores=1",
-            "--num-cp-cores=1",
+            "--num-exclusive-cores=1",
+            "--num-shared-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
         integration.cmk(), args, proc_env_isolated_mismatch)
 
     assert ("WARNING:root:Not all isolated cores will be used "
-            "by data and control plane") in str(output)
+            "by exclusive and shared pools") in str(output)
 
 
 def test_cmk_init_partial_isolation():
@@ -103,8 +103,8 @@ def test_cmk_init_partial_isolation():
 
     args = ["init",
             "--socket-id=-1",
-            "--num-dp-cores=1",
-            "--num-cp-cores=1",
+            "--num-exclusive-cores=1",
+            "--num-shared-cores=1",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
@@ -117,14 +117,14 @@ def test_cmk_init_partial_isolation():
 def test_cmk_init_insufficient_cores():
     args = ["init",
             "--socket-id=-1",
-            "--num-dp-cores=10",
-            "--num-cp-cores=5",
+            "--num-exclusive-cores=10",
+            "--num-shared-cores=5",
             "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
         helpers.execute(integration.cmk(), args, proc_env_ok)
 
-    assert ("ERROR:root:10 cores requested for dataplane. "
+    assert ("ERROR:root:10 cores requested for exclusive. "
             "Only 8 cores available") in str(e.value.output)
 
 
@@ -147,16 +147,16 @@ def test_cmk_init_isolcpus():
 
     assert "INFO:root:Isolated physical cores: 0,1,2,3,4" in str(output)
 
-    assert "INFO:root:Adding cpu list 0,8 from socket 0 to dataplane pool." \
+    assert "INFO:root:Adding cpu list 0,8 from socket 0 to exclusive pool." \
            in str(output)
-    assert "INFO:root:Adding cpu list 1,9 from socket 0 to dataplane pool." \
+    assert "INFO:root:Adding cpu list 1,9 from socket 0 to exclusive pool." \
            in str(output)
-    assert "INFO:root:Adding cpu list 2,10 from socket 0 to dataplane pool." \
+    assert "INFO:root:Adding cpu list 2,10 from socket 0 to exclusive pool." \
            in str(output)
-    assert "INFO:root:Adding cpu list 3,11 from socket 0 to dataplane pool." \
+    assert "INFO:root:Adding cpu list 3,11 from socket 0 to exclusive pool." \
            in str(output)
 
-    assert "INFO:root:Adding cpu list 4,12 to controlplane pool." \
+    assert "INFO:root:Adding cpu list 4,12 to shared pool." \
            in str(output)
 
     assert "INFO:root:Adding cpu list 5,13,6,14,7,15 to infra pool." \

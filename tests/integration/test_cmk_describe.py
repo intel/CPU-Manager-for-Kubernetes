@@ -21,22 +21,7 @@ def test_cmk_describe_ok():
     assert helpers.execute(integration.cmk(), args) == b"""{
   "path": "/cmk/tests/data/config/ok",
   "pools": {
-    "controlplane": {
-      "cpuLists": {
-        "3,11": {
-          "cpus": "3,11",
-          "tasks": [
-            1000,
-            1001,
-            1002,
-            1003
-          ]
-        }
-      },
-      "exclusive": false,
-      "name": "controlplane"
-    },
-    "dataplane": {
+    "exclusive": {
       "cpuLists": {
         "4,12": {
           "cpus": "4,12",
@@ -64,7 +49,7 @@ def test_cmk_describe_ok():
         }
       },
       "exclusive": true,
-      "name": "dataplane"
+      "name": "exclusive"
     },
     "infra": {
       "cpuLists": {
@@ -79,6 +64,21 @@ def test_cmk_describe_ok():
       },
       "exclusive": false,
       "name": "infra"
+    },
+    "shared": {
+      "cpuLists": {
+        "3,11": {
+          "cpus": "3,11",
+          "tasks": [
+            1000,
+            1001,
+            1002,
+            1003
+          ]
+        }
+      },
+      "exclusive": false,
+      "name": "shared"
     }
   }
 }
