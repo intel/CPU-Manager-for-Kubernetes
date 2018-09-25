@@ -67,3 +67,28 @@ def test_ldh_parser_fail():
     for name in original_invalid_node_names:
         with pytest.raises(SystemExit):
             util.ldh_convert_check(name)
+
+
+def test_parse_version_success():
+    assert util.parse_version("1") == util.parse_version("1.0.0")
+    assert util.parse_version("v2") > util.parse_version("v1.0.0")
+    assert util.parse_version("v10.0.0") > util.parse_version("v2.0.0")
+    assert util.parse_version("v1.10.0") > util.parse_version("v1.9.0")
+    assert util.parse_version("v1.10.11") > util.parse_version("v1.9.2")
+    assert util.parse_version("v1.18.11") == util.parse_version("v1.18.11")
+    assert util.parse_version("v1.9.11-dirty") > util.parse_version("v1.5.2")
+    assert util.parse_version("v1.1-dirty") > util.parse_version("v1")
+    assert util.parse_version("v1.10.0-rc.1") > util.parse_version("v1.9")
+    assert (util.parse_version("v1.12.0") ==
+            util.parse_version("v1.12.0-alpha.0.2126+c9e1abca8c6d24-dirty"))
+
+
+def test_parse_version_fail():
+    with pytest.raises(ValueError):
+        util.parse_version("invalid_version")
+
+    with pytest.raises(ValueError):
+        util.parse_version("a1.2.3")
+
+    with pytest.raises(ValueError):
+        util.parse_version("v-1.6.0")
