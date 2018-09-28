@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from packaging.version import parse
 
 from os.path import normpath, realpath, join, pardir
 
@@ -39,6 +40,19 @@ def ldh_convert_check(name):
                       "[a-z0-9]([-a-z0-9]*[a-z0-9])?".format(name_con))
         exit(1)
     return name_con
+
+
+# Utility function to parse K8s version strings into basic semver format.
+# NOTE: Based on regexp used in Kubernetes source code here:
+# https://github.com/kubernetes/kubernetes/blob/v1.11.3/pkg/util/version/version.go#L37
+# NOTE: Extra parts such as pre-release and build metadata are ignored.
+def parse_version(version_str):
+    version_regex = r"^\s*v?([0-9]+(?:\.[0-9]+)*).*"
+    matches = re.search(version_regex, version_str, re.UNICODE)
+    if matches:
+        return parse(matches.group(1))
+    else:
+        raise ValueError("Could not parse %s as version string" % version_str)
 
 
 def generate_key(size):

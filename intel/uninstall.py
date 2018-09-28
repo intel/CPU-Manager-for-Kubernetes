@@ -18,7 +18,6 @@ import logging
 import os
 import shutil
 import sys
-from pkg_resources import parse_version
 
 from time import sleep
 from kubernetes.client.rest import ApiException as K8sApiException
@@ -27,6 +26,7 @@ from . import config, third_party
 from . import reconcile
 from . import discover
 from . import k8s
+from . import util
 
 
 def uninstall(install_dir, conf_dir, namespace):
@@ -68,9 +68,9 @@ def remove_binary(install_dir):
 
 
 def remove_all_report():
-    version = parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kubelet_version(None))
 
-    if version >= parse_version("v1.7.0"):
+    if version >= util.parse_version("v1.7.0"):
         remove_report_crd("cmk-nodereport", ["cmk-nr"])
         remove_report_crd("cmk-reconcilereport", ["cmk-rr"])
 
@@ -259,10 +259,10 @@ def remove_node_taint():
                       "\"{}\" obj: {}".format(node_name, err))
         sys.exit(1)
 
-    version = parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kubelet_version(None))
     node_taints_list = []
 
-    if version >= parse_version("v1.7.0"):
+    if version >= util.parse_version("v1.7.0"):
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -277,7 +277,7 @@ def remove_node_taint():
     node_taints_list = \
         [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
-    if version >= parse_version("v1.7.0"):
+    if version >= util.parse_version("v1.7.0"):
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)
@@ -299,10 +299,10 @@ def remove_node_taint():
 
 
 def remove_resource_tracking():
-    version = parse_version(k8s.get_kubelet_version(None))
-    if version == parse_version("v1.8.0"):
+    version = util.parse_version(k8s.get_kubelet_version(None))
+    if version == util.parse_version("v1.8.0"):
         logging.warning("Unsupported Kubernetes version")
-    elif version >= parse_version("v1.8.1"):
+    elif version >= util.parse_version("v1.8.1"):
         remove_node_cmk_er()
     else:
         remove_node_cmk_oir()
@@ -354,8 +354,8 @@ def remove_node_cmk_er():
 
 
 def remove_webhook_resources(prefix, namespace):
-    version = parse_version(k8s.get_kubelet_version(None))
-    if version >= parse_version("v1.9.0"):
+    version = util.parse_version(k8s.get_kubelet_version(None))
+    if version >= util.parse_version("v1.9.0"):
         try:
             k8s.delete_mutating_webhook_configuration(
                                             None, "{}-config".format(prefix))

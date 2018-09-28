@@ -16,7 +16,6 @@ import json
 import logging
 import sys
 import yaml
-from pkg_resources import parse_version
 
 from kubernetes import client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
@@ -79,8 +78,8 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  exclusive_mode, namespace)
 
     # Run mutating webhook admission controller on supported cluster
-    version = parse_version(k8s.get_kubelet_version(None))
-    if version >= parse_version("v1.9.0"):
+    version = util.parse_version(k8s.get_kubelet_version(None))
+    if version >= util.parse_version("v1.9.0"):
         deploy_webhook(namespace, conf_dir, install_dir, serviceaccount,
                        cmk_img)
 
@@ -138,8 +137,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
-        version = parse_version(k8s.get_kubelet_version(None))
-        if version >= parse_version("v1.7.0"):
+        version = util.parse_version(k8s.get_kubelet_version(None))
+        if version >= util.parse_version("v1.7.0"):
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
         for cmd in cmd_list:
@@ -373,9 +372,9 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     container_template["env"].pop()
     pod_init_containers_list = []
 
-    version = parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kubelet_version(None))
 
-    if version >= parse_version("v1.7.0"):
+    if version >= util.parse_version("v1.7.0"):
         pod["spec"]["initContainers"] = [container_template]
     else:
 

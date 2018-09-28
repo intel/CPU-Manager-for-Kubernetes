@@ -17,10 +17,9 @@ import json
 import logging
 import os
 import time
-from pkg_resources import parse_version
 
 from kubernetes import config as k8sconfig, client as k8sclient
-from . import config, custom_resource, k8s, proc, third_party, topology
+from . import config, custom_resource, k8s, proc, third_party, topology, util
 
 
 def nodereport(conf_dir, seconds, publish):
@@ -40,9 +39,9 @@ def nodereport(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version = parse_version(k8s.get_kubelet_version(None))
+            version = util.parse_version(k8s.get_kubelet_version(None))
 
-            if version >= parse_version("v1.7.0"):
+            if version >= util.parse_version("v1.7.0"):
                 node_report_type = \
                     custom_resource.CustomResourceDefinitionType(
                         v1beta,
