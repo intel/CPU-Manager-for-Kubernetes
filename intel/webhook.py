@@ -21,6 +21,7 @@ import base64
 import sys
 
 CMK_ER_NAME = 'cmk.intel.com/exclusive-cores'
+CMK_MUTATE_ANNOTATION = 'cmk.intel.com/mutate'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
 
@@ -124,9 +125,6 @@ def mutate(admission_review, mutations_file):
         for i in range(len(pod['spec']['containers'])):
             container = pod['spec']['containers'][i]
 
-            if not is_container_mutation_required(container):
-                continue
-
             # apply container mutations
             try:
                 merge(container, mutations.get("perContainer", {}))
@@ -135,13 +133,21 @@ def mutate(admission_review, mutations_file):
                               "{}".format(str(err)))
                 raise MutationError
 
-            # always inject ENV_NUM_CORES variable
-            # NOTE: priotize requests over limits
-            if 'requests' in container['resources']:
-                num_cores = container['resources']['requests'][CMK_ER_NAME]
-            else:
-                num_cores = container['resources']['limits'][CMK_ER_NAME]
-            inject_env(container, ENV_NUM_CORES, num_cores)
+            # NOTE: inject ENV_NUM_CORES variable only into containers with
+            # ERs request/limit, priotizing requests over limits
+            n_cores = None
+            try:
+                n_cores = container['resources']['requests'][CMK_ER_NAME]
+            except KeyError:
+                logging.info("Container {} does not request CMK ERs"
+                             .format(container['name']))
+                try:
+                    n_cores = container['resources']['requests'][CMK_ER_NAME]
+                except KeyError:
+                    logging.info("Container {} doesn't have CMK ERs limit"
+                                 .format(container['name']))
+            if n_cores is not None:
+                inject_env(container, ENV_NUM_CORES, n_cores)
 
             # replace original container with patched one
             pod['spec']['containers'][i] = container
@@ -219,6 +225,13 @@ def is_mutation_required(pod):
     for container in pod['spec']['containers']:
         if is_container_mutation_required(container):
             return True
+    try:
+        if (pod['metadata']['annotations'][CMK_MUTATE_ANNOTATION]
+                in ["true", "True", "1"]):
+            return True
+    except KeyError:
+        logging.info("Annotation `{}` not present."
+                     .format(CMK_MUTATE_ANNOTATION))
     return False
 
 
