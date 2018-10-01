@@ -79,6 +79,30 @@ def ds_from(pod):
     return ds_template
 
 
+def deployment_from(pod):
+    deployment_template = {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            "labels": pod["metadata"]["labels"],
+            "name": pod["metadata"]["name"].replace("pod", "deployment")
+        },
+        "spec": {
+            "replicas": 1,
+            "selector": {
+                "matchLabels": pod["metadata"]["labels"]
+            },
+            "template": {
+                "metadata": {
+                    "labels": pod["metadata"]["labels"]
+                },
+                "spec": pod["spec"]
+            }
+        }
+    }
+    return deployment_template
+
+
 def client_from_config(config):
     if config is None:
         k8sconfig.load_incluster_config()
@@ -86,6 +110,15 @@ def client_from_config(config):
     else:
         client = k8sclient.ApiClient(configuration=config)
         return k8sclient.CoreV1Api(api_client=client)
+
+
+def apps_api_client_from_config(config):
+    if config is None:
+        k8sconfig.load_incluster_config()
+        return k8sclient.AppsV1Api()
+    else:
+        client = k8sclient.ApiClient(configuration=config)
+        return k8sclient.AppsV1Api(api_client=client)
 
 
 def extensions_client_from_config(config):
@@ -207,6 +240,11 @@ def create_mutating_webhook_configuration(config, spec):
     return k8s_api.create_mutating_webhook_configuration(spec)
 
 
+def create_deployment(config, spec, ns_name):
+    k8s_api = apps_api_client_from_config(config)
+    return k8s_api.create_namespaced_deployment(ns_name, spec)
+
+
 # Create list of schedulable nodes.
 def get_compute_nodes(config, label_selector=None):
     compute_nodes = []
@@ -316,3 +354,8 @@ def delete_mutating_webhook_configuration(config, name,
                                           body=V1DeleteOptions()):
     k8s_api = admissionregistartion_api_client_from_config(config)
     return k8s_api.delete_mutating_webhook_configuration(name, body)
+
+
+def delete_deployment(config, name, ns_name="default", body=V1DeleteOptions()):
+    k8s_api = apps_api_client_from_config(config)
+    return k8s_api.delete_namespaced_deployment(name, ns_name, body)

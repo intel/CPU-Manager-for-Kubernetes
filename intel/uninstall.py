@@ -363,7 +363,7 @@ def remove_webhook_resources(prefix, namespace):
             k8s.delete_config_map(None, "{}-configmap".format(prefix),
                                   namespace)
             k8s.delete_service(None, "{}-service".format(prefix), namespace)
-            delete_cmk_pod("cmk-webhook-pod", namespace)
+            k8s.delete_deployment(None, "cmk-webhook-deployment", namespace)
         except K8sApiException as err:
             logging.error("Aborting uninstall: Exception when removing "
                           "webhook: {}".format(err))
