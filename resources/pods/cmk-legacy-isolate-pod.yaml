@@ -1,0 +1,103 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# NOTE: To be used with k8s <= 1.7.x.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+# Needed for k8s < 1.7
+#  annotations:
+#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
+  name: cmk-isolate-pod
+  #namespace: user-supplied-namespace
+spec:
+  serviceAccountName: cmk-serviceaccount
+# Needed for k8s >= 1.7
+#  tolerations:
+#  - operator: "Exists"
+  containers:
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive echo -- Hello World Exclusive!!!"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    image: cmk:v1.2.2
+    name: cmk-isolate-exclusive
+    resources:
+      requests:
+        pod.alpha.kubernetes.io/opaque-int-resource-cmk: '1'
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    image: cmk:v1.2.2
+    name: cmk-isolate-shared
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
+  - args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
+    command:
+    - "/bin/bash"
+    - "-c"
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    image: cmk:v1.2.2
+    name: cmk-isolate-infra
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
+  restartPolicy: Never
+  volumes:
+  - hostPath:
+      # Change this to modify the CMK installation dir in the host file system.
+      path: "/opt/bin"
+    name: cmk-install-dir
+  - hostPath:
+      path: "/proc"
+    name: host-proc
+  - hostPath:
+      # Change this to modify the CMK config dir in the host file system.
+      path: "/etc/cmk"
+    name: cmk-conf-dir

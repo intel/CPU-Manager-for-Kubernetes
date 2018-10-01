@@ -1,4 +1,4 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,89 +12,99 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# NOTE: To be used with k8s >= 1.8.1
+
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
     app: cmk-isolate-pod
-# Needed for k8s < 1.7
-#  annotations:
-#    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-isolate-pod
+# Consumed by mutating webhook, if present, in k8s >= 1.9.0. Can be commented out if k8s < 1.9.0 or webhook is not used.
+  annotations:
+    cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
   #namespace: user-supplied-namespace
 spec:
-  serviceAccountName: cmk-serviceaccount
-# Needed for k8s >= 1.7
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#  serviceAccountName: cmk-serviceaccount
 #  tolerations:
 #  - operator: "Exists"
+  restartPolicy: Never
   containers:
-  - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive echo -- Hello World Exclusive!!!"
+  - name: cmk-isolate-exclusive
+    image: cmk:v1.2.2
     command:
     - "/bin/bash"
     - "-c"
-    env:
-    - name: CMK_PROC_FS
-      value: "/host/proc"
-    image: cmk:v1.2.2
-    name: cmk-isolate-exclusive
+    args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive echo -- Hello World Exclusive!!!"
     resources:
       requests:
-        pod.alpha.kubernetes.io/opaque-int-resource-cmk: '1'
-    volumeMounts:
-    - mountPath: "/host/proc"
-      name: host-proc
-      readOnly: true
-    - mountPath: "/opt/bin"
-      name: cmk-install-dir
-    - mountPath: "/etc/cmk"
-      name: cmk-conf-dir
-  - args:
+        cmk.intel.com/exclusive-cores: '1'
+      limits:
+        cmk.intel.com/exclusive-cores: '1'
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#    env:
+#    - name: CMK_PROC_FS
+#      value: "/host/proc"
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#    volumeMounts:
+#    - mountPath: "/host/proc"
+#      name: cmk-host-proc
+#      readOnly: true
+#    - mountPath: "/opt/bin"
+#      name: cmk-install-dir
+#    - mountPath: "/etc/cmk"
+#      name: cmk-config-dir
+  - name: cmk-isolate-shared
+    image: cmk:v1.2.2
+    command:
+    - "/bin/bash"
+    - "-c"
+    args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#    env:
+#    - name: CMK_PROC_FS
+#      value: "/host/proc"
+#    volumeMounts:
+#    - mountPath: "/host/proc"
+#      name: host-proc
+#      readOnly: true
+#    - mountPath: "/opt/bin"
+#      name: cmk-install-dir
+#    - mountPath: "/etc/cmk"
+#      name: cmk-conf-dir
+  - name: cmk-isolate-infra
+    image: cmk:v1.2.2
     command:
     - "/bin/bash"
     - "-c"
-    env:
-    - name: CMK_PROC_FS
-      value: "/host/proc"
-    image: cmk:v1.2.2
-    name: cmk-isolate-shared
-    volumeMounts:
-    - mountPath: "/host/proc"
-      name: host-proc
-      readOnly: true
-    - mountPath: "/opt/bin"
-      name: cmk-install-dir
-    - mountPath: "/etc/cmk"
-      name: cmk-conf-dir
-  - args:
+    args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
-    command:
-    - "/bin/bash"
-    - "-c"
-    env:
-    - name: CMK_PROC_FS
-      value: "/host/proc"
-    image: cmk:v1.2.2
-    name: cmk-isolate-infra
-    volumeMounts:
-    - mountPath: "/host/proc"
-      name: host-proc
-      readOnly: true
-    - mountPath: "/opt/bin"
-      name: cmk-install-dir
-    - mountPath: "/etc/cmk"
-      name: cmk-conf-dir
-  restartPolicy: Never
-  volumes:
-  - hostPath:
-      # Change this to modify the CMK installation dir in the host file system.
-      path: "/opt/bin"
-    name: cmk-install-dir
-  - hostPath:
-      path: "/proc"
-    name: host-proc
-  - hostPath:
-      # Change this to modify the CMK config dir in the host file system.
-      path: "/etc/cmk"
-    name: cmk-conf-dir
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#    env:
+#    - name: CMK_PROC_FS
+#      value: "/host/proc"
+#    volumeMounts:
+#    - mountPath: "/host/proc"
+#      name: host-proc
+#      readOnly: true
+#    - mountPath: "/opt/bin"
+#      name: cmk-install-dir
+#    - mountPath: "/etc/cmk"
+#      name: cmk-conf-dir
+# Added automatically by webhook. Uncomment for k8s < 1.9.0 or if webhook is not used.
+#  volumes:
+#  - hostPath:
+#      # Change this to modify the CMK installation dir in the host file system.
+#      path: "/opt/bin"
+#    name: cmk-install-dir
+#  - hostPath:
+#      path: "/proc"
+#    name: host-proc
+#  - hostPath:
+#      # Change this to modify the CMK config dir in the host file system.
+#      path: "/etc/cmk"
+#    name: cmk-conf-dir
