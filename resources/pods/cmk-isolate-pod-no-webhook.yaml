@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 
-# NOTE: To be used with k8s >= 1.9.0 (if webhook is running).
+# NOTE: To be used with k8s >= 1.8.1, < 1.9.0 (or with k8s >= 1.9.0 if webhook is not used).
 
 apiVersion: v1
 kind: Pod
@@ -21,11 +21,11 @@ metadata:
   labels:
     app: cmk-isolate-pod
   name: cmk-isolate-pod
-# Consumed by mutating webhook
-  annotations:
-    cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
   #namespace: user-supplied-namespace
 spec:
+  serviceAccountName: cmk-serviceaccount
+  tolerations:
+  - operator: "Exists"
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive
@@ -40,6 +40,17 @@ spec:
         cmk.intel.com/exclusive-cores: '1'
       limits:
         cmk.intel.com/exclusive-cores: '1'
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: cmk-host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   - name: cmk-isolate-shared
     image: cmk:v1.2.2
     command:
@@ -47,6 +58,17 @@ spec:
     - "-c"
     args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: cmk-host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
   - name: cmk-isolate-infra
     image: cmk:v1.2.2
     command:
@@ -54,3 +76,26 @@ spec:
     - "-c"
     args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
+    env:
+    - name: CMK_PROC_FS
+      value: "/host/proc"
+    volumeMounts:
+    - mountPath: "/host/proc"
+      name: cmk-host-proc
+      readOnly: true
+    - mountPath: "/opt/bin"
+      name: cmk-install-dir
+    - mountPath: "/etc/cmk"
+      name: cmk-conf-dir
+  volumes:
+  - hostPath:
+      # Change this to modify the CMK installation dir in the host file system.
+      path: "/opt/bin"
+    name: cmk-install-dir
+  - hostPath:
+      path: "/proc"
+    name: cmk-host-proc
+  - hostPath:
+      # Change this to modify the CMK config dir in the host file system.
+      path: "/etc/cmk"
+    name: cmk-conf-dir
