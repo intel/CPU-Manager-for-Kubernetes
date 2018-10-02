@@ -100,9 +100,62 @@ Please refer to the [`cmk node-report` documentation][cmk-node-report].
 
 Please refer to the [`cmk reconcile` documentation][cmk-reconcile].
 
-### Mutating webhook (Kubernetes v1.9.0+)
+## Mutating webhook (Kubernetes v1.9.0+)
 
-Please refer to the [`cmk webhook` documentation][cmk-webhook].
+CMK makes use of mutating admission webhook to simplify deployment of workloads.
+
+Whenever a user tries to create a pod which definition contains any container
+requesting CMK Extended Resources or has `cmk.intel.com/mutate: "true"`
+annotation, CMK webhook modifies it by applying a number of modifications on
+top of the original pod spec, including:
+- CMK installation and configuration directories and host /proc filesystem
+  volumes,
+- CMK service account,
+- tolerations required for the pod to be scheduled on the CMK enabled node,
+- annotation to mark pod as modified.
+
+Containers which are part of the pod specification are updated with:
+- environmental variable `CMK_NUM_CORES` with its value set to the number of
+  cores  specified in the Extended Resource request/limit (if present),
+- volume mounts (referencing volumes added to the pod),
+- environmental variable `CMK_PROC_FS`.
+
+Complete webhook deployment consists of the following Kubernetes resources:
+- Deployment: runs a single instance of mutating webhook server application. It
+  ensures that at least 1 instance of webhook is always running - in case of
+  node failure webhook application pod gets rescheduled to another node in the
+  same cluster. Running the webhook server in deployment also guarantees that
+  app will start automatically after single-cluster node reboot and Kubelet or
+  container runtime service restart.
+- Service: exposes mutating webhook server application to the external world,
+  making it visible for Kubernetes API server.
+- ConfigMap: defines a file containing a webhook application configuration.
+  Webhook reads it on each admission review request, which makes the config file
+  configurable during runtime.
+- Secret: contains TLS certificate and private key which are used to secure
+  communication between the API server and the webhook application.
+- Mutating Admission Controller configuration: enable the API server to send
+  admission review request to the webhook whenever user requests pod to be
+  created. Admission controller configuration points to the service endpoint, it
+  also specifies TLS certificate used for authorization, RBAC rules and defines
+  failure policy. Default failure policy is set to "Ignore", so in case of
+  malfunctioning webhook server spinning up new pods and setting CMK binary and
+  config volume mounts is still possible.
+
+All of the above resources are created automatically during cluster init,
+although they may be also deployed manually using template specification files
+located in `resources/webhook` directory. Manual deployment requires a properly
+signed TLS certificate and private key pair to be created and encoded into
+base64 format beforehand. Creating and configuring TLS certificates is out of
+the scope of this document.
+
+The diagram below shows a high-level overview of the mutating webhook mechanism
+in CMK.
+
+![CMK webhook](images/cmk-webhook.svg)
+
+For more information and configuration details please refer, to the
+[`cmk webhook` documentation][cmk-webhook].
 
 ## Known issues
 

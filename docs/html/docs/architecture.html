@@ -179,9 +179,61 @@ current configuration and health status of the CMK system.</p>
 <h3>
 <a id="user-content-reconciliation" class="anchor" href="#reconciliation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reconciliation</h3>
 <p>Please refer to the <a href="cli.html#cmk-reconcile"><code>cmk reconcile</code> documentation</a>.</p>
-<h3>
-<a id="user-content-mutating-webhook-kubernetes-v190" class="anchor" href="#mutating-webhook-kubernetes-v190" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Mutating webhook (Kubernetes v1.9.0+)</h3>
-<p>Please refer to the <a href="cli.html#cmk-webhook"><code>cmk webhook</code> documentation</a>.</p>
+<h2>
+<a id="user-content-mutating-webhook-kubernetes-v190" class="anchor" href="#mutating-webhook-kubernetes-v190" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Mutating webhook (Kubernetes v1.9.0+)</h2>
+<p>CMK makes use of mutating admission webhook to simplify deployment of workloads.</p>
+<p>Whenever a user tries to create a pod which definition contains any container
+requesting CMK Extended Resources or has <code>cmk.intel.com/mutate: "true"</code>
+annotation, CMK webhook modifies it by applying a number of modifications on
+top of the original pod spec, including:</p>
+<ul>
+<li>CMK installation and configuration directories and host /proc filesystem
+volumes,</li>
+<li>CMK service account,</li>
+<li>tolerations required for the pod to be scheduled on the CMK enabled node,</li>
+<li>annotation to mark pod as modified.</li>
+</ul>
+<p>Containers which are part of the pod specification are updated with:</p>
+<ul>
+<li>environmental variable <code>CMK_NUM_CORES</code> with its value set to the number of
+cores  specified in the Extended Resource request/limit (if present),</li>
+<li>volume mounts (referencing volumes added to the pod),</li>
+<li>environmental variable <code>CMK_PROC_FS</code>.</li>
+</ul>
+<p>Complete webhook deployment consists of the following Kubernetes resources:</p>
+<ul>
+<li>Deployment: runs a single instance of mutating webhook server application. It
+ensures that at least 1 instance of webhook is always running - in case of
+node failure webhook application pod gets rescheduled to another node in the
+same cluster. Running the webhook server in deployment also guarantees that
+app will start automatically after single-cluster node reboot and Kubelet or
+container runtime service restart.</li>
+<li>Service: exposes mutating webhook server application to the external world,
+making it visible for Kubernetes API server.</li>
+<li>ConfigMap: defines a file containing a webhook application configuration.
+Webhook reads it on each admission review request, which makes the config file
+configurable during runtime.</li>
+<li>Secret: contains TLS certificate and private key which are used to secure
+communication between the API server and the webhook application.</li>
+<li>Mutating Admission Controller configuration: enable the API server to send
+admission review request to the webhook whenever user requests pod to be
+created. Admission controller configuration points to the service endpoint, it
+also specifies TLS certificate used for authorization, RBAC rules and defines
+failure policy. Default failure policy is set to "Ignore", so in case of
+malfunctioning webhook server spinning up new pods and setting CMK binary and
+config volume mounts is still possible.</li>
+</ul>
+<p>All of the above resources are created automatically during cluster init,
+although they may be also deployed manually using template specification files
+located in <code>resources/webhook</code> directory. Manual deployment requires a properly
+signed TLS certificate and private key pair to be created and encoded into
+base64 format beforehand. Creating and configuring TLS certificates is out of
+the scope of this document.</p>
+<p>The diagram below shows a high-level overview of the mutating webhook mechanism
+in CMK.</p>
+<p><a href="images/cmk-webhook.svg" target="_blank" rel="noopener noreferrer"><img src="images/cmk-webhook.svg" alt="CMK webhook" style="max-width:100%;"></a></p>
+<p>For more information and configuration details please refer, to the
+<a href="cli.html#cmk-webhook"><code>cmk webhook</code> documentation</a>.</p>
 <h2>
 <a id="user-content-known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known issues</h2>
 <table>
