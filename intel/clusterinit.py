@@ -252,10 +252,13 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     update_pod_with_metadata(pod, pod_name, app_name)
     update_pod_with_webhook_container(pod, cmk_img, configmap_name,
                                       secret_name)
+    update_pod_with_restart_policy(pod, "Always")
+    deployment = k8s.deployment_from(pod)
     try:
-        k8s.create_pod(None, pod, namespace)
+        k8s.create_deployment(None, deployment, namespace)
     except K8sApiException as err:
-        logging.error("Exception when creating webhook pod: {}".format(err))
+        logging.error("Exception when creating webhook deployment: {}"
+                      .format(err))
         logging.error("Aborting webhook deployment ...")
         sys.exit(1)
 
@@ -269,7 +272,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
                                         service_name,
                                         "/mutate",
                                         namespace,
-                                        "Fail")
+                                        "Ignore")
     try:
         k8s.create_mutating_webhook_configuration(None, config)
     except K8sApiException as err:
@@ -343,6 +346,10 @@ def update_pod_with_pull_secret(pod, pull_secret):
 def update_pod_with_metadata(pod, name, app):
     pod["metadata"]["name"] = name
     pod["metadata"]["labels"] = {"app": app}
+
+
+def update_pod_with_restart_policy(pod, restart_pol):
+    pod["spec"]["restartPolicy"] = restart_pol
 
 
 # update_pod_with_container() updates the pod template with a container using

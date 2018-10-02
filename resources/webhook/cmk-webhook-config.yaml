@@ -11,7 +11,7 @@ webhooks:
       name: cmk-webhook-service
       namespace: default
       path: /mutate
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: cmk.intel.com
   rules:
   - apiGroups:
