@@ -29,7 +29,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive
-    image: cmk:v1.3.0
+    image: cmk:v1.2.2
     command:
     - "/bin/bash"
     - "-c"
@@ -52,7 +52,7 @@ spec:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
   - name: cmk-isolate-shared
-    image: cmk:v1.3.0
+    image: cmk:v1.2.2
     command:
     - "/bin/bash"
     - "-c"
@@ -70,7 +70,7 @@ spec:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
   - name: cmk-isolate-infra
-    image: cmk:v1.3.0
+    image: cmk:v1.2.2
     command:
     - "/bin/bash"
     - "-c"
