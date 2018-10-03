@@ -83,7 +83,7 @@ spec:
     - "/bin/bash"
     - "-c"
     env:
-    image: cmk:v1.3.0
+    image: cmk:v1.2.2
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     resources:
