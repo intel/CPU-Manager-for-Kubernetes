@@ -29,7 +29,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive
-    image: cmk:v1.2.2
+    image: cmk:v1.3.0
     command:
     - "/bin/bash"
     - "-c"
@@ -41,14 +41,14 @@ spec:
       limits:
         cmk.intel.com/exclusive-cores: '1'
   - name: cmk-isolate-shared
-    image: cmk:v1.2.2
+    image: cmk:v1.3.0
     command:
     - "/bin/bash"
     - "-c"
     args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
   - name: cmk-isolate-infra
-    image: cmk:v1.2.2
+    image: cmk:v1.3.0
     command:
     - "/bin/bash"
     - "-c"
