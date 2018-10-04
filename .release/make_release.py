@@ -50,9 +50,9 @@ def validate_commit_msg_get_tag():
 
 
 def get_org_and_repo_name():
-    origin_url = githelpers.execute_git_cmd("config --get remote.origin.url").strip(".git").split(":")
-    repo_info = origin_url[-1].split("/")
-    return repo_info[0], repo_info[1]
+    origin_url = githelpers.execute_git_cmd("config --get remote.origin.url").rstrip(".git")
+    repo_info = re.split(':|\/', origin_url)
+    return repo_info[-2], repo_info[-1]
 
 
 def main():
