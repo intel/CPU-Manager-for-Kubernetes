@@ -335,9 +335,9 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
     return
 
 
-def delete_service(config, name, ns_name="default"):
+def delete_service(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_service(name, ns_name)
+    return k8s_api.delete_namespaced_service(name, ns_name, body)
 
 
 def delete_config_map(config, name, ns_name="default", body=V1DeleteOptions()):
