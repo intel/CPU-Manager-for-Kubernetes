@@ -61,7 +61,7 @@ def remove_binary(install_dir):
         os.remove(remove_file)
         logging.info("cmk binary from \"{}\" removed successfully.".format(
             install_dir))
-    except FileNotFoundError as err:
+    except FileNotFoundError:
         logging.warning("Could not found cmk binary in "
                         "\"{}\".".format(install_dir))
         logging.warning("Wrong path or file has already been removed.")
