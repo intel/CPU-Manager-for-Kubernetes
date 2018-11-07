@@ -43,29 +43,6 @@ def test_discover_no_exclusive():
     assert err.value.args[0] == expected_msg
 
 
-def test_discover_no_cl_exclusive():
-    temp_dir = tempfile.mkdtemp()
-    conf_dir = os.path.join(temp_dir, "discover")
-
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("ok"),
-         "{}".format(conf_dir)]
-    )
-    helpers.execute(
-        "rm",
-        ["-r",
-         "{}".format(os.path.join(conf_dir, "pools",
-                                  "exclusive", "*"))]
-    )
-
-    with pytest.raises(KeyError) as err:
-        discover.add_node_oir(conf_dir)
-    expected_msg = "No CPU list in exclusive pool"
-    assert err.value.args[0] == expected_msg
-
-
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
         self.status = status
@@ -238,24 +215,4 @@ def test_discover_add_node_er_no_exclusive_pool_failure():
     )
 
     with pytest.raises(KeyError, message="Exclusive pool does not exist"):
-        discover.add_node_er(conf_dir)
-
-
-def test_discover_add_node_er_no_exclusive_cores_failure():
-    temp_dir = tempfile.mkdtemp()
-    conf_dir = os.path.join(temp_dir, "discover")
-
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("ok"),
-         "{}".format(conf_dir)]
-    )
-    helpers.execute(
-        "rm",
-        ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "exclusive", "0"))]
-    )
-
-    with pytest.raises(KeyError, message="No CPU list in exclusive pool"):
         discover.add_node_er(conf_dir)
