@@ -58,8 +58,6 @@ def add_node_oir(conf_dir):
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
-        if len(c.pool("exclusive").cpu_lists()) == 0:
-            raise KeyError("No CPU list in exclusive pool")
         num_slots = len(c.pool("exclusive").cpu_lists())
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
@@ -85,8 +83,6 @@ def add_node_er(conf_dir):
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
-        if len(c.pool("exclusive").cpu_lists()) == 0:
-            raise KeyError("No CPU list in exclusive pool")
         num_slots = len(c.pool("exclusive").cpu_lists())
 
     patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")

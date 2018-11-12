@@ -159,7 +159,7 @@ def assign(cores, pool, count=None):
                            (count, pool, len(free_cores)))
 
     assigned = free_cores
-    if count:
+    if count is not None:
         assigned = free_cores[:count]
 
     for c in assigned:
