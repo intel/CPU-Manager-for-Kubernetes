@@ -40,15 +40,14 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
         else:
             selected_socket = socket_id
 
-        # Read env variable and if unset return 1
-        n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
-
-        if n_cpus < 1:
-            raise ValueError("Requested numbers of cores "
-                             "must be positive integer")
-
         clists = None
         if pool.exclusive():
+            # Read env variable and if unset return 1
+            n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
+            if n_cpus < 1:
+                raise ValueError("Requested numbers of cores "
+                                 "must be positive integer")
+
             available_clists = [cl for
                                 cl in pool.cpu_lists(selected_socket).values()
                                 if len(cl.tasks()) == 0]
