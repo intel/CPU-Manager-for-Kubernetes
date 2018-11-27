@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: docker docs
+.PHONY: docker docs release
 
 all: docker
 
@@ -54,3 +54,7 @@ docs:
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/operator.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/user.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/architecture.html
+
+# Trigger for github release used by travis.yml
+release:
+	.release/make_release.py
