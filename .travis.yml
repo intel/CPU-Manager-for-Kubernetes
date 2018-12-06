@@ -11,8 +11,8 @@ jobs:
     - stage: "Release"
       before_script:
         # Set up git user name and update remote origin
-        - git config --local user.name "cmk-bot"
-        - git config --local user.email "cmk-bot@intel.com"
+        - git config --local user.name "intel-bot"
+        - git config --local user.email "intel_bot@intel.com"
         - git remote set-url origin https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}
       script: make release
       if: branch = master
