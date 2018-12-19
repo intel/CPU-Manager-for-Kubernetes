@@ -19,15 +19,15 @@ General flow is:
  - run `prepare_release.py` script
  - create PR, get review
  - "Rebase and merge" PR into master branch
+ - Travis will build, test and make release automatically
  - If the repository has [Jenkins CI/CD](#jenkins-release-job) job
    - Jenkins CI/CD will build VM based on `.release/Vagrantfile`
    - Jenkins CI/CD will run `.release/make_release.py`
- - If there is no Jenkins CI/CD or you want to release in [manual](#manual-release) way:
+ - If you want to release in [manual](#manual-release) way:
    - spawn release VM (`vagrant up`in `.release` directory)
    - run `make_release.py` script in the VM
    
 In any case, please read [below](#prepare-release-script) paragraph for more information.
-If you want to release manually, please read also
 
 
 
@@ -74,6 +74,8 @@ Additionally, tag and release are created once PR from release branch gets onto 
 
 ## Make release
 ---
+#### Travis
+By default travis will build, test and make the release automatically. To set this up, add secret environment variable GITHUB_TOKEN in travis repository settings and update corresponding git username and email.
 
 #### Jenkins release job
 If Jenkins CI/CD is present and configured with the "release job" - no user intervention is needed.
