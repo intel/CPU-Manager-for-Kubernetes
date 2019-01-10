@@ -2,5 +2,5 @@
 .cache/*
 .tox/*
 cmk.egg-info/*
-*.pyc
-*/__pycache__/*
+**/*.pyc
+**/__pycache__/*

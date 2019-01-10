@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: docker docs release
+.PHONY: docker docs release test
 
 all: docker
 
@@ -23,10 +23,14 @@ version=v1.3.0
 jenkins: docker
 
 docker:
-	docker build --no-cache -t cmk:$(version) .
+	docker build -t cmk:$(version) .
 	@echo ""
 	@echo "To run the docker image, run command:"
 	@echo "docker run -it cmk:$(version) ..."
+
+test: docker
+	docker run --rm cmk:$(version) tox -e lint,unit,integration,coverage
+
 
 # Output neatly formatted HTML docs to `docs/html`.
 #

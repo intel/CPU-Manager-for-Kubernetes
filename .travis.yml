@@ -7,7 +7,7 @@ services:
 jobs:
   include:
     - stage: "Build and test"
-      script: make docker
+      script: make test
     - stage: "Release"
       before_script:
         # Set up git user name and update remote origin
