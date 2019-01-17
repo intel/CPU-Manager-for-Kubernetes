@@ -222,7 +222,7 @@ for some reason.</li>
 <li>The subcommands described below should be run in the same order.</li>
 <li>The documentation in this section assumes that the <code>CMK</code> configuration directory is <code>/etc/cmk</code> and the <code>cmk</code>
 binary is installed on the host under <code>/opt/bin</code>.</li>
-<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.3.0</code>. It is expected that the
+<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.3.1</code>. It is expected that the
 <code>cmk</code> container image is built and cached locally in the host. The <code>image</code> field will require modification if the
 container image is hosted remotely (e.g., in <a href="https://hub.docker.com/" rel="nofollow">https://hub.docker.com/</a>).</li>
 </ul>
@@ -487,7 +487,7 @@ ls /opt/bin/</pre></div>
     <span class="pl-ent">env</span>:
     - <span class="pl-ent">name</span>: <span class="pl-s">CMK_PROC_FS</span>
       <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">"</span>/host/proc<span class="pl-pds">"</span></span>
-    <span class="pl-ent">image</span>: <span class="pl-s">cmk:v1.3.0</span>
+    <span class="pl-ent">image</span>: <span class="pl-s">cmk:v1.3.1</span>
     <span class="pl-ent">imagePullPolicy</span>: <span class="pl-s"><span class="pl-pds">"</span>Never<span class="pl-pds">"</span></span>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-isolate-infra</span>
     <span class="pl-ent">volumeMounts</span>:
@@ -542,7 +542,7 @@ spec:
     - "/bin/bash"
     - "-c"
     env:
-    image: cmk:v1.3.0
+    image: cmk:v1.3.1
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     resources:
@@ -553,7 +553,7 @@ spec:
 <ul>
 <li>Run <code>kubectl create -f &lt;file-name&gt;</code>, where <code>&lt;file-name&gt;</code> is the name of the Pod manifest file with nodeName field
 substituted as mentioned in the previous section.</li>
-<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .metadata.annotations</code> and verify that annotation has been
+<li>Run <code>kubectl get pod cmk-isolate-pod  -o json | jq .metadata.annotations</code> and verify that annotation has been
 added:</li>
 </ul>
 <pre><code>{
@@ -561,7 +561,7 @@ added:</li>
 }
 </code></pre>
 <ul>
-<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .spec.volumes</code> and verify that extra volumes have been
+<li>Run <code>kubectl get pod cmk-isolate-pod  -o json | jq .spec.volumes</code> and verify that extra volumes have been
 injected:</li>
 </ul>
 <pre><code>[
@@ -596,7 +596,7 @@ injected:</li>
 ]
 </code></pre>
 <ul>
-<li>Run <code>kubectl get pod cmk-isolate-pod -o json | jq .spec.containers[0].env</code> and verify that
+<li>Run <code>kubectl get pod cmk-isolate-pod  -o json | jq .spec.containers[0].env</code> and verify that
 env variables have been added to the container spec:</li>
 </ul>
 <pre><code>[

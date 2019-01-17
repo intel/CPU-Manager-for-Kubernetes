@@ -31,7 +31,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: cmk:v1.3.0
+    image: cmk:v1.3.1
     name: cmk-discover-pod
     volumeMounts:
     - mountPath: "/etc/cmk"
