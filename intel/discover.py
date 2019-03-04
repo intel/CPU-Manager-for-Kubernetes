@@ -117,6 +117,19 @@ def add_node_label():
         sys.exit(1)
 
 
+def get_node_label(key):
+    node_name = os.getenv("NODE_NAME")
+
+    try:
+        node = get_k8s_node(node_name)
+    except K8sApiException as err:
+        logging.error("Exception when getting the node obj: {}".format(err))
+        logging.error("Aborting ...")
+        sys.exit(1)
+
+    return node["metadata"]["labels"][key]
+
+
 def add_node_taint():
     node_name = os.getenv("NODE_NAME")
     try:

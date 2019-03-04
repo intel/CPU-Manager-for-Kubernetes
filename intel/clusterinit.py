@@ -373,10 +373,6 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     container_template["args"][0] = args
     # Each container name should be distinct within a Pod.
     container_template["name"] = cmd
-    # Note(balajismaniam): Downward API for spec.nodeName doesn't seem to
-    # work with init-containers. Removing it as a work-around. Needs further
-    # investigation.
-    container_template["env"].pop()
     pod_init_containers_list = []
 
     version = util.parse_version(k8s.get_kubelet_version(None))

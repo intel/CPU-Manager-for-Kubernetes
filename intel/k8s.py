@@ -170,6 +170,9 @@ def get_container_template():
         ],
         "image": "IMAGENAME",
         "name": "NAME",
+        "securityContext": {
+            "privileged": True
+        },
         "volumeMounts": [
             {
                 "mountPath": "/host/proc",
