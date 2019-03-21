@@ -20,7 +20,7 @@ concurrent modifications.
 The rest of this document discusses the high-level design of CMK.
 
 For more information about the structure of state on disk, see
-[The kcm configuration directory][doc-config].
+[The cmk configuration directory][doc-config].
 
 For more information about how to use the `cmk` wrapper program, see
 [Using the kcm command-line tool][doc-cli].
