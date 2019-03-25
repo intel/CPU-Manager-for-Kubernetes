@@ -208,7 +208,7 @@ _None_
   directory must either not exist or be an empty directory.
 - `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
   in the exclusive pool.
-- `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
+- `--num-shared-cores=<num>` Number of (physical) processor cores to include
   in the shared pool.
 
 **Example:**
