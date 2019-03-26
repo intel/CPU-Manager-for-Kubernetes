@@ -71,7 +71,7 @@ class Process:
         with open(os.path.join(procfs(), str(self.pid), "status")) as status:
             for line in status:
                 fields = line.split(":")
-                if len(fields) is not 2:
+                if len(fields) != 2:
                     continue
 
                 first = fields[0].strip()
