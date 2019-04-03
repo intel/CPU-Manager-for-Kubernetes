@@ -302,6 +302,12 @@ To select appropriate `mode` operator can select it during initialization with `
 Those parameters can be used with `cluster-init` and `init`. If operator use two different modes, then those policies
 will be mixed. In that case __exclusive__ pool is resolving before __shared__ pool.
 
+### Power Management Capabilities
+CMK supports some power management capabilities on the latest Xeon processors, one of these __Speed Select Technology - Base Frequency (SST-Bf)__. 
+CMK is able to discover SST-BF configured nodes through the use of node labels, discovers the SST-BF configured cores and ensures these cores are placed in the __exclusive__ pool. This enables users to use these special cores for their containerized workloads, getting guaranteed performance.
+* More information on SST-BF can be found [here](https://builders.intel.com/docs/networkbuilders/intel-speed-select-technology-base-frequency-enhancing-performance.pdf)
+* More information on configuring a Kubernetes cluster to take advantage of these Power Management capabilites can be found [here](addlink)
+
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
 World [cmk-isolate-pod template][isolate-template] describes a simple Pod with three containers requesting CPUs from
