@@ -24,10 +24,7 @@ test_env = {
 
 
 def test_cmk_nodereport_ok():
-    assert helpers.execute(
-        integration.cmk(),
-        ["node-report", "--conf-dir={}".format(helpers.conf_dir("ok"))],
-        test_env).decode() == """{
+    expected = """{
   "checks": {
     "configDirectory": {
       "errors": [],
@@ -213,13 +210,14 @@ def test_cmk_nodereport_ok():
   }
 }
 """
+    assert expected in helpers.execute(
+        integration.cmk(),
+        ["node-report", "--conf-dir={}".format(helpers.conf_dir("ok"))],
+        test_env).decode()
 
 
 def test_cmk_nodereport_minimal():
-    assert helpers.execute(
-        integration.cmk(),
-        ["node-report", "--conf-dir={}".format(helpers.conf_dir("minimal"))],
-        test_env).decode() == """{
+    expected = """{
   "checks": {
     "configDirectory": {
       "errors": [
@@ -368,3 +366,7 @@ def test_cmk_nodereport_minimal():
   }
 }
 """
+    assert expected in helpers.execute(
+        integration.cmk(),
+        ["node-report", "--conf-dir={}".format(helpers.conf_dir("minimal"))],
+        test_env).decode()

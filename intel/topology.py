@@ -18,17 +18,26 @@ import json
 import logging
 import os
 import subprocess
+from . import sst_bf
 
 ENV_LSCPU_SYSFS = "CMK_DEV_LSCPU_SYSFS"
 
 
 # Returns a dictionary of socket_id (int) to intel.topology.Socket.
-def discover():
+def discover(sst_bf_discovery):
     isol = isolcpus()
     if isol:
         logging.info("Isolated logical cores: {}".format(
             ",".join([str(c) for c in isol])))
-    return parse(lscpu(), isol)
+
+    sst_bf_cpus = []
+    if sst_bf_discovery:
+        sst_bf_cpus = sst_bf.cpus()
+        if sst_bf_cpus:
+            logging.info("High priority SST-BF cores: {}".format(
+                ",".join([str(c) for c in sst_bf_cpus])))
+
+    return parse(lscpu(), isol, sst_bf_cpus)
 
 
 class Platform:
@@ -38,6 +47,18 @@ class Platform:
     def has_isolated_cores(self):
         for socket in self.sockets.values():
             if socket.has_isolated_cores():
+                return True
+        return False
+
+    def has_sst_bf_cores(self):
+        for socket in self.sockets.values():
+            if socket.has_sst_bf_cores():
+                return True
+        return False
+
+    def has_isolated_sst_bf_cores(self):
+        for socket in self.sockets.values():
+            if socket.has_isolated_sst_bf_cores():
                 return True
         return False
 
@@ -52,34 +73,46 @@ class Platform:
     def get_isolated_cores(self, mode="packed"):
         return self.get_cores_general(mode, True)
 
-    def get_cores_general(self, mode, isolated=False):
+    def get_isolated_sst_bf_cores(self, mode="packed"):
+        return self.get_cores_general(mode, True, True)
+
+    def get_cores_general(self, mode, isolated=False, sst_bf=False):
         if mode not in ["spread", "packed"]:
             logging.warning("Wrong mode has been selected."
                             "Fallback to vertical")
             mode = "packed"
 
         if mode == "packed":
-            return self.allocate_packed(isolated)
+            return self.allocate_packed(isolated, sst_bf)
         if mode == "spread":
-            return self.allocate_spread(isolated)
+            return self.allocate_spread(isolated, sst_bf)
 
-    def allocate_packed(self, isolated_cores=False):
+    def allocate_packed(self, isolated_cores=False, sst_bf_cores=False):
         cores = []
         for socket in self.sockets.values():
-            if isolated_cores:
+            if isolated_cores and sst_bf_cores:
+                cores += socket.get_isolated_sst_bf_cores()
+            elif isolated_cores and not sst_bf_cores:
                 cores += socket.get_isolated_cores()
+            elif not isolated_cores and sst_bf_cores:
+                cores += socket.get_sst_bf_cores()
             else:
                 cores += socket.get_cores()
         return cores
 
-    def allocate_spread(self, isolated_cores=False):
+    def allocate_spread(self, isolated_cores=False, sst_bf_cores=False):
         output_cores = []
         socket_cores = {}
 
         for socket in self.sockets:
-            if isolated_cores:
-                socket_cores[socket] = self.sockets[socket]\
-                    .get_isolated_cores()
+            if isolated_cores and sst_bf_cores:
+                socket_cores[socket] = \
+                    self.sockets[socket].get_isolated_sst_bf_cores()
+            elif isolated_cores and not sst_bf_cores:
+                socket_cores[socket] = \
+                    self.sockets[socket].get_isolated_cores()
+            elif not isolated_cores and sst_bf_cores:
+                socket_cores[socket] = self.sockets[socket].get_sst_bf_cores()
             else:
                 socket_cores[socket] = self.sockets[socket].get_cores()
         while len(socket_cores) > 0:
@@ -120,11 +153,30 @@ class Socket:
                 return True
         return False
 
+    def has_sst_bf_cores(self):
+        for core in self.cores.values():
+            if core.is_sst_bf():
+                return True
+        return False
+
+    def has_isolated_sst_bf_cores(self):
+        for core in self.cores.values():
+            if core.is_sst_bf() and core.is_isolated():
+                return True
+        return False
+
     def get_cores(self):
         return [core for core in self.cores.values()]
 
     def get_isolated_cores(self):
         return [core for core in self.cores.values() if core.is_isolated()]
+
+    def get_sst_bf_cores(self):
+        return [core for core in self.cores.values() if core.is_sst_bf()]
+
+    def get_isolated_sst_bf_cores(self):
+        return [core for core in self.cores.values()
+                if core.is_sst_bf() and core.is_isolated()]
 
     def get_shared_cores(self):
         return [core for core in self.cores.values() if not core.is_isolated()]
@@ -164,6 +216,16 @@ class Core:
 
         return True
 
+    def is_sst_bf(self):
+        if len(self.cpus) == 0:
+            return False
+
+        for cpu_id in self.cpus:
+            if not self.cpus[cpu_id].sst_bf:
+                return False
+
+        return True
+
     def as_dict(self, include_pool=True):
         result = {
             "id": self.core_id,
@@ -180,12 +242,20 @@ class CPU:
     def __init__(self, cpu_id):
         self.cpu_id = cpu_id
         self.isolated = False
+        self.sst_bf = False
 
     def as_dict(self):
-        return {
-            "id": self.cpu_id,
-            "isolated": self.isolated,
-        }
+        if self.sst_bf:
+            return {
+                "id": self.cpu_id,
+                "isolated": self.isolated,
+                "sst_bf": self.sst_bf,
+            }
+        else:
+            return {
+                "id": self.cpu_id,
+                "isolated": self.isolated,
+            }
 
 
 # Returns of map of socket id (integer) to sockets (Socket type).
@@ -196,9 +266,12 @@ class CPU:
 # # CPU,Core,Socket,Node,,L1d,L1i,L2,L3
 # 0,0,0,0,,0,0,0,0
 # 1,1,0,0,,1,1,1,0
-def parse(lscpu_output, isolated_cpus=None):
+def parse(lscpu_output, isolated_cpus=None, sst_bf_cpus=None):
     if not isolated_cpus:
         isolated_cpus = []
+
+    if not sst_bf_cpus:
+        sst_bf_cpus = []
 
     sockets = {}
 
@@ -222,6 +295,10 @@ def parse(lscpu_output, isolated_cpus=None):
             cpu = CPU(cpu_id)
             if cpu.cpu_id in isolated_cpus:
                 cpu.isolated = True
+
+            if cpu.cpu_id in sst_bf_cpus:
+                cpu.sst_bf = True
+
             core.cpus[cpu_id] = cpu
 
     return Platform(sockets)

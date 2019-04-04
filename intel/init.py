@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, topology
+from . import config, topology, discover
 import logging
 import sys
+
+NFD_SST_BF_LABEL = "feature.node.kubernetes.io/cpu_power-sst_bf.enabled"
 
 
 def init(conf_dir, num_exclusive_cores, num_shared_cores,
@@ -32,14 +34,40 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         check_assignment(conf_dir, num_exclusive_cores, num_shared_cores)
         return
 
-    platform = topology.discover()
+    sst_bf = False
+    try:
+        sst_bf = discover.get_node_label(NFD_SST_BF_LABEL) in ["true", "True"]
+    except Exception as err:
+        logging.info("Could not read SST-BF label from the node metadata: {}"
+                     .format(err))
+
+    platform = topology.discover(sst_bf)
 
     # List of intel.topology.Core objects.
     cores = platform.get_cores()
 
     check_isolated_cores(platform, num_exclusive_cores, num_shared_cores)
 
-    if platform.has_isolated_cores():
+    if sst_bf and platform.has_isolated_sst_bf_cores():
+        sst_bf_cores = [str(c.core_id) for c
+                        in platform.get_isolated_sst_bf_cores()]
+        logging.info("Isolated SST-BF physical cores: {}".format(
+                     ",".join(sst_bf_cores)))
+
+        # Isolated SST_BF cores will always land in the exclusive pool.
+        isolated_sst_bf_cores_exclusive = \
+            platform.get_isolated_sst_bf_cores(mode=exclusive_allocation_mode)
+
+        isolated_cores_shared = \
+            platform.get_isolated_cores(mode=shared_allocation_mode)
+        infra_cores = platform.get_shared_cores()
+
+        assign(isolated_sst_bf_cores_exclusive, "exclusive",
+               count=num_exclusive_cores)
+        assign(isolated_cores_shared, "shared", count=num_shared_cores)
+        assign(infra_cores, "infra")
+
+    elif platform.has_isolated_cores():
         logging.info("Isolated physical cores: {}".format(
             ",".join([str(c.core_id) for c in platform.get_isolated_cores()])))
 
@@ -148,6 +176,9 @@ def check_isolated_cores(platform, num_exclusive_cores, num_shared_cores):
 
 def assign(cores, pool, count=None):
     free_cores = [c for c in cores if c.pool is None]
+
+    # always prioritize free SST_BF cores, even if there may be none
+    free_cores.sort(key=lambda c: (c.is_sst_bf(), -c.core_id), reverse=True)
 
     if not free_cores:
         raise RuntimeError(
