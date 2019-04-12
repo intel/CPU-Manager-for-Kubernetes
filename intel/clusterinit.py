@@ -220,9 +220,12 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     try:
         k8s.create_secret(None, secret, namespace)
     except K8sApiException as err:
-        logging.error("Exception when creating secret: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
-        sys.exit(1)
+        if err.status == 409:
+            logging.debug("Secret {} already exists".format(secret_name))
+        else:
+            logging.error("Exception when creating secret: {}".format(err))
+            logging.error("Aborting webhook deployment ...")
+            sys.exit(1)
 
     configmap = k8sclient.V1ConfigMap()
     configmap_name = '-'.join([prefix, "configmap"])
@@ -234,18 +237,24 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     try:
         k8s.create_config_map(None, configmap, namespace)
     except K8sApiException as err:
-        logging.error("Exception when creating config map: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
-        sys.exit(1)
+        if err.status == 409:
+            logging.debug("configmap {} already exists".format(configmap_name))
+        else:
+            logging.error("Exception when creating config map: {}".format(err))
+            logging.error("Aborting webhook deployment ...")
+            sys.exit(1)
 
     service = k8sclient.V1Service()
     update_service(service, service_name, app_name, 443)
     try:
         k8s.create_service(None, service, namespace)
     except K8sApiException as err:
-        logging.error("Exception when creating service: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
-        sys.exit(1)
+        if err.status == 409:
+            logging.debug("service {} already exists".format(service_name))
+        else:
+            logging.error("Exception when creating service: {}".format(err))
+            logging.error("Aborting webhook deployment ...")
+            sys.exit(1)
 
     pod = k8s.get_pod_template()
     pod_name = '-'.join([prefix, "pod"])
@@ -257,10 +266,13 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     try:
         k8s.create_deployment(None, deployment, namespace)
     except K8sApiException as err:
-        logging.error("Exception when creating webhook deployment: {}"
-                      .format(err))
-        logging.error("Aborting webhook deployment ...")
-        sys.exit(1)
+        if err.status == 409:
+            logging.debug("deployment {} already exists".format(deployment))
+        else:
+            logging.error("Exception when creating webhook deployment: {}"
+                          .format(err))
+            logging.error("Aborting webhook deployment ...")
+            sys.exit(1)
 
     config = k8sclient.V1beta1MutatingWebhookConfiguration()
     config_name = '-'.join([prefix, "config"])
@@ -276,10 +288,13 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     try:
         k8s.create_mutating_webhook_configuration(None, config)
     except K8sApiException as err:
-        logging.error("Exception when creating webhook configuration: {}"
-                      .format(err))
-        logging.error("Aborting webhook deployment ...")
-        sys.exit(1)
+        if err.status == 409:
+            logging.debug("mutating_webhook {} already exists".format(config_name))
+        else:
+            logging.error("Exception when creating webhook configuration: {}"
+                          .format(err))
+            logging.error("Aborting webhook deployment ...")
+            sys.exit(1)
 
 
 # get_cmk_node_list() returns a list of nodes based on either host_list or
