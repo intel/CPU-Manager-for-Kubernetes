@@ -3,6 +3,8 @@ import struct
 import re
 import logging
 
+NFD_LABEL = "feature.node.kubernetes.io/cpu-power.sst_bf.enabled"
+
 
 def get_cpu_count():
     dirs = os.listdir("/sys/devices/system/cpu")

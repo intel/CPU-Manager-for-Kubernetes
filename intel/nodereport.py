@@ -20,9 +20,7 @@ import time
 
 from kubernetes import config as k8sconfig, client as k8sclient
 from . import config, custom_resource, discover, \
-    k8s, proc, third_party, topology, util
-
-NFD_SST_BF_LABEL = "feature.node.kubernetes.io/cpu_power-sst_bf.enabled"
+    k8s, proc, third_party, topology, util, sst_bf as sst
 
 
 def nodereport(conf_dir, seconds, publish):
@@ -84,7 +82,7 @@ def generate_report(conf_dir):
     check_cmk_config(report, conf_dir)
     sst_bf = False
     try:
-        sst_bf = bool(discover.get_node_label(NFD_SST_BF_LABEL))
+        sst_bf = bool(discover.get_node_label(sst.NFD_LABEL))
     except Exception as err:
         logging.info("Could not read SST-BF NFD label: {}".format(err))
 
