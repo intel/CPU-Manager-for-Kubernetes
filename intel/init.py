@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, topology, discover
+from . import config, topology, discover, sst_bf as sst
 import logging
 import sys
-
-NFD_SST_BF_LABEL = "feature.node.kubernetes.io/cpu_power-sst_bf.enabled"
 
 
 def init(conf_dir, num_exclusive_cores, num_shared_cores,
@@ -36,7 +34,7 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
 
     sst_bf = False
     try:
-        sst_bf = discover.get_node_label(NFD_SST_BF_LABEL) in ["true", "True"]
+        sst_bf = discover.get_node_label(sst.NFD_LABEL) in ["true", "True"]
     except Exception as err:
         logging.info("Could not read SST-BF label from the node metadata: {}"
                      .format(err))
