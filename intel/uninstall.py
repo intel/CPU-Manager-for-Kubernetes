@@ -17,7 +17,6 @@ import json
 import logging
 import os
 import shutil
-import sys
 
 from time import sleep
 from kubernetes.client.rest import ApiException as K8sApiException
@@ -95,10 +94,9 @@ def remove_report_crd(report_type, short_names):
         node_report.remove()
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
-            logging.error(
-                "Aborting uninstall: Exception when removing custom"
+            logging.warning(
+                "Exception when removing custom"
                 " resource definition \"{}\": {}".format(report_type, err))
-            sys.exit(1)
 
         logging.warning("\"{}\" for node \"{}\" does not exist.".format(
             report_type, os.getenv("NODE_NAME")))
@@ -122,10 +120,9 @@ def remove_report_tpr(report_type):
         node_report.remove()
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
-            logging.error(
-                "Aborting uninstall: Exception when removing third"
+            logging.warning(
+                "Exception when removing third"
                 " party resource \"{}\": {}".format(report_type, err))
-            sys.exit(1)
 
         logging.warning("\"{}\" for node \"{}\" does not exist.".format(
             report_type, os.getenv("NODE_NAME")))
@@ -151,10 +148,9 @@ def delete_cmk_pod(pod_base_name, namespace, postfix=None,):
             k8s.delete_pod(None, pod_name, namespace)
     except K8sApiException as err:
         if json.loads(err.body)["reason"] != "NotFound":
-            logging.error(
-                "Aborting uninstall: Exception when removing pod \"{}\": "
+            logging.warning(
+                "Exception when removing pod \"{}\": "
                 "{}".format(pod_name, err))
-            sys.exit(1)
 
         logging.warning("\"{}\" does not exist".format(pod_name))
     logging.info("\"{}\" deleted".format(pod_name))
@@ -166,10 +162,9 @@ def check_remove_conf_dir(conf_dir):
     try:
         conf = config.Config(conf_dir)
     except Exception as err:
-        logging.error(
-            "Aborting uninstall: Unable to read the CMK configuration "
+        logging.warning(
+            "Unable to read the CMK configuration "
             "directory at \"{}\": {}.".format(conf_dir, err))
-        sys.exit(1)
 
     try:
         retries = 10
@@ -215,9 +210,8 @@ def check_remove_conf_dir(conf_dir):
         logging.warning("Wrong path or \"{}\" has already been removed."
                         .format(conf_dir))
     except Exception as err:
-        logging.error("Aborting uninstall: Exception when removing "
+        logging.warning("Exception when removing "
                       "\"{}\": {}".format(conf_dir, err))
-        sys.exit(1)
 
 
 def get_pool_tasks(c, pool_name):
@@ -240,10 +234,9 @@ def remove_node_label():
         discover.patch_k8s_node(patch_body)
     except K8sApiException as err:
         if "nonexistant" not in json.loads(err.body)["message"]:
-            logging.error(
-                "Aborting uninstall: Exception when removing node "
+            logging.warning(
+                "Exception when removing node "
                 "label \"{}\": {}".format(patch_path, err))
-            sys.exit(1)
         logging.warning("Label \"{}\" does not exist.".format(patch_path))
     logging.info("Removed node label \"{}\".".format(patch_path))
 
@@ -255,9 +248,8 @@ def remove_node_taint():
     try:
         node_resp = discover.get_k8s_node(node_name)
     except K8sApiException as err:
-        logging.error("Aborting uninstall: Exception when getting the node "
+        logging.warning("Exception when getting the node "
                       "\"{}\" obj: {}".format(node_name, err))
-        sys.exit(1)
 
     version = util.parse_version(k8s.get_kubelet_version(None))
     node_taints_list = []
@@ -291,10 +283,8 @@ def remove_node_taint():
     try:
         discover.patch_k8s_node(patch_body)
     except K8sApiException as err:
-        logging.error(
-            "Aborting uninstall: Exception when removing taint \"{}\": "
-            "{}".format(patch_path, err))
-        sys.exit(1)
+        logging.warning(
+            "Exception when removing taint \"{}\": {}".format(patch_path, err))
     logging.info("Removed node taint with key\"{}\".".format("cmk"))
 
 
@@ -321,10 +311,9 @@ def remove_node_cmk_oir():
         discover.patch_k8s_node_status(patch_body)
     except K8sApiException as err:
         if "nonexistant" not in json.loads(err.body)["message"]:
-            logging.error(
-                "Aborting uninstall: Exception when removing OIR \"{}\": "
+            logging.warning(
+                "Exception when removing OIR \"{}\": "
                 "{}".format(patch_path, err))
-            sys.exit(1)
         logging.warning("CMK oir \"{}\" does not exist.".format(patch_path))
     logging.info("Removed node oir \"{}\".".format(patch_path))
 
@@ -345,10 +334,9 @@ def remove_node_cmk_er():
         discover.patch_k8s_node_status(patch_body_allocatable)
     except K8sApiException as err:
         if "nonexistant" not in json.loads(err.body)["message"]:
-            logging.error(
-                "Aborting uninstall: Exception when removing ER: "
+            logging.warning(
+                "Exception when removing ER: "
                 "{}".format(err))
-            sys.exit(1)
         logging.warning("CMK ER does not exist.")
     logging.info("Removed node ERs")
 
@@ -359,13 +347,23 @@ def remove_webhook_resources(prefix, namespace):
         try:
             k8s.delete_mutating_webhook_configuration(
                                             None, "{}-config".format(prefix))
+        except K8sApiException as err:
+            logging.warning("Exception when removing webhook: {}".format(err))
+        try:
             k8s.delete_secret(None, "{}-certs".format(prefix), namespace)
+        except K8sApiException as err:
+            logging.warning("Exception when removing webhook: {}".format(err))
+        try:
             k8s.delete_config_map(None, "{}-configmap".format(prefix),
                                   namespace)
+        except K8sApiException as err:
+            logging.warning("Exception when removing webhook: {}".format(err))
+        try:
             k8s.delete_service(None, "{}-service".format(prefix), namespace)
+        except K8sApiException as err:
+            logging.warning("Exception when removing webhook: {}".format(err))
+        try:
             k8s.delete_deployment(None, "cmk-webhook-deployment", namespace)
         except K8sApiException as err:
-            logging.error("Aborting uninstall: Exception when removing "
-                          "webhook: {}".format(err))
-            sys.exit(1)
+            logging.warning("Exception when removing webhook: {}".format(err))
         logging.info("Removed webhook resources")
