@@ -105,3 +105,10 @@ def generate_secrets(service, namespace):
     )
 
     return b64encode(cert_pem).decode(), b64encode(private_key_pem).decode()
+
+
+def convert_array2bitmask(array):
+    bitmask = 0
+    for val in array:
+        bitmask = bitmask | (1 << val)
+    return str(hex(bitmask))[2:].upper()
