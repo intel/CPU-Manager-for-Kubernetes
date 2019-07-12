@@ -176,7 +176,9 @@ def assign(cores, pool, count=None):
     free_cores = [c for c in cores if c.pool is None]
 
     # always prioritize free SST_BF cores, even if there may be none
-    free_cores.sort(key=lambda c: (c.is_sst_bf(), -c.core_id), reverse=True)
+    # move up SST_BF cores AND keep order (spread or packet) among
+    # SST_BF cores and among non-SST_BF cores
+    free_cores.sort(key=lambda c: -c.is_sst_bf(), reverse=False)
 
     if not free_cores:
         raise RuntimeError(
