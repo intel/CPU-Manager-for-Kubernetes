@@ -455,7 +455,7 @@ def update_mutatingwebhookconfiguration(config, name, app, webhook_name, cert,
     config.metadata = k8sclient.V1ObjectMeta()
     config.metadata.name = name
     config.metadata.labels = {"app": app}
-    client_config = k8sclient.V1beta1WebhookClientConfig(
+    client_config = k8sclient.AdmissionregistrationV1beta1WebhookClientConfig(
         ca_bundle=cert,
         service=k8sclient.AdmissionregistrationV1beta1ServiceReference(
             name=service,

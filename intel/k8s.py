@@ -304,13 +304,13 @@ def get_kubelet_version(config):
 # Delete namespace by name.
 def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespace(ns_name, delete_options)
+    k8s_api.delete_namespace(ns_name)
 
 
 # Delete pod from namespace.
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespaced_pod(name, ns_name, body)
+    k8s_api.delete_namespaced_pod(name, ns_name)
 
 
 # Delete ds from namespace.
@@ -324,7 +324,6 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
 
     k8s_api_ext.delete_namespaced_daemon_set(ds_name,
                                              ns_name,
-                                             body,
                                              grace_period_seconds=0,
                                              orphan_dependents=False)
 
@@ -340,25 +339,25 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
 
 def delete_service(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_service(name, ns_name, body)
+    return k8s_api.delete_namespaced_service(name, ns_name)
 
 
 def delete_config_map(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_config_map(name, ns_name, body)
+    return k8s_api.delete_namespaced_config_map(name, ns_name)
 
 
 def delete_secret(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_secret(name, ns_name, body)
+    return k8s_api.delete_namespaced_secret(name, ns_name)
 
 
 def delete_mutating_webhook_configuration(config, name,
                                           body=V1DeleteOptions()):
     k8s_api = admissionregistartion_api_client_from_config(config)
-    return k8s_api.delete_mutating_webhook_configuration(name, body)
+    return k8s_api.delete_mutating_webhook_configuration(name)
 
 
 def delete_deployment(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = apps_api_client_from_config(config)
-    return k8s_api.delete_namespaced_deployment(name, ns_name, body)
+    return k8s_api.delete_namespaced_deployment(name, ns_name)
