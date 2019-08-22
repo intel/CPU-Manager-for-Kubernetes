@@ -24,7 +24,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-isolate-pod
-  #namespace: user-supplied-namespace
+  namespace: intel-cmk
 spec:
   serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7

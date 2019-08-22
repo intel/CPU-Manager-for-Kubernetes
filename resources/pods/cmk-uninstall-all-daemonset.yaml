@@ -21,6 +21,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-uninstall-all-nodes
+  namespace: intel-cmk
 spec:
   template:
     metadata:

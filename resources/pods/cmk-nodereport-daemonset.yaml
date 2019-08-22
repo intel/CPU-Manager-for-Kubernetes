@@ -21,6 +21,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-node-report-ds-all
+  namespace: intel-cmk
 spec:
   template:
     metadata:

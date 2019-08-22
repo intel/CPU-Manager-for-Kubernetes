@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-install-pod
   name: cmk-install-pod
+  namespace: intel-cmk
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
