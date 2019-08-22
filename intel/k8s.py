@@ -18,7 +18,7 @@ from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
 
-def get_pod_template():
+def get_pod_template(saname="cmk-serviceaccount"):
     pod_template = {
         "apiVersion": "v1",
         "kind": "Pod",
@@ -28,6 +28,7 @@ def get_pod_template():
             }
         },
         "spec": {
+            "serviceAccount":saname,
             "nodeName": "NODENAME",
             "containers": [
             ],
