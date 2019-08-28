@@ -617,7 +617,7 @@ env variables have been added to the container spec:</li>
 the recommended way to start troubleshooting is to look at the logs using <code>kubectl logs POD_NAME [CONTAINER_NAME] -f</code>.</p>
 <p>For example, assuming you ran the <a href="../resources/pods/cmk-cluster-init-pod.yaml">cmk-cluster-init-pod template</a> with default options, it
 should create two pods on each node named <code>cmk-init-install-discover-pod-&lt;node-name&gt;</code> and
-<code>cmk-reconcile-nodereport-&lt;node-name&gt;</code>, where <code>&lt;node-name&gt;</code> should be replaced with the name of the node.</p>
+<code>cmk-rediscover-reconcile-nodereport-&lt;node-name&gt;</code>, where <code>&lt;node-name&gt;</code> should be replaced with the name of the node.</p>
 <p>If you want to look at the logs from the container which ran the <code>discover</code> subcommand in the pod, you can use
 <code>kubectl logs -f cmk-init-install-discover-pod-&lt;node-name&gt; discover</code></p>
 <p>If you want to look at the logs from the container which ran the <code>reconcile</code> subcommand in the pod, you can use

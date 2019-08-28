@@ -1027,7 +1027,7 @@ restricted Docker registry.</li>
 </h3>
 <p>Removes <code>cmk</code> from a node. Uninstall process reverts <code>cmk cluster-init</code>:</p>
 <ul>
-<li>deletes <code>cmk-reconcile-nodereport-pod-{node}</code> if present</li>
+<li>deletes <code>cmk-rediscover-reconcile-nodereport-pod-{node}</code> if present</li>
 <li>removes <code>NodeReport</code> from Kubernetes ThirdPartyResources if present</li>
 <li>removes <code>ReconcileReport</code> from Kubernetes ThirdPartyResources if present</li>
 <li>removes cmk node label if present</li>

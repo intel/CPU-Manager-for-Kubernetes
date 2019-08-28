@@ -32,7 +32,7 @@ from . import util
 def uninstall(install_dir, conf_dir, namespace):
     delete_cmk_pod("cmk-init-install-discover-pod", namespace,
                    postfix=os.getenv("NODE_NAME"))
-    delete_cmk_pod("cmk-reconcile-nodereport-ds", namespace,
+    delete_cmk_pod("cmk-rediscover-reconcile-nodereport-ds", namespace,
                    postfix=os.getenv("NODE_NAME"))
 
     delete_cmk_pod("cmk-node-report-ds-all", namespace)

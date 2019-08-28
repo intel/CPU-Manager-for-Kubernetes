@@ -69,7 +69,9 @@ def ds_from(pod):
                 "metadata": {
                     "labels": {
                         "app":
-                            pod["metadata"]["name"].replace("pod", "ds")
+                            pod["metadata"]["name"].replace("pod", "ds"),
+                        "podname":
+                            pod["metadata"]["labels"]["podname"]
                     }
                 },
                 "spec": pod["spec"]

@@ -36,7 +36,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 
     # Check if all the flag values passed are valid.
     # Check if cmk_cmd_list is valid.
-    valid_cmd_list = ["init", "discover", "install", "reconcile", "nodereport"]
+    valid_cmd_list = ["init", "discover", "install", "rediscover", "reconcile", "nodereport"]
     for cmk_cmd in cmk_cmd_list:
         if cmk_cmd not in valid_cmd_list:
             raise RuntimeError("CMK command should be one of {}"
@@ -147,6 +147,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                 args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=5 --publish"  # noqa: E501
             elif cmd == "nodereport":
                 args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=5 --publish"  # noqa: E501
+            elif cmd == "rediscover":
+                args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- discover; sleep infinity" # noqa: E501
 
             update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args)
     elif cmd_init_list:
@@ -178,10 +180,10 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
     for node_name in cmk_node_list:
         if cmd_list:
-            update_pod_with_node_details(pod, node_name, cmd_list)
+            update_pod_with_node_details(pod, node_name, cmd_list, "ds")
             daemon_set = k8s.ds_from(pod=pod)
         elif cmd_init_list:
-            update_pod_with_node_details(pod, node_name, cmd_init_list)
+            update_pod_with_node_details(pod, node_name, cmd_init_list, "pod")
 
         try:
             if cmd_list:
@@ -315,8 +317,9 @@ def wait_for_pod_phase(pod_name, phase_name):
             sys.exit(1)
 
         for pod in pod_list_resp["items"]:
-            if ("metadata" in pod) and ("name" in pod["metadata"]) \
-                    and pod_name in pod["metadata"]["name"]:
+            if ("metadata" in pod) and ("labels" in pod["metadata"]) \
+                    and ("podname" in pod["metadata"]["labels"]) \
+                    and (pod_name == pod["metadata"]["labels"]["podname"]):
                 if pod["status"]["phase"] == phase_name:
                     wait = False
                     break
@@ -333,10 +336,13 @@ def update_pod(pod, restart_pol, conf_dir, install_dir, serviceaccount):
     pod["spec"]["volumes"][2]["hostPath"]["path"] = install_dir
 
 
-def update_pod_with_node_details(pod, node_name, cmd_list):
+def update_pod_with_node_details(pod, node_name, cmd_list, res_type):
     pod["spec"]["nodeName"] = node_name
-    pod_name = "cmk-{}-pod-{}".format("-".join(cmd_list), node_name)
+    pod_name = "cmk-{}-{}-{}".format("-".join(cmd_list), res_type, node_name)
     pod["metadata"]["name"] = pod_name
+    # name max length is 63, so move to labels key-value
+    pod["metadata"]["labels"] = {"podname": pod_name}
+    logging.info("Created pod name: {}".format(pod_name))
 
 
 def update_pod_with_pull_secret(pod, pull_secret):
