@@ -28,11 +28,7 @@ def get_pod_template(saname="cmk-serviceaccount"):
             }
         },
         "spec": {
-<<<<<<< HEAD
             "serviceAccount": saname,
-=======
-            "serviceAccount":saname,
->>>>>>> 8e5a2a0f9150531063aa44cd1e15302b4b1ade0d
             "nodeName": "NODENAME",
             "containers": [
             ],
