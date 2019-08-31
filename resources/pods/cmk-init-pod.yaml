@@ -18,7 +18,7 @@ metadata:
   labels:
     app: cmk-init-pod
   name: cmk-init-pod
-  namespace: intel-cmk  
+  namespace: cmk-namespace  
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:

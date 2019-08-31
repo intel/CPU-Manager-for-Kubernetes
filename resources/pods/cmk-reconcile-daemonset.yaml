@@ -21,7 +21,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-reconcile-ds-all
-  namespace: intel-cmk
+  namespace: cmk-namespace
 spec:
   template:
     metadata:
