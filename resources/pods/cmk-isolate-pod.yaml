@@ -24,7 +24,7 @@ metadata:
 # Consumed by mutating webhook
   annotations:
     cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
-    namespace: cmk-namespace
+  namespace: cmk-namespace
 spec:
   restartPolicy: Never
   containers:
