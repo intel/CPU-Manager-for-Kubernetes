@@ -21,7 +21,7 @@ metadata:
   labels:
     app: cmk-isolate-pod
   name: cmk-isolate-pod
-  #namespace: user-supplied-namespace
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
   tolerations:

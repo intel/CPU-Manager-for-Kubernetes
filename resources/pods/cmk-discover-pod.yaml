@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-discover-pod
   name: cmk-discover-pod
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
