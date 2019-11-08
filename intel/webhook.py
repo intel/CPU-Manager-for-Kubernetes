@@ -133,7 +133,8 @@ def mutate(admission_review, mutations_file):
             for i in range(len(pod['spec']['initContainers'])):
                 container = pod['spec']['initContainers'][i]
 
-                pod['spec']['initContainers'][i] = apply_mutation(container, mutations)
+                pod['spec']['initContainers'][i] = \
+                    apply_mutation(container, mutations)
         except KeyError:
             pass
 
@@ -156,14 +157,15 @@ def mutate(admission_review, mutations_file):
     admission_review.pop('request')
     admission_review['response'] = resp
 
+
 def apply_mutation(container, mutations):
     try:
         merge(container, mutations.get("perContainer", {}))
     except YamlReaderError as err:
         logging.error("Error when applying container mutations: "
-                              "{}".format(str(err)))
+                      "{}".format(str(err)))
         raise MutationError
-    
+
     # NOTE: inject ENV_NUM_CORES variable only into containers with
     # ERs request/limit, priotizing requests over limits
     n_cores = None
@@ -171,17 +173,18 @@ def apply_mutation(container, mutations):
         n_cores = container['resources']['requests'][CMK_ER_NAME]
     except KeyError:
         logging.info("Container {} does not request CMK ERs"
-                             .format(container['name']))
+                     .format(container['name']))
         try:
             n_cores = container['resources']['limits'][CMK_ER_NAME]
         except KeyError:
             logging.info("Container {} doesn't have CMK ERs limit"
-                                 .format(container['name']))
+                         .format(container['name']))
 
     if n_cores is not None:
         inject_env(container, ENV_NUM_CORES, n_cores)
 
     return container
+
 
 def generate_patch(pod):
     # NOTE: workaround for K8s API server not accepting '/' as a patch path
