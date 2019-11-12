@@ -18,7 +18,7 @@ from kubernetes import client as k8sclient
 from kubernetes.config import ConfigException
 from urllib3.util.retry import MaxRetryError
 
-from intel import clusterinit, k8s
+from intel import clusterinit, k8s, util
 
 
 def test_k8s_node_list_all():
@@ -178,13 +178,13 @@ def test_k8s_get_namespaces():
         assert len(called_methods[0][2]) == 0
 
 
-def test_k8s_get_kubelet_version():
+def test_k8s_get_kube_version():
     mock = MagicMock()
     with patch('intel.k8s.version_api_client_from_config',
                MagicMock(return_value=mock)):
         expected_version = "v1.7.0"
         mock.get_code.return_value.git_version = expected_version
-        version = k8s.get_kubelet_version(None)
+        version = k8s.get_kube_version(None)
         assert version == expected_version
 
 
@@ -213,18 +213,30 @@ def test_k8s_delete_ds():
                MagicMock(return_value=mock_core)), \
         patch('intel.k8s.extensions_client_from_config',
               MagicMock(return_value=mock_ext)):
-        k8s.delete_ds(None, "fake_ds")
+        k8s.delete_ds(None, util.parse_version("v1.8.0"), "fake_ds")
         method_calls_core = mock_core.method_calls
         method_calls_ext = mock_ext.method_calls
         assert method_calls_ext[0][0] == 'delete_namespaced_daemon_set'
         assert method_calls_core[0][0] == 'list_namespaced_pod'
 
 
-def test_k8s_create_ds():
+def test_k8s_create_ds_extensions():
     mock = MagicMock()
     with patch('intel.k8s.extensions_client_from_config',
                MagicMock(return_value=mock)):
-        k8s.create_ds(None, "test_podspec", "test_namespace")
+        k8s.create_ds(None, "test_dsspec", "test_namespace",
+                      util.parse_version("v1.6.0"))
+        called_methods = mock.method_calls
+        assert len(called_methods) == 1
+        assert called_methods[0][0] == "create_namespaced_daemon_set"
+
+
+def test_k8s_create_ds_apps():
+    mock = MagicMock()
+    with patch('intel.k8s.apps_api_client_from_config',
+               MagicMock(return_value=mock)):
+        k8s.create_ds(None, "test_dsspec", "test_namespace",
+                      util.parse_version("v1.9.0"))
         called_methods = mock.method_calls
         assert len(called_methods) == 1
         assert called_methods[0][0] == "create_namespaced_daemon_set"

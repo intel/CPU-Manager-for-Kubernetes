@@ -12,24 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: cmk-reconcile-ds-all
+    app: cmk-node-report-ds-all
 # Needed for k8s < 1.7
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-reconcile-ds-all
+  name: cmk-node-report-ds-all
   namespace: cmk-namespace
 spec:
-  selector:
-    matchLabels:
-      app: cmk-reconcile-ds-all
   template:
     metadata:
       labels:
-        app: cmk-reconcile-ds-all
+        app: cmk-node-report-ds-all
     spec:
       serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
@@ -37,14 +34,14 @@ spec:
 #      - operator: "Exists"
       containers:
       - args:
-        - "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=$CMK_RECONCILE_SLEEP_TIME --publish"
+        - "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=$CMK_NODE_REPORT_SLEEP_TIME --publish"
         command:
         - "/bin/bash"
         - "-c"
         env:
-        - name: CMK_RECONCILE_SLEEP_TIME
+        - name: CMK_NODE_REPORT_SLEEP_TIME
           # Change this to modify the sleep interval between consecutive
-          # cmk reconcile runs. The value is specified in seconds.
+          # cmk node report runs. The value is specified in seconds.
           value: '60'
         - name: CMK_PROC_FS
           value: "/host/proc"
@@ -53,7 +50,7 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         image: cmk:v1.3.1
-        name: cmk-reconcile
+        name: cmk-nodereport
         volumeMounts:
         - mountPath: "/host/proc"
           name: host-proc

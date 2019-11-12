@@ -68,7 +68,7 @@ def remove_binary(install_dir):
 
 
 def remove_all_report():
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
 
     if version >= util.parse_version("v1.7.0"):
         remove_report_crd("cmk-nodereport", ["cmk-nr"])
@@ -146,7 +146,8 @@ def delete_cmk_pod(pod_base_name, namespace, postfix=None,):
             # Pod is part of DaemonSet - remove ds otherwise ds
             # controller will restart pod
             logging.info("\"{}\" is DaemonSet".format(pod_name))
-            k8s.delete_ds(None, pod_name, namespace)
+            api_version = util.parse_version(k8s.get_kube_version(None))
+            k8s.delete_ds(None, api_version, pod_name, namespace)
         else:
             k8s.delete_pod(None, pod_name, namespace)
     except K8sApiException as err:
@@ -259,7 +260,7 @@ def remove_node_taint():
                       "\"{}\" obj: {}".format(node_name, err))
         sys.exit(1)
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     node_taints_list = []
 
     if version >= util.parse_version("v1.7.0"):
@@ -299,7 +300,7 @@ def remove_node_taint():
 
 
 def remove_resource_tracking():
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
         logging.warning("Unsupported Kubernetes version")
     elif version >= util.parse_version("v1.8.1"):
@@ -354,7 +355,7 @@ def remove_node_cmk_er():
 
 
 def remove_webhook_resources(prefix, namespace):
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version >= util.parse_version("v1.9.0"):
         try:
             k8s.delete_mutating_webhook_configuration(

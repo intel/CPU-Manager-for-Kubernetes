@@ -133,6 +133,7 @@ HTTP response body: fake body
     return exp_log_err
 
 
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_init_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -149,6 +150,7 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_discover_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -165,6 +167,7 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_install_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -181,7 +184,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -198,7 +201,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
         assert caplog_tuple[1][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
@@ -242,7 +245,7 @@ def test_clusterinit_node_list_host_list():
 
 
 @patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_pass_pull_secrets():
     mock = MagicMock()
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
@@ -261,7 +264,7 @@ def test_clusterinit_pass_pull_secrets():
 
 
 @patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_pull_secrets():
     mock = MagicMock()
     with patch('intel.k8s.client_from_config',
@@ -278,7 +281,7 @@ def test_clusterinit_dont_pass_pull_secrets():
 
 
 @patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_pass_serviceaccountname():
     mock = MagicMock()
     serviceaccount_name = "testSAname"
@@ -297,7 +300,7 @@ def test_clusterinit_pass_serviceaccountname():
 
 
 @patch('intel.clusterinit.wait_for_pod_phase', MagicMock(return_value=True))
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_serviceaccountname():
     mock = MagicMock()
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
@@ -314,7 +317,7 @@ def test_clusterinit_dont_pass_serviceaccountname():
         assert sa_name_in_spec == ""
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_update_pod_with_init_container():
     pod_passed = k8sclient.V1Pod(
         metadata=k8sclient.V1ObjectMeta(annotations={}),
