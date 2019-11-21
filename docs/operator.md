@@ -573,13 +573,13 @@ the recommended way to start troubleshooting is to look at the logs using `kubec
 
 For example, assuming you ran the [cmk-cluster-init-pod template][cluster-init-template] with default options, it
 should create two pods on each node named `cmk-init-install-discover-pod-<node-name>` and
-`cmk-reconcile-nodereport-<node-name>`, where `<node-name>` should be replaced with the name of the node.
+`cmk-rediscover-reconcile-nodereport-<node-name>`, where `<node-name>` should be replaced with the name of the node.
 
 If you want to look at the logs from the container which ran the `discover` subcommand in the pod, you can use
 `kubectl logs -f cmk-init-install-discover-pod-<node-name> discover`
 
 If you want to look at the logs from the container which ran the `reconcile` subcommand in the pod, you can use
-`kubectl logs -f cmk-reconcile-nodereport-pod-<node-name> reconcile`
+`kubectl logs -f cmk-rediscover-reconcile-nodereport-pod-<node-name> reconcile`
 
 If you want to remove `cmk` use `cmk-uninstall-pod.yaml`. [nodeSelector](https://kubernetes.io/docs/user-guide/node-selection)
 can help to fine-grain the deletion for specific node.

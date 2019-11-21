@@ -1030,7 +1030,7 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
 ### `cmk uninstall`
 
 Removes `cmk` from a node. Uninstall process reverts `cmk cluster-init`:
- - deletes `cmk-reconcile-nodereport-pod-{node}` if present
+ - deletes `cmk-rediscover-reconcile-nodereport-pod-{node}` if present
  - removes `NodeReport` from Kubernetes ThirdPartyResources if present
  - removes `ReconcileReport` from Kubernetes ThirdPartyResources if present
  - removes cmk node label if present
