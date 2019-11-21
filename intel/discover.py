@@ -29,7 +29,7 @@ from . import k8s
 # the appropriate CMK node labels and taints.
 def discover(conf_dir):
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
         logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
                       "version >=1.8.1 or rollback to previous versions")
@@ -139,7 +139,7 @@ def add_node_taint():
         logging.error("Aborting discover ...")
         sys.exit(1)
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     node_taints_list = []
     node_taints = []
 

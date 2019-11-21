@@ -111,7 +111,7 @@ def test_discover_add_taint_failure1(caplog):
         assert caplog_tuple[0][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_discover_add_taint_failure2(caplog):
     fake_node_resp = {
             "metadata": {
@@ -148,7 +148,7 @@ def test_add_node_er_failure(caplog):
         assert caplog_tuple[-1][2] == "Aborting discover ..."
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.10.0'))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.10.0'))
 def test_discover_version_check(caplog):
     conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \
@@ -164,7 +164,7 @@ def test_discover_version_check(caplog):
         assert mock_taint.called
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.6.0'))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.6.0'))
 def test_discover_version_check2(caplog):
     conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \
@@ -180,7 +180,7 @@ def test_discover_version_check2(caplog):
         assert mock_taint.called
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value='v1.8.0'))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.8.0'))
 def test_discover_version_check3(caplog):
     conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \

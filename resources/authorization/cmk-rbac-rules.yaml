@@ -27,8 +27,8 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: cmk-daemonset-controller
 rules:
-- apiGroups: ["extensions"]
-  resources: ["daemonsets", "daemonsets.extensions"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["daemonsets", "daemonsets.extensions", "daemonsets.apps"]
   verbs: ["*"]
 ---
 kind: ClusterRole
@@ -47,6 +47,15 @@ metadata:
 rules:
 - apiGroups: ["", "apps", "extensions", "admissionregistration.k8s.io"]
   resources: ["secrets", "configmaps", "deployments", "services", "mutatingwebhookconfigurations"]
+  verbs: ["*"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: cmk-node-lister
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
   verbs: ["*"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -122,6 +131,19 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cmk-webhook-installer
+subjects:
+- kind: ServiceAccount
+  name: cmk-serviceaccount
+  namespace: cmk-namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: cmk-role-binding-node-lister
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cmk-node-lister
 subjects:
 - kind: ServiceAccount
   name: cmk-serviceaccount

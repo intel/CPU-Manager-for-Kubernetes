@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
@@ -23,9 +23,6 @@ metadata:
   name: cmk-reconcile-ds-all
   namespace: cmk-namespace
 spec:
-  selector:
-    matchLabels:
-      app: cmk-reconcile-ds-all
   template:
     metadata:
       labels:

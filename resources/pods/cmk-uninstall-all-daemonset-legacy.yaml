@@ -12,40 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
-    app: cmk-reconcile-ds-all
+    app: cmk-uninstall-all-nodes
 # Needed for k8s < 1.7
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
-  name: cmk-reconcile-ds-all
+  name: cmk-uninstall-all-nodes
   namespace: cmk-namespace
 spec:
-  selector:
-    matchLabels:
-      app: cmk-reconcile-ds-all
   template:
     metadata:
       labels:
-        app: cmk-reconcile-ds-all
+        app: cmk-uninstall-all-nodes
     spec:
       serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
 #      tolerations:
 #      - operator: "Exists"
+      nodeSelector:
+        "cmk.intel.com/cmk-node": "true"
       containers:
       - args:
-        - "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=$CMK_RECONCILE_SLEEP_TIME --publish"
+        - "/cmk/cmk.py uninstall"
         command:
         - "/bin/bash"
         - "-c"
         env:
-        - name: CMK_RECONCILE_SLEEP_TIME
-          # Change this to modify the sleep interval between consecutive
-          # cmk reconcile runs. The value is specified in seconds.
-          value: '60'
         - name: CMK_PROC_FS
           value: "/host/proc"
         - name: NODE_NAME
@@ -53,13 +48,15 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         image: cmk:v1.3.1
-        name: cmk-reconcile
+        name: cmk-uninstall-all-nodes
         volumeMounts:
+        - mountPath: "/etc/cmk"
+          name: cmk-conf-dir
         - mountPath: "/host/proc"
           name: host-proc
           readOnly: true
-        - mountPath: "/etc/cmk"
-          name: cmk-conf-dir
+        - mountPath: "/opt/bin"
+          name: cmk-install-dir
       volumes:
       - hostPath:
           path: "/proc"
@@ -68,3 +65,7 @@ spec:
           # Change this to modify the CMK config dir in the host file system.
           path: "/etc/cmk"
         name: cmk-conf-dir
+      - hostPath:
+          # Change this to modify the CMK installation dir in the host file system.
+          path: "/opt/bin"
+        name: cmk-install-dir

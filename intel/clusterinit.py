@@ -78,7 +78,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  exclusive_mode, namespace)
 
     # Run mutating webhook admission controller on supported cluster
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version >= util.parse_version("v1.9.0"):
         deploy_webhook(namespace, conf_dir, install_dir, serviceaccount,
                        cmk_img)
@@ -132,12 +132,12 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
                  exclusive_mode, namespace):
+    version = util.parse_version(k8s.get_kube_version(None))
     pod = k8s.get_pod_template()
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
-        version = util.parse_version(k8s.get_kubelet_version(None))
         if version >= util.parse_version("v1.7.0"):
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
@@ -179,13 +179,14 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     for node_name in cmk_node_list:
         if cmd_list:
             update_pod_with_node_details(pod, node_name, cmd_list)
-            daemon_set = k8s.ds_from(pod=pod)
+            daemon_set = k8s.ds_from(pod=pod, version=version)
         elif cmd_init_list:
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
             if cmd_list:
-                cr_pod_resp = k8s.create_ds(None, daemon_set, namespace)
+                cr_pod_resp = k8s.create_ds(None, daemon_set, namespace,
+                                            version)
                 logging.debug("Response while creating ds for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
@@ -375,7 +376,7 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     container_template["name"] = cmd
     pod_init_containers_list = []
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
 
     if version >= util.parse_version("v1.7.0"):
         pod["spec"]["initContainers"] = [container_template]

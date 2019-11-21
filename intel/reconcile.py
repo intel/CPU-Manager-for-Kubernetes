@@ -44,7 +44,7 @@ def reconcile(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version = util.parse_version(k8s.get_kubelet_version(None))
+            version = util.parse_version(k8s.get_kube_version(None))
 
             if version >= util.parse_version("v1.7.0"):
                 reconcile_report_type = \
