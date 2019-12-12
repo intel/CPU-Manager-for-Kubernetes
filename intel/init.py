@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, topology, discover, sst_bf as sst
+from . import config, topology, discover, sst_bf as sst, sst_cp as cp
 import logging
 import sys
 
@@ -39,6 +39,13 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         logging.info("Could not read SST-BF label from the node metadata: {}"
                      .format(err))
 
+    sst_cp = False
+    try:
+        sst_cp = discover.get_node_label(cp.NFD_LABEL) in ["true", "True"]
+    except Exception as err:
+        logging.info("Could not read SST-CP label from the node metadata: {}"
+                     .format(err))
+
     platform = topology.discover(sst_bf)
 
     # List of intel.topology.Core objects.
@@ -46,7 +53,69 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
 
     check_isolated_cores(platform, num_exclusive_cores, num_shared_cores)
 
-    if sst_bf and platform.has_isolated_sst_bf_cores():
+    if sst_cp and platform.has_isolated_cores():
+        epp_order = cp.get_epp_order(platform)
+
+        if len(epp_order) > 3:
+            logging.error("There must not be more than 3 EPP values "
+                          "among the cores. EPP values present: {}"
+                          .format(", ".join(epp_order)))
+            sys.exit(1)
+
+        check_sst_cp_isolated_cores(platform, num_exclusive_cores,
+                                    num_shared_cores, epp_order)
+        logging.info("EPP order: {}".format(", ".join(epp_order)))
+
+        if len(epp_order) == 3:
+            sst_cp_exclusive_cores = platform.get_epp_cores(
+                 epp_order[0], num_exclusive_cores)
+            sst_cp_shared_cores = platform.get_epp_cores(
+                 epp_order[1], num_shared_cores)
+            sst_cp_infra_cores = platform.get_epp_cores_no_limit(
+                 epp_order[2])
+
+            logging.info("Isolated SST-CP exclusive cores (EPP value:"
+                         " {}): {}".format(epp_order[0], ",".join(
+                          [str(c.core_id) for c in sst_cp_exclusive_cores])))
+            logging.info("Isolated SST-CP shared cores (EPP value: {}"
+                         "): {}".format(epp_order[1], ",".join(
+                          [str(c.core_id) for c in sst_cp_shared_cores])))
+            logging.info("SST-CP infra cores (EPP value: {}): {}"
+                         .format(epp_order[2], ",".join([str(c.core_id)
+                                 for c in sst_cp_infra_cores])))
+        elif len(epp_order) == 2:
+            logging.info("Only two EPP values set; exclusive and "
+                         "shared pools will take all of the cores "
+                         "of the highest EPP value")
+            sst_cp_exclusive_cores = platform.get_epp_cores(
+                 epp_order[0], num_exclusive_cores)
+            sst_cp_shared_cores = platform.get_epp_cores(
+                 epp_order[0], num_shared_cores, sst_cp_exclusive_cores)
+            sst_cp_infra_cores = platform.get_epp_cores_no_limit(
+                 epp_order[1])
+
+            logging.info("Isolated SST-CP exclusive cores (EPP value: {}): {}"
+                         .format(epp_order[0], ",".join([str(c.core_id)
+                                 for c in sst_cp_exclusive_cores])))
+            logging.info("Isolated SST-CP shared cores (EPP value: {}): {}"
+                         .format(epp_order[0], ",".join([str(c.core_id)
+                                 for c in sst_cp_shared_cores])))
+            logging.info("SST-CP infra cores (EPP value {}): {}"
+                         .format(epp_order[1], ",".join([str(c.core_id)
+                                 for c in sst_cp_infra_cores])))
+        else:
+            logging.error("There must be either 2 or 3 EPP values set among "
+                          "the cores. EPP values present: {}".format(
+                              ", ".join(epp_order)))
+            sys.exit(1)
+
+        assign(sst_cp_exclusive_cores, "exclusive",
+               count=num_exclusive_cores)
+        assign(sst_cp_shared_cores, "shared",
+               count=num_shared_cores)
+        assign(sst_cp_infra_cores, "infra")
+
+    elif sst_bf and platform.has_isolated_sst_bf_cores():
         sst_bf_cores = [str(c.core_id) for c
                         in platform.get_isolated_sst_bf_cores()]
         logging.info("Isolated SST-BF physical cores: {}".format(
@@ -170,6 +239,44 @@ def check_isolated_cores(platform, num_exclusive_cores, num_shared_cores):
                 "Not all isolated cores will be used by exclusive and "
                 "shared pools. %d isolated but only %d used" %
                 (num_isolated_cores, required_isolated_cores))
+
+
+def check_sst_cp_isolated_cores(platform, num_exclusive_cores,
+                                num_shared_cores, epp_order):
+    error_occured = False
+
+    if len(epp_order) == 3:
+        exclusive_cores = platform.get_epp_cores_no_limit(epp_order[0])
+        shared_cores = platform.get_epp_cores_no_limit(epp_order[1])
+
+        if num_exclusive_cores != len(exclusive_cores):
+            logging.error("Number of requested exclusive cores must"
+                          " match the number of cores with EPP value"
+                          " %s. Exclusive cores %d compared to requested %d"
+                          % (epp_order[0], len(exclusive_cores),
+                             num_exclusive_cores))
+            error_occured = True
+
+        if num_shared_cores != len(shared_cores):
+            logging.error("Number of requested shared cores must"
+                          " match the number of cores with EPP value"
+                          " %s. Shared cores %d compared to requested %d"
+                          % (epp_order[1], len(shared_cores),
+                             num_shared_cores))
+            error_occured = True
+    elif len(epp_order) == 2:
+        requested_cores = num_exclusive_cores + num_shared_cores
+        cores = platform.get_epp_cores_no_limit(epp_order[0])
+
+        if len(cores) != requested_cores:
+            logging.error("Requested number of isolated cores "
+                          "should match number of cores with EPP "
+                          "value %s. %d cores requested. %d cores available",
+                          epp_order[0], requested_cores, len(cores))
+            error_occured = True
+
+    if error_occured:
+        sys.exit(1)
 
 
 def assign(cores, pool, count=None):
