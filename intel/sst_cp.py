@@ -30,7 +30,7 @@ def get_epp_cores(platform, epp_value, num_required, unavailable_cores):
         for core_id in socket.cores.keys():
             if core_id not in unavailable_core_ids:
                 with open(CPU_EPP_PATH.format(core_id)) as f:
-                    if f.read().split("\n")[0] == epp_value:
+                    if f.readline().rstrip() == epp_value:
                         cores.append(socket.cores[core_id])
                         if len(cores) == num_required:
                             return cores
@@ -41,7 +41,7 @@ def get_epp_cores_no_limit(platform, epp_value):
     for socket in platform.sockets.values():
         for core_id in socket.cores.keys():
             with open(CPU_EPP_PATH.format(core_id)) as f:
-                if f.read().split("\n")[0] == epp_value:
+                if f.readline().rstrip() == epp_value:
                     cores.append(socket.cores[core_id])
 
     return cores

@@ -46,6 +46,11 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         logging.info("Could not read SST-CP label from the node metadata: {}"
                      .format(err))
 
+    if sst_bf and sst_cp:
+        logging.error("SST-BF and SST-CP are mutually exclusive features in "
+                      "CMK, please disable one or both.")
+        sys.exit(1)
+
     platform = topology.discover(sst_bf)
 
     # List of intel.topology.Core objects.
