@@ -19,6 +19,7 @@ import logging
 import os
 import subprocess
 from . import sst_bf
+from . import sst_cp
 
 ENV_LSCPU_SYSFS = "CMK_DEV_LSCPU_SYSFS"
 
@@ -137,6 +138,14 @@ class Platform:
         for socket in self.sockets.values():
             cores += socket.get_cores_from_pool(pool)
         return cores
+
+    def get_epp_cores(self, epp_value, num_required,
+                      unavailable_cores=[]):
+        return sst_cp.get_epp_cores(self, epp_value, num_required,
+                                    unavailable_cores)
+
+    def get_epp_cores_no_limit(self, epp_value):
+        return sst_cp.get_epp_cores_no_limit(self, epp_value)
 
 
 class Socket:
