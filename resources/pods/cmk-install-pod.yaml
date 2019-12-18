@@ -27,7 +27,7 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.3.1
+    image: cmk:v1.4.0
     name: cmk-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"
