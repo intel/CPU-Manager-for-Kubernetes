@@ -1,7 +1,7 @@
 language: python
 sudo: required
 python:
-  - "3.4"
+  - "3.6"
 services:
   - docker
 jobs:
