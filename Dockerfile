@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.4.6
+FROM python:3.6.8
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
