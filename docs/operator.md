@@ -312,10 +312,21 @@ Those parameters can be used with `cluster-init` and `init`. If operator use two
 will be mixed. In that case __exclusive__ pool is resolving before __shared__ pool.
 
 ### Power Management Capabilities
-CMK supports some power management capabilities on the latest Xeon processors, one of these __Speed Select Technology - Base Frequency (SST-Bf)__. 
+CMK supports some power management capabilities on the latest Xeon processors, one of these __Speed Select Technology - Base Frequency (SST-BF)__. 
 CMK is able to discover SST-BF configured nodes through the use of node labels, discovers the SST-BF configured cores and ensures these cores are placed in the __exclusive__ pool. This enables users to use these special cores for their containerized workloads, getting guaranteed performance.
 * More information on SST-BF can be found [here](https://builders.intel.com/docs/networkbuilders/intel-speed-select-technology-base-frequency-enhancing-performance.pdf)
 * More information on configuring a Kubernetes cluster to take advantage of these Power Management capabilites can be found [here](addlink)
+
+#### SST-CP
+To utilize SST-CP cores with CMK, the cores need to be set up before CMK is initialised. More information about setting up the cores can be found [here](https://github.com/intel/CommsPowerManagement). The SST-CP capable node must also be labeled correctly.
+
+The node gets labeled correctly using [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery), which will use a script provided in the CMK Github repository (located at resources/scripts/sst-cp.sh) to determine whether the node is configured to use SST-CP. This file needs to be moved to the correct place so NFD can find it.
+
+After NFD has been set up in your Kubernetes cluster, the folders /etc/kubernetes/node-feature-discovery/source.d/ and /etc/kubernetes/node-feature-discovery/features.d/ should have been created. To move this SST-CP discovery script to the correct location, move into the directory where you cloned the CMK repository. Then copy the file:
+
+`cp resources/scripts/sst-cp.sh /etc/kubernetes/node-feature-discovery/source.d/`
+     
+NFD will look in this location and execute the script, labeling the node if SST-CP is correctly configured. Then simply initialise CMK with the recommended script, providing the correct number of cores for the exclusive and shared pools, and the correct cores will be placed in the correct pools.
 
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
