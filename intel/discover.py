@@ -55,10 +55,14 @@ def discover(conf_dir):
 # add_node_oir patches the node with the appropriate CMK OIR.
 def add_node_oir(conf_dir):
     c = config.Config(conf_dir)
+    num_excl_non_isolcpus = None
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
         num_slots = len(c.pool("exclusive").cpu_lists())
+        if "exclusive-non-isolcpus" in c.pools():
+            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
+                                        .cpu_lists())
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
@@ -76,14 +80,35 @@ def add_node_oir(conf_dir):
         logging.error("Aborting discover ...")
         sys.exit(1)
 
+    if num_excl_non_isolcpus:
+        patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
+                      "resource-cmk-excl-non-isolcpus")
+        patch_body = [{
+            "op": "add",
+            "path": patch_path,
+            "value": num_excl_non_isolcpus
+        }]
+
+        try:
+            patch_k8s_node_status(patch_body)
+        except K8sApiException as err:
+            logging.error("Exception when patching node with OIR: {}"
+                          .format(err))
+            logging.error("Aborting discover ...")
+            sys.exit(1)
+
 
 # add_node_er patches the node with the appropriate CMK extended resources.
 def add_node_er(conf_dir):
     c = config.Config(conf_dir)
+    num_excl_non_isolcpus = None
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
         num_slots = len(c.pool("exclusive").cpu_lists())
+        if "exclusive-non-isolcpus" in c.pools():
+            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
+                                        .cpu_lists())
 
     patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")
     patch_body = [{
@@ -99,6 +124,24 @@ def add_node_er(conf_dir):
                       .format(err))
         logging.error("Aborting discover ...")
         sys.exit(1)
+
+    if num_excl_non_isolcpus:
+        patch_path = ("/status/capacity/cmk.intel.com~1"
+                      "exclusive-non-isolcpus-cores")
+        patch_body = [{
+            "op": "add",
+            "path": patch_path,
+            "value": num_excl_non_isolcpus
+        }]
+
+        try:
+            patch_k8s_node_status(patch_body)
+        except K8sApiException as err:
+            logging.error("Exception when patching node with "
+                          "exclusive-non-isolcpus ER: {}"
+                          .format(err))
+            logging.error("Aborting discover ...")
+            sys.exit(1)
 
 
 def add_node_label():

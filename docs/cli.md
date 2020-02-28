@@ -30,9 +30,11 @@ Usage:
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
+                   [--excl-non-isolcpus=<list>]
   cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
+           [--excl-non-isolcpus=<list>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -84,6 +86,8 @@ Options:
   --namespace=<name>           Set the namespace to deploy pods to during the
                                cluster-init deployment process.
                                [default: default].
+  --excl-non-isolcpus=<list>   List of cores to be added to the extra exclusive
+                               pool, not governed by isolcpus [default: -1]
 ```
 
 ## Global configuration
@@ -103,9 +107,11 @@ Options:
 ### `cmk init`
 
 Initializes the cmk configuration directory customized for NFV workloads,
-including three pools: _infra_, _shared_ and _exclusive_. The
+including three pools: _infra_, _shared_ and _exclusive_, with an 
+additional fourth - _exclusive-non-isolcpus_ - if cores are provided. The
 _exclusive_ pool is EXCLUSIVE while the _shared_ and _infra_ pools
-are SHARED.
+are SHARED. The _exclusive-non-isolcpus_ pool is also EXCLUSIVE, but the
+cores within the pool are not governed by isolcpus.
 
 Processor topology is discovered using [`lscpu`][lscpu].
 
@@ -210,12 +216,21 @@ _None_
   in the exclusive pool.
 - `--num-shared-cores=<num>` Number of (physical) processor cores to include
   in the shared pool.
+- `--excl-non-isolcpus=<list>` List of (physical) processor cores to include in
+  the exclusive-non-isolcpus pool, which is isolated from other user pods in the
+  cluster but does not use cores governed by isolcpus.
 
 **Example:**
 
 ```shell
 $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
   cmk init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
+```
+
+```shell
+$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
+  cmk init --conf-dir=/etc/cmk ----num-exclusive-cores=4 --num-shared-cores=1 \
+           --excl-non-isolcpus=10-15
 ```
 
 -------------------------------------------------------------------------------
@@ -494,7 +509,8 @@ to be set._
 **Flags:**
 
 - `--conf-dir=<dir>` Path to the CMK configuration directory.
-- `--pool=<pool>`    Pool name: either _infra_, _shared_ or _exclusive_.
+- `--pool=<pool>`    Pool name: either _infra_, _shared_, _exclusive_ or 
+                     _exlcusive-non-isolcpus_.
 - `--no-affinity`    Do not set cpu affinity before forking the child
                      command. In this mode the user program is responsible
                      for reading the `CMK_CPUS_ASSIGNED` environment
@@ -993,6 +1009,10 @@ stored in `cmk-webhook-certs` secret object. After updating them, `cmk-webhook-p
 should be restarted to load new  Additionally certificate is stored in
 the `cmk-webhook-config` MutatingWebhookConfiguration object and in such scenario,
 it needs to be updated as well.
+- Including the flag _excl-non-isolcpus_ will create an extra pool in which the
+  cores are isolated from other user pods in the cluster but are not governed by
+  isolcpus. Excluding it will configure CMK normally, with only the _infra_, 
+  _shared_, and _exclusive_ pools.
 
 **Args:**
 
@@ -1017,12 +1037,21 @@ _None_
   in the shared pool.
 - `--pull-secret=<name>`  Name of secret used for pulling Docker images from
   restricted Docker registry.
+- `--excl-non-isolcpus`   List of (physical) processor cores to include in
+  the exclusive-non-isolcpus pool, which is isolated from other user pods in the
+  cluster but does not use cores governed by isolcpus.
 
 **Example:**
 
 ```shell
 $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
   cmk cluster-init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
+```
+
+```shell
+$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
+  cmk cluster-init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1 \
+                   --excl-non-isolcpus=10-15
 ```
 
 -------------------------------------------------------------------------------

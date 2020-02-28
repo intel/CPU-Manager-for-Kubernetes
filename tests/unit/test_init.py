@@ -58,6 +58,30 @@ def quad_core_lscpu():
 """
 
 
+def eight_core_lscpu():
+    return """#The following is the parsable format, which can be fed to other
+# programs. Each different item in every column has an unique ID
+# starting from zero.
+# CPU,Core,Socket,Node,,L1d,L1i,L2,L3
+0,0,0,0,,0,0,0,0
+1,1,0,0,,1,1,1,0
+2,2,0,0,,2,2,2,0
+3,3,0,0,,3,3,3,0
+4,4,0,0,,4,4,4,0
+5,5,0,0,,5,5,5,0
+6,6,0,0,,6,6,6,0
+7,7,0,0,,7,7,7,0
+8,0,0,0,,0,0,0,0
+9,1,0,0,,1,1,1,0
+10,2,0,0,,2,2,2,0
+11,3,0,0,,3,3,3,0
+12,4,0,0,,4,4,4,0
+13,5,0,0,,5,5,5,0
+14,6,0,0,,6,6,6,0
+15,7,0,0,,7,7,7,0
+"""
+
+
 def test_init_success1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
@@ -66,7 +90,8 @@ def test_init_success1(monkeypatch):
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 2, 1,
+                  "vertical", "vertical", "-1")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -93,7 +118,8 @@ def test_init_success1_isolcpus(monkeypatch):
     with patch("intel.topology.lscpu",
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 2, 1,
+                  "vertical", "vertical", "-1")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -120,7 +146,8 @@ def test_init_success2(monkeypatch):
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 2, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 1, 2,
+                  "vertical", "vertical", "-1")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -145,7 +172,8 @@ def test_init_success2_isolcpus(monkeypatch):
     with patch("intel.topology.lscpu",
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 2, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 1, 2,
+                  "vertical", "vertical", "-1")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -171,7 +199,8 @@ def test_init_success3(monkeypatch):
 
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 1, 1,
+                  "vertical", "vertical", "-1")
         c = config.Config(os.path.join(temp_dir, "init"))
         pools = c.pools()
         assert len(pools) == 3
@@ -187,6 +216,69 @@ def test_init_success3(monkeypatch):
         assert cl_exclusive["0,4"]
         assert cl_shared["1,5"]
         assert cl_infra["2,6,3,7"]
+
+
+def test_init_success_excl_non_isolcpus1(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        init.init(os.path.join(temp_dir, "init"), 1, 1,
+                  "vertical", "vertical", "0")
+        c = config.Config(os.path.join(temp_dir, "init"))
+        pools = c.pools()
+        assert len(pools) == 4
+        assert "shared" in pools
+        assert "exclusive" in pools
+        assert "infra" in pools
+        assert "exclusive-non-isolcpus" in pools
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        cl_excl_non_isolcpus = pools["exclusive-non-isolcpus"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
+        assert not pools["infra"].exclusive()
+        assert pools["exclusive-non-isolcpus"].exclusive()
+        assert cl_exclusive["1,9"]
+        assert cl_shared["2,10"]
+        assert cl_excl_non_isolcpus["0,8"]
+        assert cl_infra["3,11,4,12,5,13,6,14,7,15"]
+
+
+def test_init_success_excl_non_isolcpus2(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        init.init(os.path.join(temp_dir, "init"), 1, 1,
+                  "vertical", "vertical", "0,3-5")
+        c = config.Config(os.path.join(temp_dir, "init"))
+        pools = c.pools()
+        assert len(pools) == 4
+        assert "shared" in pools
+        assert "exclusive" in pools
+        assert "infra" in pools
+        assert "exclusive-non-isolcpus" in pools
+        cl_exclusive = pools["exclusive"].cpu_lists()
+        cl_shared = pools["shared"].cpu_lists()
+        cl_infra = pools["infra"].cpu_lists()
+        cl_excl_non_isolcpus = pools["exclusive-non-isolcpus"].cpu_lists()
+        assert not pools["shared"].exclusive()
+        assert pools["exclusive"].exclusive()
+        assert not pools["infra"].exclusive()
+        assert pools["exclusive-non-isolcpus"].exclusive()
+        assert cl_exclusive["1,9"]
+        assert cl_shared["2,10"]
+        assert "0,8" in cl_excl_non_isolcpus
+        assert "3,11" in cl_excl_non_isolcpus
+        assert "4,12" in cl_excl_non_isolcpus
+        assert "5,13" in cl_excl_non_isolcpus
+        assert cl_infra["6,14,7,15"]
 
 
 def test_init_failure1(monkeypatch):
@@ -210,7 +302,7 @@ def test_init_failure1(monkeypatch):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError):
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
-                      "vertical")
+                      "vertical", "-1")
 
 
 def test_init_failure2(monkeypatch):
@@ -234,7 +326,7 @@ def test_init_failure2(monkeypatch):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
-                      "vertical")
+                      "vertical", "-1")
         assert err is not None
         expected_msg = "No more free cores left to assign for shared"
         assert err.value.args[0] == expected_msg
@@ -265,9 +357,87 @@ def test_init_failure3(monkeypatch):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
-                      "vertical")
+                      "vertical", "-1")
         assert err is not None
         expected_msg = "No more free cores left to assign for infra"
+        assert err.value.args[0] == expected_msg
+
+
+def test_init_failure_excl_non_isolcpus1(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        with pytest.raises(RuntimeError) as err:
+            init.init(os.path.join(temp_dir, "init"), 1, 1,
+                      "vertical", "vertical", "1,2")
+        assert err is not None
+        expected_msg = "Core(s) have already been assigned to pool(s): [1, 2]"\
+                       ", cannot add them to exclusive-non-isolcpus pool"
+        assert err.value.args[0] == expected_msg
+
+
+def test_init_failure_excl_non_isolcpus2(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        with pytest.raises(RuntimeError) as err:
+            init.init(os.path.join(temp_dir, "init"), 1, 1,
+                      "vertical", "vertical", "0,1")
+        assert err is not None
+        expected_msg = "Core(s) have already been assigned to pool(s): [1]"\
+                       ", cannot add them to exclusive-non-isolcpus pool"
+        assert err.value.args[0] == expected_msg
+
+
+def test_init_failure_excl_non_isolcpus3(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        with pytest.raises(RuntimeError) as err:
+            init.init(os.path.join(temp_dir, "init"), 1, 1,
+                      "vertical", "vertical", "-2")
+        assert err is not None
+        expected_msg = "Invalid core ID: -2"
+        assert err.value.args[0] == expected_msg
+
+
+def test_init_failure_excl_non_isolcpus4(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS,
+                       helpers.procfs_dir("exclusive_non_isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=eight_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        with pytest.raises(RuntimeError) as err:
+            init.init(os.path.join(temp_dir, "init"), 1, 1,
+                      "vertical", "vertical", "20,21")
+        assert err is not None
+        expected_msg = "Following physical cores not on system: [20, 21];"\
+                       " you may be including logical CPUs of each core"
+        assert err.value.args[0] == expected_msg
+
+
+def test_init_failure_excl_non_isolcpus5(monkeypatch):
+    monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
+
+    with patch("intel.topology.lscpu",
+               MagicMock(return_value=quad_core_lscpu())):
+        temp_dir = tempfile.mkdtemp()
+        with pytest.raises(RuntimeError) as err:
+            init.init(os.path.join(temp_dir, "init"), 1, 1,
+                      "vertical", "vertical", "3")
+        assert err is not None
+        expected_msg = "Isolated cores [3] cannot be placed in"\
+                       " exclusive-non-isolcpus pool"
         assert err.value.args[0] == expected_msg
 
 
@@ -280,10 +450,12 @@ def test_init_config_exists_error(monkeypatch, caplog):
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         # Init
-        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 2, 1,
+                  "vertical", "vertical", "-1")
 
         # Try to init again, configuration should already exist
-        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 2, 1,
+                  "vertical", "vertical", "-1")
 
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[-1][2] == "Configuration directory already exists."
@@ -303,6 +475,7 @@ def test_init_check_assignment_error(monkeypatch, caplog):
     with patch("intel.topology.lscpu",
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical", "vertical")
+        init.init(os.path.join(temp_dir, "init"), 2, 1,
+                  "vertical", "vertical", "-1")
         with pytest.raises(SystemExit):
             init.check_assignment(os.path.join(temp_dir, "init"), -1, -1)

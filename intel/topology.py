@@ -347,14 +347,14 @@ def parse_isolcpus(cmdline):
 
         if key == "isolcpus":
             cpus_str = value.split(",")
-            cpus += parse_cpus_from_isolcpus(cpus_str)
+            cpus += parse_cpus_str(cpus_str)
 
     # Get unique cpu_ids from list
     cpus = list(set(cpus))
     return cpus
 
 
-def parse_cpus_from_isolcpus(cpus_str):
+def parse_cpus_str(cpus_str):
     cpus = []
     for cpu_id in cpus_str:
         if "-" not in cpu_id:

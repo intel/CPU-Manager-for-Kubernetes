@@ -26,7 +26,8 @@ from intel import k8s, util
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_exclusive_cores, num_shared_cores,
                  pull_secret, serviceaccount, exclusive_mode, shared_mode,
-                 namespace):
+                 namespace, excl_non_isolcpus):
+
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
@@ -70,12 +71,12 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
 
     # Run mutating webhook admission controller on supported cluster
     version = util.parse_version(k8s.get_kube_version(None))
@@ -91,7 +92,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
              install_dir, num_exclusive_cores, num_shared_cores, cmk_node_list,
              pull_secret, serviceaccount, shared_mode, exclusive_mode,
-             namespace):
+             namespace, excl_non_isolcpus):
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -101,7 +102,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -131,7 +132,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace):
+                 exclusive_mode, namespace, excl_non_isolcpus):
     version = util.parse_version(k8s.get_kube_version(None))
     pod = k8s.get_pod_template()
     if pull_secret:
@@ -156,9 +157,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             if cmd == "init":
                 args = ("/cmk/cmk.py init --num-exclusive-cores={} "
                         "--num-shared-cores={} --shared-mode={} "
-                        "--exclusive-mode={}")\
+                        "--exclusive-mode={} --excl-non-isolcpus={}")\
                     .format(num_exclusive_cores, num_shared_cores, shared_mode,
-                            exclusive_mode)
+                            exclusive_mode, excl_non_isolcpus)
                 # If init is the only cmd in cmd_init_list, it should be run
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.

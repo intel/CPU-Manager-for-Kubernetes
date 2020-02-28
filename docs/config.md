@@ -50,6 +50,34 @@ etc
             └── exclusive
 ```
 
+_Example with extra exclusive-non-isolcpus pool configured:_
+
+```           
+etc
+└── cmk
+    ├── lock
+    └── pools
+        ├── shared
+        │   ├── 3,11
+        │   │   └── tasks
+        │   └── exclusive
+        ├── exclusive
+        │   ├── 4,12
+        │   │   └── tasks
+        │   ├── 5,13
+        │   │   └── tasks
+        ├── infra
+        |   ├── 0-2,8-10
+        |   │   └── tasks
+        |   └── exclusive
+        └── exclusive-non-isolcpus
+            ├── 6,14
+            │   └── tasks
+            ├── 7,15
+            │   └── tasks
+            └── exclusive
+```
+
 _Where:_
 
 | Path                                    | Meaning |

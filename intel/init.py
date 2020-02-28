@@ -18,7 +18,8 @@ import sys
 
 
 def init(conf_dir, num_exclusive_cores, num_shared_cores,
-         exclusive_allocation_mode, shared_allocation_mode):
+         exclusive_allocation_mode, shared_allocation_mode,
+         excl_non_isolcpus):
     check_hugepages()
 
     logging.info("Writing config to {}.".format(conf_dir))
@@ -118,6 +119,7 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
                count=num_exclusive_cores)
         assign(sst_cp_shared_cores, "shared",
                count=num_shared_cores)
+        check_excl_non_isolcpus(excl_non_isolcpus, platform)
         assign(sst_cp_infra_cores, "infra")
 
     elif sst_bf and platform.has_isolated_sst_bf_cores():
@@ -137,6 +139,7 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         assign(isolated_sst_bf_cores_exclusive, "exclusive",
                count=num_exclusive_cores)
         assign(isolated_cores_shared, "shared", count=num_shared_cores)
+        check_excl_non_isolcpus(excl_non_isolcpus, platform)
         assign(infra_cores, "infra")
 
     elif platform.has_isolated_cores():
@@ -158,6 +161,7 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         assign(isolated_cores_exclusive, "exclusive",
                count=num_exclusive_cores)
         assign(isolated_cores_shared, "shared", count=num_shared_cores)
+        check_excl_non_isolcpus(excl_non_isolcpus, platform)
         assign(infra_cores, "infra")
     else:
         logging.info("No isolated physical cores detected: allocating "
@@ -173,6 +177,8 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
     with c.lock():
         write_exclusive_pool("exclusive", platform, c)
         write_shared_pool("shared", platform, c)
+        if excl_non_isolcpus != "-1" and platform.has_isolated_cores():
+            write_exclusive_pool("exclusive-non-isolcpus", platform, c)
         write_shared_pool("infra", platform, c)
 
 
@@ -284,6 +290,30 @@ def check_sst_cp_isolated_cores(platform, num_exclusive_cores,
         sys.exit(1)
 
 
+def check_excl_non_isolcpus(excl_non_isolcpus, platform):
+
+    # Assigns the cores from excl_non_isolcpus to a new pool called
+    # exclusive-non-isolcpus. This pool is for cores that need to be
+    # isolated from other user containers but are not governed by
+    # isolcpus
+
+    if excl_non_isolcpus != "-1":
+        cpus_str = excl_non_isolcpus.split(",")
+        # To get rid of negative numbers
+        for cpu_list in cpus_str:
+            if len(cpu_list) > 2:
+                cpu_list = cpu_list.split("-")
+            else:
+                cpu_list = [cpu_list]
+            for cpu in cpu_list:
+                if not cpu.isdigit():
+                    raise RuntimeError("Invalid core ID: {}".format(cpu))
+        cpus = topology.parse_cpus_str(cpus_str)
+        all_cores = platform.get_cores()
+        assign_excl_non_isolcpus(all_cores, "exclusive-non-isolcpus",
+                                 cpus)
+
+
 def assign(cores, pool, count=None):
     free_cores = [c for c in cores if c.pool is None]
 
@@ -309,6 +339,54 @@ def assign(cores, pool, count=None):
         c.pool = pool
 
 
+def assign_excl_non_isolcpus(cores, pool, parsed_cpus):
+
+    # Assigns cores provided by the user to an addition pool
+    # called 'exclusive-non-isolcpus'. These cores are
+    # isolated from other user processes but are not placed
+    # in isolcpus
+
+    # Catch all the cores that are not on the system
+    # Only looking for physical cores - the logical CPUs on each core
+    # will be considered not on the system
+    cores_not_on_system = []
+    for c in parsed_cpus:
+        if c >= len(cores):
+            cores_not_on_system.append(c)
+    if len(cores_not_on_system) > 0:
+        raise RuntimeError("Following physical cores not on system: {};"
+                           " you may be including logical CPUs of each core"
+                           .format(cores_not_on_system))
+
+    cores_to_assign = [c for c in cores if c.core_id in parsed_cpus]
+    cores_already_assigned = []
+    for core in cores_to_assign:
+        if core.pool is not None:
+            cores_already_assigned.append(core)
+    if len(cores_already_assigned) > 0:
+        raise RuntimeError("Core(s) have already been assigned to pool(s): {}"
+                           ", cannot add them to exclusive-non-isolcpus pool"
+                           .format([c.core_id for c in
+                                   cores_already_assigned]))
+
+    unused_isolated_cores = []
+    for core in cores_to_assign:
+        if core.is_isolated():
+            unused_isolated_cores.append(core)
+    if len(unused_isolated_cores) > 0:
+        raise RuntimeError("Isolated cores {} cannot be placed in"
+                           " exclusive-non-isolcpus pool"
+                           .format([c.core_id for c in
+                                   unused_isolated_cores]))
+
+    logging.info("Logical cores assigned to exclusive-non-isolcpus"
+                 " pool: {}".format((",").join(
+                  [str(c.core_id) for c in cores_to_assign])))
+
+    for c in cores_to_assign:
+        c.pool = pool
+
+
 def write_exclusive_pool(pool_name, platform, config):
     logging.info("Adding %s pool." % pool_name)
     pool = config.add_pool(pool_name, True)
@@ -317,6 +395,7 @@ def write_exclusive_pool(pool_name, platform, config):
     for socket in sockets:
         pool.add_socket(str(socket.socket_id))
         cores = socket.get_cores_from_pool(pool_name)
+
         for core in cores:
             cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
             pool.add_cpu_list(str(socket.socket_id), cpu_ids_str)

@@ -131,6 +131,15 @@ The above command prepares all the nodes in the Kubernetes cluster for the `CMK`
 The above command prepares nodes "node1", "node2" and "node3" but only runs the `cmk init` and `cmk discover`
 subcommands on each of those nodes.
 
+```yml
+  - args:
+      # Change this value to pass different options to cluster-init.
+      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --num-exclusive-cores=3 --num-shared-cores=1 --excl-non-isolcpus=11-15"
+```
+The above command prepares nodes "node1", "node2" and "node3" to have 3 cores placed in the _exclusive_ pool, 1 core 
+placed in the _shared_ pool, and the cores 11-15 placed in the _exclusive-non-isolcpus_ pool. The _exclusive-non-isolcpus_ 
+pool will isolate pods from other pods in the cluster, but will not use cores that are governed by isolcpus.
+
 For more details on the options provided by `cmk cluster-init`, see this [description][cmk-cluster-init].
 
 ### Prepare `CMK` nodes by running each `CMK` subcommand as a Pod.

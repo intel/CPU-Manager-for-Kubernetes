@@ -20,7 +20,8 @@ import json
 import base64
 import sys
 
-CMK_ER_NAME = 'cmk.intel.com/exclusive-cores'
+CMK_ER_NAME = ['cmk.intel.com/exclusive-cores',
+               'cmk.intel.com/exclusive-non-isolcpus-cores']
 CMK_MUTATE_ANNOTATION = 'cmk.intel.com/mutate'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
@@ -169,19 +170,23 @@ def apply_mutation(container, mutations):
     # NOTE: inject ENV_NUM_CORES variable only into containers with
     # ERs request/limit, priotizing requests over limits
     n_cores = None
-    try:
-        n_cores = container['resources']['requests'][CMK_ER_NAME]
-    except KeyError:
-        logging.info("Container {} does not request CMK ERs"
-                     .format(container['name']))
+    for er in CMK_ER_NAME:
         try:
-            n_cores = container['resources']['limits'][CMK_ER_NAME]
+            n_cores = container['resources']['requests'][er]
         except KeyError:
-            logging.info("Container {} doesn't have CMK ERs limit"
-                         .format(container['name']))
+            logging.info("Container {} does not request CMK ER {}"
+                         .format(container['name'], er))
+            try:
+                n_cores = container['resources']['limits'][er]
+            except KeyError:
+                logging.info("Container {} doesn't have CMK ER {} limit"
+                             .format(container['name'], er))
 
-    if n_cores is not None:
-        inject_env(container, ENV_NUM_CORES, n_cores)
+        if n_cores is not None:
+            # Break out if request found for any one ER
+            # No support for multiple
+            inject_env(container, ENV_NUM_CORES, n_cores)
+            break
 
     return container
 
@@ -222,16 +227,17 @@ def encode_patch(patch):
 
 
 def is_container_mutation_required(container):
-    try:
-        if container['resources']['requests'][CMK_ER_NAME] is not None:
-            return True
-    except KeyError:
-        pass
-    try:
-        if container['resources']['limits'][CMK_ER_NAME] is not None:
-            return True
-    except KeyError:
-        pass
+    for er in CMK_ER_NAME:
+        try:
+            if container['resources']['requests'][er] is not None:
+                return True
+        except KeyError:
+            pass
+        try:
+            if container['resources']['limits'][er] is not None:
+                return True
+        except KeyError:
+            pass
     return False
 
 
