@@ -36,7 +36,7 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
                            .format(pool_name))
         pool = pools[pool_name]
 
-        socket_aware_pools = ["exclusive", "shared"]
+        socket_aware_pools = ["exclusive", "shared", "exclusive-non-isolcpus"]
         if socket_id == "-1" or pool_name not in socket_aware_pools:
             selected_socket = None
         else:
