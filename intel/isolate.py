@@ -23,6 +23,7 @@ import subprocess
 
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
 ENV_CPUS_ASSIGNED_MASK = "CMK_CPUS_ASSIGNED_MASK"
+ENV_CPUS_SHARED = "CMK_CPUS_SHARED"
 ENV_CPUS_INFRA = "CMK_CPUS_INFRA"
 ENV_NUM_CORES = "CMK_NUM_CORES"
 
@@ -89,6 +90,14 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
         cpus_arr = [int(n) for n in cpu_ids.split(',')]
         cpus_bit_mask = util.convert_array2bitmask(cpus_arr)
         os.environ[ENV_CPUS_ASSIGNED_MASK] = cpus_bit_mask
+
+        # Advertise shared pool CPU IDs
+        shared_pool = pools.get("shared")
+        if shared_pool is not None:
+            shared_clists = [cl.cpus()
+                             for cl
+                             in shared_pool.cpu_lists().values()]
+            os.environ[ENV_CPUS_SHARED] = ','.join(shared_clists)
 
         # Advertise infra pool CPU IDs
         infra_pool = pools.get("infra")

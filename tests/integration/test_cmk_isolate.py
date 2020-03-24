@@ -35,6 +35,7 @@ def test_cmk_isolate_child_env():
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
 CMK_CPUS_ASSIGNED=0
 CMK_CPUS_ASSIGNED_MASK=1
+CMK_CPUS_SHARED=0
 CMK_PROC_FS=/proc
 """
 
@@ -48,6 +49,7 @@ def test_cmk_isolate_child_env_infra():
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
 CMK_CPUS_ASSIGNED=1
 CMK_CPUS_ASSIGNED_MASK=2
+CMK_CPUS_SHARED=1
 CMK_CPUS_INFRA=0
 CMK_PROC_FS=/proc
 """
@@ -200,6 +202,7 @@ def test_cmk_isolate_multiple_cores_exclusive():
     assert helpers.execute(integration.cmk(), args, env) == b"""\
 CMK_CPUS_ASSIGNED=0,1
 CMK_CPUS_ASSIGNED_MASK=3
+CMK_CPUS_SHARED=0
 CMK_PROC_FS=/proc
 CMK_NUM_CORES=2
 """
@@ -215,6 +218,7 @@ def test_cmk_isolate_multiple_cores_shared():
     assert helpers.execute(integration.cmk(), args, env) == b"""\
 CMK_CPUS_ASSIGNED=0
 CMK_CPUS_ASSIGNED_MASK=1
+CMK_CPUS_SHARED=0
 CMK_PROC_FS=/proc
 CMK_NUM_CORES=2
 """
