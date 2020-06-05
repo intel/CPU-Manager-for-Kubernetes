@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc
+from . import config, proc, reconcile
 from intel import util
 import logging
 import os
@@ -142,4 +142,17 @@ command because the --no-affinity flag was supplied""")
     finally:
         with c.lock():
             for cl in clists:
-                cl.remove_task(proc.getpid())
+                try:
+                    cl.remove_task(proc.getpid())
+                except FileNotFoundError:
+                    # This has been added because of the reconfigure
+                    # functionality If a process is reconfigured to use another
+                    # core when the process finishes and goes to remove itself
+                    # from the core list it will look for the core list it used
+                    # to instead of its new one. Reconcile just guarantees that
+                    # the core list is correctly cleaned
+
+                    report = reconcile.generate_report(c)
+                    logging.info("CPU List not found, report:")
+                    logging.info(report)
+                    reconcile.reclaim_cpu_lists(c, report)
