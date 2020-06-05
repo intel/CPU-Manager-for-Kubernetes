@@ -37,11 +37,23 @@ Usage:
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
-              [-- <args> ...][--no-affinity]
+              [-- <args>...][--no-affinity]
   cmk install [--install-dir=<dir>]
   cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
   cmk webhook [--conf-file=<file>]
+  cmk reconfigure [--node-name=<name>] [--num-exclusive-cores=<num>]
+                  [--num-shared-cores=<num>] [--excl-non-isolcpus=<list>]
+                  [--conf-dir=<dir>] [--exclusive-mode=<mode>]
+                  [--shared-mode=<mode>] [--install-dir=<dir>]
+                  [--namespace=<name>]
+  cmk reconfigure_setup [--num-exclusive-cores=<num>] [--num-shared-cores=<num>]
+                        [--excl-non-isolcpus=<list>] [--conf-dir=<dir>]
+                        [--exclusive-mode=<mode>] [--shared-mode=<mode>]
+                        [--cmk-img=<img>] [--cmk-img-pol=<pol>]
+                        [--install-dir=<dir>] [--saname=<name>]
+                        [--namespace=<name>]
+  cmk reaffinitize [--node-name=<name>] [--namespace=<name>]
 
 Options:
   -h --help                    Show this screen.
@@ -88,4 +100,5 @@ Options:
                                exclusive pool, not governed by isolcpus. Both
                                hyperthreads of the core will be added to the pool
                                [default: -1]
+  --node-name=<name>           The name of the node that is being reaffinitized
 """  # noqa: E501

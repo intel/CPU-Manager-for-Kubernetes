@@ -334,6 +334,15 @@ def get_kube_version(config):
     return version_info.git_version
 
 
+# Get named configmap
+def get_config_map(config, name, ns_name):
+    k8s_api = client_from_config(config)
+    configmaps = k8s_api.list_namespaced_config_map(ns_name)
+    for cm in configmaps.items:
+        if cm.metadata.name == name:
+            return cm.data
+
+
 # Delete namespace by name.
 def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
     k8s_api = client_from_config(config)

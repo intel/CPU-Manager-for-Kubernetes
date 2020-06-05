@@ -361,6 +361,7 @@ def parse_cpus_str(cpus_str):
             cpus.append(int(cpu_id))
             continue
         cpu_range = cpu_id.split("-")
+        cpu_range = ' '.join(cpu_range).split()
         if len(cpu_range) != 2:
             continue
         cpus += range(int(cpu_range[0]), int(cpu_range[1])+1)

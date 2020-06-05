@@ -33,6 +33,14 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         check_assignment(conf_dir, num_exclusive_cores, num_shared_cores)
         return
 
+    configure(c, conf_dir, num_exclusive_cores, num_shared_cores,
+              exclusive_allocation_mode, shared_allocation_mode,
+              excl_non_isolcpus)
+
+
+def configure(c, conf_dir, num_exclusive_cores, num_shared_cores,
+              exclusive_allocation_mode, shared_allocation_mode,
+              excl_non_isolcpus):
     sst_bf = False
     try:
         sst_bf = discover.get_node_label(sst.NFD_LABEL) in ["true", "True"]
