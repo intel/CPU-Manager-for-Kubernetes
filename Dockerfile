@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.4.6
+FROM python:3.6.8
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
@@ -22,11 +22,6 @@ WORKDIR /cmk
 
 RUN chmod +x /cmk/cmk.py
 
-RUN tox -e lint
-RUN tox -e unit
-RUN tox -e integration
-RUN tox -e coverage
-
 RUN /cmk/cmk.py --help && echo ""
 
-ENTRYPOINT [ "/cmk/cmk.py" ]
+CMD [ "/cmk/cmk.py" ]

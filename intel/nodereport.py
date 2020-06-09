@@ -19,7 +19,8 @@ import os
 import time
 
 from kubernetes import config as k8sconfig, client as k8sclient
-from . import config, custom_resource, k8s, proc, third_party, topology, util
+from . import config, custom_resource, discover, \
+    k8s, proc, third_party, topology, util, sst_bf as sst
 
 
 def nodereport(conf_dir, seconds, publish):
@@ -39,7 +40,7 @@ def nodereport(conf_dir, seconds, publish):
             k8sconfig.load_incluster_config()
             v1beta = k8sclient.ExtensionsV1beta1Api()
 
-            version = util.parse_version(k8s.get_kubelet_version(None))
+            version = util.parse_version(k8s.get_kube_version(None))
 
             if version >= util.parse_version("v1.7.0"):
                 node_report_type = \
@@ -79,7 +80,13 @@ def generate_report(conf_dir):
     report = NodeReport()
     check_describe(report, conf_dir)
     check_cmk_config(report, conf_dir)
-    for socket in topology.discover().sockets.values():
+    sst_bf = False
+    try:
+        sst_bf = bool(discover.get_node_label(sst.NFD_LABEL))
+    except Exception as err:
+        logging.info("Could not read SST-BF NFD label: {}".format(err))
+
+    for socket in topology.discover(sst_bf).sockets.values():
         report.add_socket(socket)
     return report
 

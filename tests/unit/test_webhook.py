@@ -10,10 +10,24 @@ def get_cmk_container():
     fake_cmk_container = {
         "resources": {
             "requests": {
-                webhook.CMK_ER_NAME: "2"
+                webhook.CMK_ER_NAME[0]: "2"
             },
             "limits": {
-                webhook.CMK_ER_NAME: "2"
+                webhook.CMK_ER_NAME[0]: "2"
+            },
+        }
+    }
+    return fake_cmk_container
+
+
+def get_cmk_container2():
+    fake_cmk_container = {
+        "resources": {
+            "requests": {
+                webhook.CMK_ER_NAME[1]: "2"
+            },
+            "limits": {
+                webhook.CMK_ER_NAME[1]: "2"
             },
         }
     }
@@ -88,6 +102,16 @@ def test_webhook_container_mutation_required():
     assert still_required
 
 
+def test_webhook_container_mutation_required2():
+    container = get_cmk_container2()
+    required = webhook.is_container_mutation_required(container)
+    assert required
+
+    container["resources"].pop("requests")
+    still_required = webhook.is_container_mutation_required(container)
+    assert still_required
+
+
 def test_webhook_container_mutation_not_required():
     container = {}
     required = webhook.is_container_mutation_required(container)
@@ -100,6 +124,17 @@ def test_webhook_mutation_required():
             "containers": [get_cmk_container()]
         }
     }
+    required = webhook.is_mutation_required(pod)
+    assert required
+
+
+def test_wehbook_mutation_required2():
+    pod = {
+        "spec": {
+            "containers": [get_cmk_container2()]
+        }
+    }
+
     required = webhook.is_mutation_required(pod)
     assert required
 

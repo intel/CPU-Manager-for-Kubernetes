@@ -18,16 +18,16 @@ metadata:
   labels:
     app: cmk-cluster-init-pod
   name: cmk-cluster-init-pod
-  #namespace: user-supplied-namespace      
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
   - args:
       # Change this value to pass different options to cluster-init.
-      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --saname=cmk-serviceaccount"
+      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --saname=cmk-serviceaccount --namespace=cmk-namespace"
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-cluster-init-pod
   restartPolicy: Never

@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-install-pod
   name: cmk-install-pod
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
@@ -26,7 +27,7 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"

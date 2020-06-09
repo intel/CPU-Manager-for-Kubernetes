@@ -29,7 +29,7 @@ from . import k8s
 # the appropriate CMK node labels and taints.
 def discover(conf_dir):
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
         logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
                       "version >=1.8.1 or rollback to previous versions")
@@ -55,12 +55,14 @@ def discover(conf_dir):
 # add_node_oir patches the node with the appropriate CMK OIR.
 def add_node_oir(conf_dir):
     c = config.Config(conf_dir)
+    num_excl_non_isolcpus = None
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
-        if len(c.pool("exclusive").cpu_lists()) == 0:
-            raise KeyError("No CPU list in exclusive pool")
         num_slots = len(c.pool("exclusive").cpu_lists())
+        if "exclusive-non-isolcpus" in c.pools():
+            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
+                                        .cpu_lists())
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
@@ -78,16 +80,35 @@ def add_node_oir(conf_dir):
         logging.error("Aborting discover ...")
         sys.exit(1)
 
+    if num_excl_non_isolcpus:
+        patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
+                      "resource-cmk-excl-non-isolcpus")
+        patch_body = [{
+            "op": "add",
+            "path": patch_path,
+            "value": num_excl_non_isolcpus
+        }]
+
+        try:
+            patch_k8s_node_status(patch_body)
+        except K8sApiException as err:
+            logging.error("Exception when patching node with OIR: {}"
+                          .format(err))
+            logging.error("Aborting discover ...")
+            sys.exit(1)
+
 
 # add_node_er patches the node with the appropriate CMK extended resources.
 def add_node_er(conf_dir):
     c = config.Config(conf_dir)
+    num_excl_non_isolcpus = None
     with c.lock():
         if "exclusive" not in c.pools():
             raise KeyError("Exclusive pool does not exist")
-        if len(c.pool("exclusive").cpu_lists()) == 0:
-            raise KeyError("No CPU list in exclusive pool")
         num_slots = len(c.pool("exclusive").cpu_lists())
+        if "exclusive-non-isolcpus" in c.pools():
+            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
+                                        .cpu_lists())
 
     patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")
     patch_body = [{
@@ -103,6 +124,24 @@ def add_node_er(conf_dir):
                       .format(err))
         logging.error("Aborting discover ...")
         sys.exit(1)
+
+    if num_excl_non_isolcpus:
+        patch_path = ("/status/capacity/cmk.intel.com~1"
+                      "exclusive-non-isolcpus-cores")
+        patch_body = [{
+            "op": "add",
+            "path": patch_path,
+            "value": num_excl_non_isolcpus
+        }]
+
+        try:
+            patch_k8s_node_status(patch_body)
+        except K8sApiException as err:
+            logging.error("Exception when patching node with "
+                          "exclusive-non-isolcpus ER: {}"
+                          .format(err))
+            logging.error("Aborting discover ...")
+            sys.exit(1)
 
 
 def add_node_label():
@@ -121,6 +160,19 @@ def add_node_label():
         sys.exit(1)
 
 
+def get_node_label(key):
+    node_name = os.getenv("NODE_NAME")
+
+    try:
+        node = get_k8s_node(node_name)
+    except K8sApiException as err:
+        logging.error("Exception when getting the node obj: {}".format(err))
+        logging.error("Aborting ...")
+        sys.exit(1)
+
+    return node["metadata"]["labels"][key]
+
+
 def add_node_taint():
     node_name = os.getenv("NODE_NAME")
     try:
@@ -130,7 +182,7 @@ def add_node_taint():
         logging.error("Aborting discover ...")
         sys.exit(1)
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     node_taints_list = []
     node_taints = []
 

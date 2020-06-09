@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
@@ -21,7 +21,11 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-node-report-ds-all
+  namespace: cmk-namespace
 spec:
+  selector:
+    matchLabels:
+      app: cmk-node-report-ds-all
   template:
     metadata:
       labels:
@@ -48,7 +52,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: cmk:v1.3.0
+        image: cmk:v1.4.1
         name: cmk-nodereport
         volumeMounts:
         - mountPath: "/host/proc"

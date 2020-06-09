@@ -12,21 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: docker docs
+.PHONY: docker docs release test
 
 all: docker
 
-version=v1.3.0
+version=v1.4.1
 
 # TODO: This target should be changed, when e2e tests will be ready and test
 # entrypoint will be defined.
 jenkins: docker
 
 docker:
-	docker build --no-cache -t cmk:$(version) .
+	docker build -t cmk:$(version) .
 	@echo ""
 	@echo "To run the docker image, run command:"
 	@echo "docker run -it cmk:$(version) ..."
+
+test: docker
+	docker run --rm cmk:$(version) tox -e lint,unit,integration,coverage
+
 
 # Output neatly formatted HTML docs to `docs/html`.
 #
@@ -54,3 +58,7 @@ docs:
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/operator.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/user.html
 	sed -i"" "s/\.md/\.html/g" docs/html/docs/architecture.html
+
+# Trigger for github release used by travis.yml
+release:
+	.release/make_release.py

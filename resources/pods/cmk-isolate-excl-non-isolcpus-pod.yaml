@@ -1,0 +1,42 @@
+# Copyright (c) 2018 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# NOTE: To be used with k8s >= 1.9.0 (if webhook is running).
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: cmk-isolate-pod
+  name: cmk-isolate-pod
+# Consumed by mutating webhook
+  annotations:
+    cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
+  namespace: cmk-namespace
+spec:
+  restartPolicy: Never
+  containers:
+  - name: cmk-isolate-exclusive-non-isolcpus
+    image: cmk:v1.4.1
+    command:
+    - "/bin/bash"
+    - "-c"
+    args:
+    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive-non-isolcpus echo -- Hello World Exclusive-Non-Isolcpus!!!"
+    resources:
+      requests:
+        cmk.intel.com/exclusive-non-isolcpus-cores: '1'
+      limits:
+        cmk.intel.com/exclusive-non-isolcpus-cores: '1'

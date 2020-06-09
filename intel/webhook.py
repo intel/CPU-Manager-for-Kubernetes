@@ -20,7 +20,8 @@ import json
 import base64
 import sys
 
-CMK_ER_NAME = 'cmk.intel.com/exclusive-cores'
+CMK_ER_NAME = ['cmk.intel.com/exclusive-cores',
+               'cmk.intel.com/exclusive-non-isolcpus-cores']
 CMK_MUTATE_ANNOTATION = 'cmk.intel.com/mutate'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 
@@ -122,35 +123,21 @@ def mutate(admission_review, mutations_file):
                           "{}".format(str(err)))
             raise MutationError
 
+        # apply mutation to containers
         for i in range(len(pod['spec']['containers'])):
             container = pod['spec']['containers'][i]
 
-            # apply container mutations
-            try:
-                merge(container, mutations.get("perContainer", {}))
-            except YamlReaderError as err:
-                logging.error("Error when applying container mutations: "
-                              "{}".format(str(err)))
-                raise MutationError
+            pod['spec']['containers'][i] = apply_mutation(container, mutations)
 
-            # NOTE: inject ENV_NUM_CORES variable only into containers with
-            # ERs request/limit, priotizing requests over limits
-            n_cores = None
-            try:
-                n_cores = container['resources']['requests'][CMK_ER_NAME]
-            except KeyError:
-                logging.info("Container {} does not request CMK ERs"
-                             .format(container['name']))
-                try:
-                    n_cores = container['resources']['requests'][CMK_ER_NAME]
-                except KeyError:
-                    logging.info("Container {} doesn't have CMK ERs limit"
-                                 .format(container['name']))
-            if n_cores is not None:
-                inject_env(container, ENV_NUM_CORES, n_cores)
+        # apply mutation to initContainers which may not exist
+        try:
+            for i in range(len(pod['spec']['initContainers'])):
+                container = pod['spec']['initContainers'][i]
 
-            # replace original container with patched one
-            pod['spec']['containers'][i] = container
+                pod['spec']['initContainers'][i] = \
+                    apply_mutation(container, mutations)
+        except KeyError:
+            pass
 
         # generate patch based on modified pod spec
         patch = generate_patch(pod)
@@ -170,6 +157,38 @@ def mutate(admission_review, mutations_file):
 
     admission_review.pop('request')
     admission_review['response'] = resp
+
+
+def apply_mutation(container, mutations):
+    try:
+        merge(container, mutations.get("perContainer", {}))
+    except YamlReaderError as err:
+        logging.error("Error when applying container mutations: "
+                      "{}".format(str(err)))
+        raise MutationError
+
+    # NOTE: inject ENV_NUM_CORES variable only into containers with
+    # ERs request/limit, priotizing requests over limits
+    n_cores = None
+    for er in CMK_ER_NAME:
+        try:
+            n_cores = container['resources']['requests'][er]
+        except KeyError:
+            logging.info("Container {} does not request CMK ER {}"
+                         .format(container['name'], er))
+            try:
+                n_cores = container['resources']['limits'][er]
+            except KeyError:
+                logging.info("Container {} doesn't have CMK ER {} limit"
+                             .format(container['name'], er))
+
+        if n_cores is not None:
+            # Break out if request found for any one ER
+            # No support for multiple
+            inject_env(container, ENV_NUM_CORES, n_cores)
+            break
+
+    return container
 
 
 def generate_patch(pod):
@@ -208,16 +227,17 @@ def encode_patch(patch):
 
 
 def is_container_mutation_required(container):
-    try:
-        if container['resources']['requests'][CMK_ER_NAME] is not None:
-            return True
-    except KeyError:
-        pass
-    try:
-        if container['resources']['limits'][CMK_ER_NAME] is not None:
-            return True
-    except KeyError:
-        pass
+    for er in CMK_ER_NAME:
+        try:
+            if container['resources']['requests'][er] is not None:
+                return True
+        except KeyError:
+            pass
+        try:
+            if container['resources']['limits'][er] is not None:
+                return True
+        except KeyError:
+            pass
     return False
 
 

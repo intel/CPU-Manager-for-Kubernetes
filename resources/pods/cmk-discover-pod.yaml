@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-discover-pod
   name: cmk-discover-pod
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
@@ -31,7 +32,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-discover-pod
     volumeMounts:
     - mountPath: "/etc/cmk"

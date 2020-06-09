@@ -18,6 +18,7 @@ metadata:
   labels:
     app: cmk-init-pod
   name: cmk-init-pod
+  namespace: cmk-namespace  
 spec:
   serviceAccountName: cmk-serviceaccount
   containers:
@@ -35,7 +36,7 @@ spec:
     - name: NUM_SHARED_CORES
       # Change this to modify the value passed to `--num-shared-cores` flag.
       value: '1'
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-init-pod
     volumeMounts:
     - mountPath: "/etc/cmk"

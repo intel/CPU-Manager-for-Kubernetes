@@ -26,7 +26,8 @@ from intel import k8s, util
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_exclusive_cores, num_shared_cores,
                  pull_secret, serviceaccount, exclusive_mode, shared_mode,
-                 namespace):
+                 namespace, excl_non_isolcpus):
+
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
@@ -70,15 +71,15 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
         run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
     if cmk_cmd_list:
         run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
 
     # Run mutating webhook admission controller on supported cluster
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
     if version >= util.parse_version("v1.9.0"):
         deploy_webhook(namespace, conf_dir, install_dir, serviceaccount,
                        cmk_img)
@@ -91,7 +92,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
 def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
              install_dir, num_exclusive_cores, num_shared_cores, cmk_node_list,
              pull_secret, serviceaccount, shared_mode, exclusive_mode,
-             namespace):
+             namespace, excl_non_isolcpus):
     if cmd_list:
         logging.info("Creating cmk pod for {} commands ...".format(cmd_list))
     elif cmd_init_list:
@@ -101,7 +102,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace)
+                 exclusive_mode, namespace, excl_non_isolcpus)
 
     pod_name_prefix = ""
     pod_phase_name = ""
@@ -131,13 +132,13 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
-                 exclusive_mode, namespace):
+                 exclusive_mode, namespace, excl_non_isolcpus):
+    version = util.parse_version(k8s.get_kube_version(None))
     pod = k8s.get_pod_template()
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
         update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
-        version = util.parse_version(k8s.get_kubelet_version(None))
         if version >= util.parse_version("v1.7.0"):
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
@@ -156,9 +157,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             if cmd == "init":
                 args = ("/cmk/cmk.py init --num-exclusive-cores={} "
                         "--num-shared-cores={} --shared-mode={} "
-                        "--exclusive-mode={}")\
+                        "--exclusive-mode={} --excl-non-isolcpus={}")\
                     .format(num_exclusive_cores, num_shared_cores, shared_mode,
-                            exclusive_mode)
+                            exclusive_mode, excl_non_isolcpus)
                 # If init is the only cmd in cmd_init_list, it should be run
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.
@@ -179,13 +180,14 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     for node_name in cmk_node_list:
         if cmd_list:
             update_pod_with_node_details(pod, node_name, cmd_list)
-            daemon_set = k8s.ds_from(pod=pod)
+            daemon_set = k8s.ds_from(pod=pod, version=version)
         elif cmd_init_list:
             update_pod_with_node_details(pod, node_name, cmd_init_list)
 
         try:
             if cmd_list:
-                cr_pod_resp = k8s.create_ds(None, daemon_set, namespace)
+                cr_pod_resp = k8s.create_ds(None, daemon_set, namespace,
+                                            version)
                 logging.debug("Response while creating ds for {} command(s): "
                               "{}".format(cmd_list, cr_pod_resp))
             elif cmd_init_list:
@@ -373,13 +375,9 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
     container_template["args"][0] = args
     # Each container name should be distinct within a Pod.
     container_template["name"] = cmd
-    # Note(balajismaniam): Downward API for spec.nodeName doesn't seem to
-    # work with init-containers. Removing it as a work-around. Needs further
-    # investigation.
-    container_template["env"].pop()
     pod_init_containers_list = []
 
-    version = util.parse_version(k8s.get_kubelet_version(None))
+    version = util.parse_version(k8s.get_kube_version(None))
 
     if version >= util.parse_version("v1.7.0"):
         pod["spec"]["initContainers"] = [container_template]
@@ -459,7 +457,7 @@ def update_mutatingwebhookconfiguration(config, name, app, webhook_name, cert,
     config.metadata = k8sclient.V1ObjectMeta()
     config.metadata.name = name
     config.metadata.labels = {"app": app}
-    client_config = k8sclient.V1beta1WebhookClientConfig(
+    client_config = k8sclient.AdmissionregistrationV1beta1WebhookClientConfig(
         ca_bundle=cert,
         service=k8sclient.AdmissionregistrationV1beta1ServiceReference(
             name=service,

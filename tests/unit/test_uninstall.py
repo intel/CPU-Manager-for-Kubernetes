@@ -62,7 +62,7 @@ def test_uninstall_remove_node_cmk_oir_failure(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.6.3"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.6.3"))
 def test_remove_all_report_tpr_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
@@ -82,7 +82,7 @@ def test_remove_all_report_tpr_success(caplog):
                                       "removed.".format(os.getenv("NODE_NAME"))
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.7.4"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.7.4"))
 def test_remove_all_report_crd_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
@@ -254,7 +254,7 @@ def test_uninstall_remove_node_taint_failure1(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_uninstall_remove_node_taint_failure2(caplog):
     fake_node_resp = {
             "metadata": {
@@ -460,6 +460,7 @@ def test_delete_cmk_pod_failure(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_delete_cmk_pod_failure2(caplog):
     fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
                                       "{\"reason\":\"WrongReason\"}")
@@ -479,6 +480,7 @@ def test_delete_cmk_pod_failure2(caplog):
         assert caplog_tuple[-1][2] == exp_log_err
 
 
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_delete_cmk_pod_success(caplog):
     fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
                                       "{\"reason\":\"NotFound\"}")
@@ -515,7 +517,7 @@ def test_delete_cmk_pod_success2(caplog):
                 pod_base_name, str(os.getenv("NODE_NAME")))
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.10.0"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.10.0"))
 def test_remove_resource_tracking_er_removed(caplog):
     mock = MagicMock()
     with patch('intel.uninstall.remove_node_cmk_er', mock):
@@ -523,7 +525,7 @@ def test_remove_resource_tracking_er_removed(caplog):
         assert mock.called
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.6.0"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.6.0"))
 def test_remove_resource_tracking_oir_removed(caplog):
     mock = MagicMock()
     with patch('intel.uninstall.remove_node_cmk_oir', mock):
@@ -531,7 +533,7 @@ def test_remove_resource_tracking_oir_removed(caplog):
         assert mock.called
 
 
-@patch('intel.k8s.get_kubelet_version', MagicMock(return_value="v1.8.0"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_remove_resource_tracking_unsupported(caplog):
     uninstall.remove_resource_tracking()
     caplog_tuple = caplog.record_tuples

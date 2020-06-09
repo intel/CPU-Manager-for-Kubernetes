@@ -19,15 +19,15 @@ General flow is:
  - run `prepare_release.py` script
  - create PR, get review
  - "Rebase and merge" PR into master branch
+ - Travis will build, test and make release automatically
  - If the repository has [Jenkins CI/CD](#jenkins-release-job) job
    - Jenkins CI/CD will build VM based on `.release/Vagrantfile`
    - Jenkins CI/CD will run `.release/make_release.py`
- - If there is no Jenkins CI/CD or you want to release in [manual](#manual-release) way:
+ - If you want to release in [manual](#manual-release) way:
    - spawn release VM (`vagrant up`in `.release` directory)
    - run `make_release.py` script in the VM
    
 In any case, please read [below](#prepare-release-script) paragraph for more information.
-If you want to release manually, please read also
 
 
 
@@ -74,6 +74,8 @@ Additionally, tag and release are created once PR from release branch gets onto 
 
 ## Make release
 ---
+#### Travis
+By default travis will build, test and make the release automatically. To set this up, add secret environment variable GITHUB_TOKEN in travis repository settings and update corresponding git username and email.
 
 #### Jenkins release job
 If Jenkins CI/CD is present and configured with the "release job" - no user intervention is needed.
@@ -118,13 +120,13 @@ Running Vagrant locally syncs your repository directory into `/cmk` using by def
  - check whether current branch is `master` and if it's "clean"
  - fetch origin
  - check whether `CMK_RELEASE_VER` is set, follows proper pattern and there in no existing tag with it's value
- - check whether there is no `cmk-release-v1.3.0` branch neither locally nor remotely
- - get previous version string from `Makefile` (`version=v1.3.0`) and check
+ - check whether there is no `cmk-release-v1.4.1` branch neither locally nor remotely
+ - get previous version string from `Makefile` (`version=v1.4.1`) and check
 
 If all above checks pass, script will:
- - create local branch `cmk-release-v1.3.0`
- - replace old release string (`v1.3.0`) with new one (`v1.3.0`) in all repo files
- - commit changes with message `CMK release - version v1.3.0.`
+ - create local branch `cmk-release-v1.4.1`
+ - replace old release string (`v1.4.1`) with new one (`v1.4.1`) in all repo files
+ - commit changes with message `CMK release - version v1.4.1.`
  - push branch to origin
  - checkout to `master` branch.
 
@@ -132,7 +134,7 @@ If all above checks pass, script will:
 After PR is "Rebased and merged" into `master` branch, Jenkins CI/CD will start VM based on `.release/Vagrantfile` and execute `.release/make_release.py` inside the VM.
 
 **What will `make_release.py` do :**
-- check latest commit message for `CMK release - version v1.3.0.` string
-- `v1.3.0` will become tag value
+- check latest commit message for `CMK release - version v1.4.1.` string
+- `v1.4.1` will become tag value
 - generate change log
 - create release with change log based on tag found in commit message

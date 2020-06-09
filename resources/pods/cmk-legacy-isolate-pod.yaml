@@ -24,7 +24,7 @@ metadata:
 #  annotations:
 #    "scheduler.alpha.kubernetes.io/tolerations": '[{"key":"cmk", "value":"true"}]'
   name: cmk-isolate-pod
-  #namespace: user-supplied-namespace
+  namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
 # Needed for k8s >= 1.7
@@ -39,7 +39,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-isolate-exclusive
     resources:
       requests:
@@ -60,7 +60,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-isolate-shared
     volumeMounts:
     - mountPath: "/host/proc"
@@ -78,7 +78,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     name: cmk-isolate-infra
     volumeMounts:
     - mountPath: "/host/proc"

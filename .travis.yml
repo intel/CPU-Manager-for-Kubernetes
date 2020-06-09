@@ -1,7 +1,18 @@
+language: python
 sudo: required
-
+python:
+  - "3.6"
 services:
-    - docker
-
-script:
-    - docker build -t cmk .
+  - docker
+jobs:
+  include:
+    - stage: "Build and test"
+      script: make test
+    - stage: "Release"
+      before_script:
+        # Set up git user name and update remote origin
+        - git config --local user.name "intel-bot"
+        - git config --local user.email "intel_bot@intel.com"
+        - git remote set-url origin https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}
+      script: make release
+      if: branch = master AND type = push AND fork = false

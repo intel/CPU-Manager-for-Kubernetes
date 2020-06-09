@@ -131,6 +131,15 @@ The above command prepares all the nodes in the Kubernetes cluster for the `CMK`
 The above command prepares nodes "node1", "node2" and "node3" but only runs the `cmk init` and `cmk discover`
 subcommands on each of those nodes.
 
+```yml
+  - args:
+      # Change this value to pass different options to cluster-init.
+      - "/cmk/cmk.py cluster-init --host-list=node1,node2,node3 --num-exclusive-cores=3 --num-shared-cores=1 --excl-non-isolcpus=11-15"
+```
+The above command prepares nodes "node1", "node2" and "node3" to have 3 cores placed in the _exclusive_ pool, 1 core 
+placed in the _shared_ pool, and the cores 11-15 placed in the _exclusive-non-isolcpus_ pool. The _exclusive-non-isolcpus_ 
+pool will isolate pods from other pods in the cluster, but will not use cores that are governed by isolcpus.
+
 For more details on the options provided by `cmk cluster-init`, see this [description][cmk-cluster-init].
 
 ### Prepare `CMK` nodes by running each `CMK` subcommand as a Pod.
@@ -141,7 +150,7 @@ for some reason.
 - The subcommands described below should be run in the same order.
 - The documentation in this section assumes that the `CMK` configuration directory is `/etc/cmk` and the `cmk`
 binary is installed on the host under `/opt/bin`.
-- In all the pod templates used in this section, the name of container image used is `cmk:v1.3.0`. It is expected that the
+- In all the pod templates used in this section, the name of container image used is `cmk:v1.4.1`. It is expected that the
 `cmk` container image is built and cached locally in the host. The `image` field will require modification if the
 container image is hosted remotely (e.g., in https://hub.docker.com/).
 
@@ -302,6 +311,23 @@ To select appropriate `mode` operator can select it during initialization with `
 Those parameters can be used with `cluster-init` and `init`. If operator use two different modes, then those policies
 will be mixed. In that case __exclusive__ pool is resolving before __shared__ pool.
 
+### Power Management Capabilities
+CMK supports some power management capabilities on the latest Xeon processors, one of these __Speed Select Technology - Base Frequency (SST-BF)__. 
+CMK is able to discover SST-BF configured nodes through the use of node labels, discovers the SST-BF configured cores and ensures these cores are placed in the __exclusive__ pool. This enables users to use these special cores for their containerized workloads, getting guaranteed performance.
+* More information on SST-BF can be found [here](https://builders.intel.com/docs/networkbuilders/intel-speed-select-technology-base-frequency-enhancing-performance.pdf)
+* More information on configuring a Kubernetes cluster to take advantage of these Power Management capabilites can be found [here](addlink)
+
+#### SST-CP
+To utilize SST-CP cores with CMK, the cores need to be set up before CMK is initialised. More information about setting up the cores can be found [here](https://github.com/intel/CommsPowerManagement). The SST-CP capable node must also be labeled correctly.
+
+The node gets labeled correctly using [Node Feature Discovery](https://github.com/kubernetes-sigs/node-feature-discovery), which will use a script provided in the CMK Github repository (located at resources/scripts/sst-cp.sh) to determine whether the node is configured to use SST-CP. This file needs to be moved to the correct place so NFD can find it.
+
+After NFD has been set up in your Kubernetes cluster, the folders /etc/kubernetes/node-feature-discovery/source.d/ and /etc/kubernetes/node-feature-discovery/features.d/ should have been created. To move this SST-CP discovery script to the correct location, move into the directory where you cloned the CMK repository. Then copy the file:
+
+`cp resources/scripts/sst-cp.sh /etc/kubernetes/node-feature-discovery/source.d/`
+     
+NFD will look in this location and execute the script, labeling the node if SST-CP is correctly configured. Then simply initialise CMK with the recommended script, providing the correct number of cores for the exclusive and shared pools, and the correct cores will be placed in the correct pools.
+
 ## Running the `cmk isolate` Hello World Pod
 After following the instructions in the previous section, the cluster is ready to run the `Hello World` Pod. The Hello
 World [cmk-isolate-pod template][isolate-template] describes a simple Pod with three containers requesting CPUs from
@@ -440,7 +466,7 @@ spec:
     env:
     - name: CMK_PROC_FS
       value: "/host/proc"
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     volumeMounts:
@@ -493,7 +519,7 @@ spec:
     - "/bin/bash"
     - "-c"
     env:
-    image: cmk:v1.3.0
+    image: cmk:v1.4.1
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     resources:

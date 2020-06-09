@@ -32,7 +32,8 @@ proc_env_ok = {
 
 def test_cmk_init():
     args = ["init",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
+            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init")),
+            "--excl-non-isolcpus=-1"]
 
     helpers.execute(integration.cmk(), args, proc_env_ok)
 

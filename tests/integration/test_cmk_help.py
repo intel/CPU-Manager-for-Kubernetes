@@ -28,9 +28,11 @@ Usage:
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
+                   [--excl-non-isolcpus=<list>]
   cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
+           [--excl-non-isolcpus=<list>]
   cmk discover [--conf-dir=<dir>]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
@@ -51,7 +53,7 @@ Options:
   --cmk-cmd-list=<list>        Comma seperated list of CMK sub-commands to run
                                on each host
                                [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>              CMK Docker image [default: cmk:v1.3.0].
+  --cmk-img=<img>              CMK Docker image [default: cmk:v1.4.1].
   --cmk-img-pol=<pol>          Image pull policy for the CMK Docker image
                                [default: IfNotPresent].
   --conf-dir=<dir>             CMK configuration directory [default: /etc/cmk].
@@ -82,4 +84,8 @@ Options:
   --namespace=<name>           Set the namespace to deploy pods to during the
                                cluster-init deployment process.
                                [default: default].
+  --excl-non-isolcpus=<list>   List of physical cores to be added to the extra
+                               exclusive pool, not governed by isolcpus. Both
+                               hyperthreads of the core will be added to the pool
+                               [default: -1]
 """  # noqa: E501

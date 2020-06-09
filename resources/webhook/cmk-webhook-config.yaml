@@ -9,7 +9,7 @@ webhooks:
     caBundle: BASE64_ENCODED_CERT
     service:
       name: cmk-webhook-service
-      namespace: default
+      namespace: cmk-namespace
       path: /mutate
   failurePolicy: Ignore
   name: cmk.intel.com

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from . import config, proc
+from intel import util
 import logging
 import os
 import random
@@ -21,6 +22,8 @@ import signal
 import subprocess
 
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
+ENV_CPUS_ASSIGNED_MASK = "CMK_CPUS_ASSIGNED_MASK"
+ENV_CPUS_SHARED = "CMK_CPUS_SHARED"
 ENV_CPUS_INFRA = "CMK_CPUS_INFRA"
 ENV_NUM_CORES = "CMK_NUM_CORES"
 
@@ -34,21 +37,20 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
                            .format(pool_name))
         pool = pools[pool_name]
 
-        socket_aware_pools = ["exclusive", "shared"]
+        socket_aware_pools = ["exclusive", "shared", "exclusive-non-isolcpus"]
         if socket_id == "-1" or pool_name not in socket_aware_pools:
             selected_socket = None
         else:
             selected_socket = socket_id
 
-        # Read env variable and if unset return 1
-        n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
-
-        if n_cpus < 1:
-            raise ValueError("Requested numbers of cores "
-                             "must be positive integer")
-
         clists = None
         if pool.exclusive():
+            # Read env variable and if unset return 1
+            n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
+            if n_cpus < 1:
+                raise ValueError("Requested numbers of cores "
+                                 "must be positive integer")
+
             available_clists = [cl for
                                 cl in pool.cpu_lists(selected_socket).values()
                                 if len(cl.tasks()) == 0]
@@ -85,6 +87,17 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
         clists.sort(key=lambda cl: int(cl.cpus().split(",")[0]))
         cpu_ids = ','.join([cl.cpus() for cl in clists])
         os.environ[ENV_CPUS_ASSIGNED] = cpu_ids
+        cpus_arr = [int(n) for n in cpu_ids.split(',')]
+        cpus_bit_mask = util.convert_array2bitmask(cpus_arr)
+        os.environ[ENV_CPUS_ASSIGNED_MASK] = cpus_bit_mask
+
+        # Advertise shared pool CPU IDs
+        shared_pool = pools.get("shared")
+        if shared_pool is not None:
+            shared_clists = [cl.cpus()
+                             for cl
+                             in shared_pool.cpu_lists().values()]
+            os.environ[ENV_CPUS_SHARED] = ','.join(shared_clists)
 
         # Advertise infra pool CPU IDs
         infra_pool = pools.get("infra")

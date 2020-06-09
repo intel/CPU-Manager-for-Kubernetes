@@ -14,11 +14,12 @@
 
 import logging
 
+from intel import util
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
 
-def get_pod_template():
+def get_pod_template(saname="cmk-serviceaccount"):
     pod_template = {
         "apiVersion": "v1",
         "kind": "Pod",
@@ -28,6 +29,7 @@ def get_pod_template():
             }
         },
         "spec": {
+            "serviceAccount": saname,
             "nodeName": "NODENAME",
             "containers": [
             ],
@@ -57,25 +59,52 @@ def get_pod_template():
     return pod_template
 
 
-def ds_from(pod):
-    ds_template = {
-        "apiVersion": "extensions/v1beta1",
-        "kind": "DaemonSet",
-        "metadata": {
-            "name": pod["metadata"]["name"].replace("pod", "ds")
-        },
-        "spec": {
-            "template": {
-                "metadata": {
-                    "labels": {
-                        "app":
-                            pod["metadata"]["name"].replace("pod", "ds")
+def ds_from(pod, version):
+    ds_template = {}
+    if version >= util.parse_version("v1.9.0"):
+        ds_template = {
+            "apiVersion": "apps/v1",
+            "kind": "DaemonSet",
+            "metadata": {
+                "name": pod["metadata"]["name"].replace("pod", "ds")
+            },
+            "spec": {
+                "selector": {
+                    "matchLabels": {
+                        "app": pod["metadata"]["name"].replace("pod", "ds")
                     }
                 },
-                "spec": pod["spec"]
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app":
+                                pod["metadata"]["name"].replace("pod", "ds")
+                        }
+                    },
+                    "spec": pod["spec"]
+                }
             }
         }
-    }
+    # for k8s versions older than 1.9.0 use extensions/v1beta1 API
+    else:
+        ds_template = {
+            "apiVersion": "extensions/v1beta1",
+            "kind": "DaemonSet",
+            "metadata": {
+                "name": pod["metadata"]["name"].replace("pod", "ds")
+            },
+            "spec": {
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app":
+                                pod["metadata"]["name"].replace("pod", "ds")
+                        }
+                    },
+                    "spec": pod["spec"]
+                }
+            }
+        }
     return ds_template
 
 
@@ -170,6 +199,9 @@ def get_container_template():
         ],
         "image": "IMAGENAME",
         "name": "NAME",
+        "securityContext": {
+            "privileged": True
+        },
         "volumeMounts": [
             {
                 "mountPath": "/host/proc",
@@ -213,11 +245,15 @@ def create_pod(config, podspec, ns_name):
     return k8s_api.create_namespaced_pod(ns_name, podspec)
 
 
-# create_ds() sends a request to the Kubernetes API server to create a
-# ds based on podspec.
-def create_ds(config, podspec, ns_name):
-    k8s_api = extensions_client_from_config(config)
-    return k8s_api.create_namespaced_daemon_set(ns_name, podspec)
+# create_legacy_ds() sends a request to the Kubernetes API server to create a
+# ds based on deamonset spec.
+def create_ds(config, spec, ns_name, version):
+    if version >= util.parse_version("v1.9.0"):
+        k8s_api = apps_api_client_from_config(config)
+        return k8s_api.create_namespaced_daemon_set(ns_name, spec)
+    else:
+        k8s_api = extensions_client_from_config(config)
+        return k8s_api.create_namespaced_daemon_set(ns_name, spec)
 
 
 def create_service(config, spec, ns_name):
@@ -291,8 +327,8 @@ def get_namespaces(config):
     return k8s_api.list_namespace().to_dict()
 
 
-# Get kubelet version from node
-def get_kubelet_version(config):
+# Get k8s version
+def get_kube_version(config):
     k8s_api = version_api_client_from_config(config)
     version_info = k8s_api.get_code()
     return version_info.git_version
@@ -301,13 +337,13 @@ def get_kubelet_version(config):
 # Delete namespace by name.
 def delete_namespace(config, ns_name, delete_options=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespace(ns_name, delete_options)
+    k8s_api.delete_namespace(ns_name)
 
 
 # Delete pod from namespace.
 def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    k8s_api.delete_namespaced_pod(name, ns_name, body)
+    k8s_api.delete_namespaced_pod(name, ns_name)
 
 
 # Delete ds from namespace.
@@ -315,15 +351,22 @@ def delete_pod(config, name, ns_name="default", body=V1DeleteOptions()):
 # in cascade deletion in k8s, first delete the ds, then the pod
 # https://github.com/kubernetes-incubator/client-python/issues/162
 # https://github.com/kubernetes/kubernetes/issues/44046
-def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
-    k8s_api_ext = extensions_client_from_config(config)
+def delete_ds(config, version, ds_name, ns_name="default",
+              body=V1DeleteOptions()):
     k8s_api_core = client_from_config(config)
 
-    k8s_api_ext.delete_namespaced_daemon_set(ds_name,
-                                             ns_name,
-                                             body,
-                                             grace_period_seconds=0,
-                                             orphan_dependents=False)
+    if version >= util.parse_version("v1.9.0"):
+        k8s_api_apps = apps_api_client_from_config(config)
+        k8s_api_apps.delete_namespaced_daemon_set(ds_name,
+                                                  ns_name,
+                                                  grace_period_seconds=0,
+                                                  orphan_dependents=False)
+    else:
+        k8s_api_ext = extensions_client_from_config(config)
+        k8s_api_ext.delete_namespaced_daemon_set(ds_name,
+                                                 ns_name,
+                                                 grace_period_seconds=0,
+                                                 orphan_dependents=False)
 
     # Pod in ds has fixed label so we use label selector
     data = k8s_api_core.list_namespaced_pod(
@@ -335,27 +378,27 @@ def delete_ds(config, ds_name, ns_name="default", body=V1DeleteOptions()):
     return
 
 
-def delete_service(config, name, ns_name="default"):
+def delete_service(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
     return k8s_api.delete_namespaced_service(name, ns_name)
 
 
 def delete_config_map(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_config_map(name, ns_name, body)
+    return k8s_api.delete_namespaced_config_map(name, ns_name)
 
 
 def delete_secret(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = client_from_config(config)
-    return k8s_api.delete_namespaced_secret(name, ns_name, body)
+    return k8s_api.delete_namespaced_secret(name, ns_name)
 
 
 def delete_mutating_webhook_configuration(config, name,
                                           body=V1DeleteOptions()):
     k8s_api = admissionregistartion_api_client_from_config(config)
-    return k8s_api.delete_mutating_webhook_configuration(name, body)
+    return k8s_api.delete_mutating_webhook_configuration(name)
 
 
 def delete_deployment(config, name, ns_name="default", body=V1DeleteOptions()):
     k8s_api = apps_api_client_from_config(config)
-    return k8s_api.delete_namespaced_deployment(name, ns_name, body)
+    return k8s_api.delete_namespaced_deployment(name, ns_name)
