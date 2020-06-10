@@ -70,7 +70,7 @@ def generate_cert(service, namespace, private_key):
     ])
 
     subj_alternative_names = x509.SubjectAlternativeName([
-        x509.DNSName("{0}".format(service, namespace)),
+        x509.DNSName("{0}".format(service)),
         x509.DNSName("{0}.{1}".format(service, namespace)),
         x509.DNSName("{0}.{1}.svc".format(service, namespace)),
     ])
