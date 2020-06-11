@@ -326,6 +326,10 @@ def assign(cores, pool, count=None):
         raise RuntimeError(
             "No more free cores left to assign for {}".format(pool))
 
+    if pool == 'infra' and not free_cores:
+        raise RuntimeError(
+            "No more free cores left to assign for {}".format(pool))
+
     if count and len(free_cores) < count:
         raise RuntimeError("%d cores requested for %s. "
                            "Only %d cores available" %
