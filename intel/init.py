@@ -322,7 +322,11 @@ def assign(cores, pool, count=None):
     # SST_BF cores and among non-SST_BF cores
     free_cores.sort(key=lambda c: -c.is_sst_bf(), reverse=False)
 
-    if not free_cores:
+    if count is not None and count > 0 and not free_cores:
+        raise RuntimeError(
+            "No more free cores left to assign for {}".format(pool))
+
+    if pool == 'infra' and not free_cores:
         raise RuntimeError(
             "No more free cores left to assign for {}".format(pool))
 
