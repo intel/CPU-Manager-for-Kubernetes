@@ -5,9 +5,48 @@ from . import k8s, config, topology, init, clusterinit
 import logging
 import shutil
 import os
-import random
 import sys
 import yaml
+
+
+class Procs():
+
+    def __init__(self):
+        self.process_map = dict()
+
+    def add_proc(self, pid, clist):
+        try:
+            self.process_map[pid].add_old_clist(clist)
+        except KeyError:
+            p = Pid()
+            p.add_old_clist(clist)
+            self.process_map[pid] = p
+
+
+class ProcessInfo():
+
+    def __init__(self, pool, socket, sockets, clist, pid):
+        self.pool = pool
+        self.socket = socket
+        self.sockets = sockets
+        self.old_clist = clist
+        self.pid = pid
+
+
+class Pid():
+
+    def __init__(self):
+        self.old_clists = []
+        self.new_clist = ""
+
+    def add_old_clist(self, clist):
+        self.old_clists.append(clist)
+
+    def add_new_clist(self, clist):
+        if self.new_clist == "":
+            self.new_clist += "{}".format(clist)
+        else:
+            self.new_clist += ",{}".format(clist)
 
 
 def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
@@ -18,27 +57,19 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
     num_exclusive_cores = int(num_exclusive_cores)
     num_shared_cores = int(num_shared_cores)
 
-    old_config = set_config_map("old-cmk-config", namespace, conf_dir)
-
-    err = check_processes(old_config, "exclusive", num_exclusive_cores)
-    if err != "":
-        logging.error("Error while checking processes: {}".format(err))
-        sys.exit(1)
+    built_config = build_config_map(conf_dir)
+    proc_info = built_config[0]
+    procs = built_config[1]
 
     num_excl_non_isols = len(topology.
                              parse_cpus_str(excl_non_isolcpus.split(",")))
-    err = check_processes(old_config, "exclusive-non-isolcpus",
-                          num_excl_non_isols)
-    if err != "":
-        logging.error("Error while checking processes: {}".format(err))
-        sys.exit(1)
+    check_processes(proc_info, num_exclusive_cores, num_excl_non_isols)
 
-    reconfigure_directory(c, old_config, conf_dir, num_exclusive_cores,
+    reconfigure_directory(c, conf_dir, num_exclusive_cores,
                           num_shared_cores, exclusive_mode, shared_mode,
-                          excl_non_isolcpus)
+                          excl_non_isolcpus, proc_info, procs)
 
-    # Get the new CMK configuration from the config directory
-    _ = set_config_map("new-cmk-config", namespace, conf_dir)
+    set_config_map("cmk-config", namespace, procs)
 
     # Run the re-affinitization command in each of the pods on the node
     all_pods = get_pods()
@@ -47,34 +78,43 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
 
     execute_reconfigure(install_dir, node_name, all_pods, namespace)
 
-    delete_config_map("old-cmk-config", namespace)
-    delete_config_map("new-cmk-config", namespace)
+    delete_config_map("cmk-config", namespace)
 
 
-def check_processes(config, pool_name, num_cores):
+def check_processes(proc_info, num_exclusive_cores, num_excl_non_isols):
     # Check to see if there will be enough cores in the pool to house
     # all processes in the current config
-    error_msg = ""
 
-    try:
-        num_processes = 0
-        for socket in config[pool_name].keys():
-            for core_list in config[pool_name][socket]:
-                if len(config[pool_name][socket][core_list]) > 0:
-                    num_processes += 1
-        if num_processes > num_cores:
-            error_msg = "Not enough {} cores in new configuration: {}"\
-                        " processes, {} cores".format(pool_name, num_processes,
-                                                      num_cores)
-    except KeyError:
-        logging.info("{} pool not detected, continuing reconfiguration"
-                     .format(pool_name))
+    error_occured = False
 
-    return error_msg
+    num_exclusive_procs = 0
+    num_exclusive_non_isol_procs = 0
+
+    for proc in proc_info:
+        if proc.pool == "exclusive":
+            num_exclusive_procs += 1
+        elif proc.pool == "exclusive-non-isolcpus":
+            num_exclusive_non_isol_procs += 1
+
+    if num_exclusive_procs > num_exclusive_cores:
+        logging.error("Not enough exclusive cores in new configuration: {}"
+                      " processes, {} cores".format(num_exclusive_procs,
+                                                    num_exclusive_cores))
+        error_occured = True
+
+    if num_exclusive_non_isol_procs > num_excl_non_isols:
+        logging.error("Not enough exclusive-non-isolcpus cores in new"
+                      " configuration: {} processes, {} cores"
+                      .format(num_exclusive_non_isol_procs,
+                              num_excl_non_isols))
+        error_occured = True
+
+    if error_occured:
+        logging.error("Aborting reconfigure...")
+        sys.exit(1)
 
 
-def set_config_map(name, namespace, conf_dir):
-    config = build_config_map(conf_dir)
+def set_config_map(name, namespace, config):
     configmap = k8sclient.V1ConfigMap()
     data = {
         "config": yaml.dump(config)
@@ -86,7 +126,6 @@ def set_config_map(name, namespace, conf_dir):
         logging.error("Exception when creating config map {}".format(name))
         logging.error(err.reason)
         sys.exit(1)
-    return config
 
 
 def delete_config_map(name, namespace):
@@ -98,10 +137,9 @@ def delete_config_map(name, namespace):
         sys.exit(1)
 
 
-def reconfigure_directory(c, old_config, conf_dir, num_exclusive_cores,
-                          num_shared_cores, exclusive_mode, shared_mode,
-                          excl_non_isolcpus):
-
+def reconfigure_directory(c, conf_dir, num_exclusive_cores, num_shared_cores,
+                          exclusive_mode, shared_mode, excl_non_isolcpus,
+                          proc_info, procs):
     # Reconfigure the config directory with the updated configuration
 
     with c.lock():
@@ -111,92 +149,94 @@ def reconfigure_directory(c, old_config, conf_dir, num_exclusive_cores,
     init.configure(c, conf_dir, num_exclusive_cores, num_shared_cores,
                    exclusive_mode, shared_mode, excl_non_isolcpus)
 
+    def update_sockets(proc):
+        proc.sockets[int(proc.socket)] = False
+        index = 0
+        proc.socket = str(index)
+        while not proc.sockets[index]:
+            index += 1
+            proc.socket = str(index)
+
     # Get matches for the exclusive pools
-
-    crossovers = dict()
-    for pool in old_config.keys():
-        if pool in ["exclusive", "exclusive-non-isolcpus"]:
-            if pool not in crossovers.keys():
-                crossovers[pool] = dict()
-            for socket in old_config[pool].keys():
-                crossovers[pool][socket] = []
-                with c.lock():
-                    pools = c.pools()
-                    p = pools[pool]
-                    new_pool_cores = [cl.cpus() for cl in p.cpu_lists(socket)
-                                      .values()]
-                crossover_cores = []
-                for core_list in old_config[pool][socket]:
-                    if core_list in new_pool_cores and\
-                       old_config[pool][socket][core_list] != []:
-                        crossover_cores = crossover_cores + [core_list]
-                crossovers[pool][socket] = crossover_cores
-
-    for pool in crossovers.keys():
-        for socket in crossovers[pool].keys():
-            for core_list in crossovers[pool][socket]:
-                pid = old_config[pool][socket][core_list][0]
-                logging.info(pid)
-                with c.lock():
-                    pools = c.pools()
-                    p = pools[pool]
-                    clist = p.cpu_list(socket, core_list)
-                    clist.add_task(pid)
-
-    excluded = []
-    for pool in old_config.keys():
-        for socket in old_config[pool].keys():
+    socket_mismatch = []
+    clist_mismatch = []
+    for proc in proc_info:
+        with c.lock():
+            pools = c.pools()
+            p = pools[proc.pool]
             try:
-                excluded = crossovers[pool][socket]
-            except KeyError:
-                logging.info("No cores to be excluded in this pool/socket")
-            for core in old_config[pool][socket].keys():
-                if old_config[pool][socket][core] != [] and\
-                   core not in excluded:
-                    logging.info("Reassigning PID(s) {} from pool {}"
-                                 " socket {}".format(old_config[pool]
-                                                     [socket][core],
-                                                     pool, socket))
-                    for pid in old_config[pool][socket][core]:
-                        with c.lock():
-                            pools = c.pools()
-                            p = pools[pool]
-                            if pool not in ["exclusive", "shared",
-                                            "exclusive-non-isolcpus"]:
-                                socket = None
-                            clists = None
-                            if p.exclusive():
-                                num_cpus = 1
-                                available_clists = [cl for cl in
-                                                    p.cpu_lists(socket)
-                                                    .values() if
-                                                    len(cl.tasks()) == 0]
-                                if len(available_clists) < num_cpus:
-                                    raise SystemError("Not enough free"
-                                                      " cpu lists in pool {}"
-                                                      .format(pool))
+                clists = p.socket_cpu_list(proc.socket)
+                if len(clists) == 0:
+                    logging.info("Cannot satisfy socket requirement pool {}"
+                                 " socket {} clist {}"
+                                 .format(proc.pool, proc.socket,
+                                         proc.old_clist))
+                    update_sockets(proc)
+                    socket_mismatch.append(proc)
+                    continue
+                try:
+                    cl = clists[proc.old_clist]
+                    logging.info("Core list requirement satisfied pool {}"
+                                 " socket {} clist {}".format(proc.pool,
+                                                              proc.socket,
+                                                              proc.old_clist))
+                    cl.add_task(",".join(proc.pid))
+                    for pid in proc.pid:
+                        procs.process_map[pid].add_new_clist(cl.cpus())
+                except KeyError:
+                    logging.info("Cannot satisfy clist requirement pool {}"
+                                 " socket {} clist {}".format(proc.pool,
+                                                              proc.socket,
+                                                              proc.old_clist))
+                    clist_mismatch.append(proc)
+            except FileNotFoundError:
+                logging.info("Cannot satisfy socket requirement pool {}"
+                             " socket {} clist {}"
+                             .format(proc.pool, proc.socket,
+                                     proc.old_clist))
+                update_sockets(proc)
+                socket_mismatch.append(proc)
 
-                                clists = available_clists[:num_cpus]
-                            else:
-                                try:
-                                    if pool in ["exclusive", "shared",
-                                                "exclusive-non-isolcpus"]:
-                                        clists = [random.choice(list(
-                                                  p.cpu_lists(socket)
-                                                  .values()))]
-                                    else:
-                                        clists = [random.choice(list(
-                                                  p.cpu_lists().values()))]
-                                except IndexError:
-                                    raise SystemError("No cpu lists in pool {}"
-                                                      .format(pool))
+    # Try to find a match in the same socket first
+    for proc in clist_mismatch:
+        with c.lock():
+            pools = c.pools()
+            p = pools[proc.pool]
+            satisfied = False
+            for cl in p.socket_cpu_list(proc.socket).values():
+                if len(cl.tasks()) == 0:
+                    cl.add_task(",".join(proc.pid))
+                    for pid in proc.pid:
+                        procs.process_map[pid].add_new_clist(cl.cpus())
+                    satisfied = True
+                    break
 
-                            if not clists:
-                                raise SystemError("No free cpu lists in pool"
-                                                  " {}".format(pool))
+            if not satisfied:
+                socket_mismatch.append(proc)
 
-                            for cl in clists:
-                                cl.add_task(pid)
+    # Move on to other sockets
+    for proc in socket_mismatch:
+        with c.lock():
+            pools = c.pools()
+            p = pools[proc.pool]
+            clists = p.socket_cpu_list(proc.socket).values()
+            satisfied = False
+            while not satisfied:
+                clists = p.socket_cpu_list(proc.socket).values()
+                for cl in p.socket_cpu_list(proc.socket).values():
+                    if len(cl.tasks()) == 0:
+                        cl.add_task(",".join(proc.pid))
+                        for pid in proc.pid:
+                            procs.process_map[pid].add_new_clist(cl.cpus())
+                        satisfied = True
+                        break
+
+                if not satisfied:
+                    logging.info("Cannot satisfy socket requirement pool {}"
+                                 " socket {} clist {}"
+                                 .format(proc.pool, proc.socket,
+                                         proc.old_clist))
+                    update_sockets(proc)
 
 
 def get_pods():
@@ -248,27 +288,36 @@ def execute_reconfigure(install_dir, node_name, all_pods, namespace):
 
 def build_config_map(path):
     path = "{}/pools".format(path)
-    cmk_config = dict()
-    for d in os.listdir(path):
-        cmk_config[d] = dict()
-        for socket in os.listdir("{}/{}".format(path, d)):
-            if os.path.isdir("{}/{}/{}".format(path, d, socket)):
-                cmk_config[d][socket] = dict()
+    proc_info = []
+    procs = Procs()
+    pools = []
+    for pool in os.listdir(path):
+        pools = pools + [pool]
+        for socket in os.listdir("{}/{}".format(path, pool)):
+            if os.path.isdir("{}/{}/{}".format(path, pool, socket)):
                 for core_list in os.listdir("{}/{}/{}"
-                                            .format(path, d, socket)):
-                    cmk_config[d][socket][core_list] = []
+                                            .format(path, pool, socket)):
                     with open("{}/{}/{}/{}/tasks"
-                              .format(path, d, socket, core_list)) as f:
+                              .format(path, pool, socket, core_list)) as f:
                         pid = f.read().strip()
                         if pid != '':
-                            for item in pid.split(","):
-                                cmk_config[d][socket][core_list]\
-                                    .append(item)
+                            sockets = [True for s in
+                                       os.listdir("{}/{}".format(path, pool))
+                                       if
+                                       os.path.isdir("{}/{}/{}"
+                                                     .format(path, pool, s))]
+                            processes = [p for p in pid.split(",")]
+                            p = ProcessInfo(pool, socket, sockets,
+                                            core_list, processes)
+                            proc_info.append(p)
+                            for process in processes:
+                                procs.add_proc(process, core_list)
 
-    for pool in cmk_config.keys():
-        if pool not in ["exclusive", "shared", "infra",
-                        "exclusive-non-isolcpus"]:
+    for p in pools:
+        if p not in ["exclusive", "shared", "infra",
+                     "exclusive-non-isolcpus"]:
             logging.error("Error while reading configuration"
-                          " at {}, incorrect pool {}".format(path, pool))
+                          " at {}, incorrect pool {}".format(path, p))
             sys.exit(1)
-    return cmk_config
+
+    return (proc_info, procs)

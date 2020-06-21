@@ -105,9 +105,11 @@ def test_execute_reconfigure_failure1(caplog):
                                                   "fake-namespace")
 
         caplog_tuple = caplog.record_tuples
-        assert caplog_tuple[-2][2] == "Exception when creating pod for"\
-                                      " reconfigure command: Fake Reason"
-        assert caplog_tuple[-1][2] == "Aborting reconfigure ..."
+        expected_msg1 = "Exception when creating pod for"\
+                        " reconfigure command: Fake Reason"
+        assert caplog_tuple[-2][2] == expected_msg1
+        expected_msg2 = "Aborting reconfigure ..."
+        assert caplog_tuple[-1][2] == expected_msg2
         assert err is not None
         assert err.value.args[0] == 1
 
@@ -125,8 +127,10 @@ def test_execute_reconfigure_failure2(caplog):
                                                   "fake-namespace")
 
             caplog_tuple = caplog.record_tuples
-            assert caplog_tuple[-2][2] == "Exception while waiting for"\
-                                          " pod to succeed: Fake Error"
-            assert caplog_tuple[-1][2] == "Aborting reconfigure ..."
+            expected_msg1 = "Exception when creating pod for"\
+                            " reconfigure command: Fake Reason"
+            assert caplog_tuple[-2][2] == expected_msg1
+            expected_msg2 = "Aborting reconfigure ..."
+            assert caplog_tuple[-1][2] == expected_msg2
             assert err is not None
             assert err.value.args[0] == 1
