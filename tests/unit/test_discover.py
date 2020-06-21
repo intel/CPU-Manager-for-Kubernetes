@@ -12,33 +12,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .. import helpers
-from intel import discover
+from intel import discover, config
 from kubernetes.client.rest import ApiException as K8sApiException
-import os
 import pytest
-import tempfile
 from unittest.mock import patch, MagicMock
 
 
+def get_bad_config():
+    conf = config.Conf()
+    for pool in ["shared", "infra"]:
+        if pool == "exclusive":
+            conf.add_pool(True, pool)
+        else:
+            conf.add_pool(False, pool)
+        for socket in ["0", "1"]:
+            conf.pools[pool].add_socket(socket)
+            for core_list in ["0,16", "1,17"]:
+                conf.pools[pool].sockets[socket].add_core_list(core_list)
+                for task in ["1234"]:
+                    s = conf.pools[pool].sockets[socket]
+                    s.core_lists[core_list].add_task(task)
+
+    return conf
+
+
+def get_fake_config():
+    conf = config.Conf()
+    for pool in ["exclusive", "shared", "infra"]:
+        if pool == "exclusive":
+            conf.add_pool(True, pool)
+        else:
+            conf.add_pool(False, pool)
+        for socket in ["0", "1"]:
+            conf.pools[pool].add_socket(socket)
+            for core_list in ["0,16", "1,17"]:
+                conf.pools[pool].sockets[socket].add_core_list(core_list)
+                for task in ["1234"]:
+                    s = conf.pools[pool].sockets[socket]
+                    s.core_lists[core_list].add_task(task)
+
+    return conf
+
+
+@patch('intel.config.get_config', MagicMock(return_value=get_bad_config()))
+@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch('intel.k8s.get_node_from_pod',
+       MagicMock(return_value="fake-node"))
 def test_discover_no_exclusive():
-    temp_dir = tempfile.mkdtemp()
-    conf_dir = os.path.join(temp_dir, "discover")
-
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("ok"),
-         "{}".format(conf_dir)]
-    )
-    helpers.execute(
-        "rm",
-        ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "exclusive"))]
-    )
-
     with pytest.raises(KeyError) as err:
-        discover.add_node_oir(conf_dir)
+        discover.add_node_oir()
     expected_msg = "Exclusive pool does not exist"
     assert err.value.args[0] == expected_msg
 
@@ -62,23 +84,17 @@ HTTP response body: fake body
     return exp_log_err
 
 
+@patch('intel.config.get_config', MagicMock(return_value=get_fake_config()))
+@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch('intel.k8s.get_node_from_pod',
+       MagicMock(return_value="fake-node"))
 def test_discover_oir_update_failure(caplog):
-    temp_dir = tempfile.mkdtemp()
-    conf_dir = os.path.join(temp_dir, "discover")
-
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("ok"),
-         "{}".format(conf_dir)]
-    )
-
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            discover.add_node_oir(conf_dir)
+            discover.add_node_oir()
         exp_err = "Exception when patching node with OIR"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -133,14 +149,17 @@ def test_discover_add_taint_failure2(caplog):
         assert caplog_tuple[0][2] == exp_log_err
 
 
+@patch('intel.config.get_config', MagicMock(return_value=get_fake_config()))
+@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch('intel.k8s.get_node_from_pod',
+       MagicMock(return_value="fake-node"))
 def test_add_node_er_failure(caplog):
-    conf_dir = helpers.conf_dir("ok")
     fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.discover.patch_k8s_node_status',
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
-            discover.add_node_er(conf_dir)
+            discover.add_node_er()
         exp_err = "Exception when patching node with OIR"
         exp_log_err = get_expected_log_error(exp_err)
         caplog_tuple = caplog.record_tuples
@@ -150,13 +169,12 @@ def test_add_node_er_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.10.0'))
 def test_discover_version_check(caplog):
-    conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \
             patch('intel.discover.add_node_oir') as mock_oir, \
             patch('intel.discover.add_node_label') as mock_label, \
             patch('intel.discover.add_node_taint') as mock_taint:
 
-        discover.discover(conf_dir)
+        discover.discover()
 
         assert mock_er.called
         assert not mock_oir.called
@@ -166,13 +184,12 @@ def test_discover_version_check(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.6.0'))
 def test_discover_version_check2(caplog):
-    conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \
             patch('intel.discover.add_node_oir') as mock_oir, \
             patch('intel.discover.add_node_label') as mock_label, \
             patch('intel.discover.add_node_taint') as mock_taint:
 
-        discover.discover(conf_dir)
+        discover.discover()
 
         assert not mock_er.called
         assert mock_oir.called
@@ -182,14 +199,13 @@ def test_discover_version_check2(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value='v1.8.0'))
 def test_discover_version_check3(caplog):
-    conf_dir = helpers.conf_dir("ok")
     with patch('intel.discover.add_node_er') as mock_er, \
             patch('intel.discover.add_node_oir') as mock_oir, \
             patch('intel.discover.add_node_label') as mock_label, \
             patch('intel.discover.add_node_taint') as mock_taint:
 
         with pytest.raises(SystemExit):
-            discover.discover(conf_dir)
+            discover.discover()
 
         # no resources should be created on unsupported cluster
         assert not mock_er.called
@@ -198,21 +214,12 @@ def test_discover_version_check3(caplog):
         assert not mock_taint.called
 
 
+@patch('intel.config.get_config', MagicMock(return_value=get_bad_config()))
+@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch('intel.k8s.get_node_from_pod',
+       MagicMock(return_value="fake-node"))
 def test_discover_add_node_er_no_exclusive_pool_failure():
-    temp_dir = tempfile.mkdtemp()
-    conf_dir = os.path.join(temp_dir, "discover")
-
-    helpers.execute(
-        "cp",
-        ["-r",
-         helpers.conf_dir("ok"),
-         "{}".format(conf_dir)]
-    )
-    helpers.execute(
-        "rm",
-        ["-r",
-         "{}".format(os.path.join(conf_dir, "pools", "exclusive"))]
-    )
-
-    with pytest.raises(KeyError, message="Exclusive pool does not exist"):
-        discover.add_node_er(conf_dir)
+    with pytest.raises(KeyError) as err:
+        discover.add_node_er()
+    expected_msg = "Exclusive pool does not exist"
+    assert err.value.args[0] == expected_msg

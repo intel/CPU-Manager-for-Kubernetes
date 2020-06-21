@@ -1,240 +1,336 @@
-# Copyright (c) 2017 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from collections import OrderedDict
-import fcntl
+from . import clusterinit, k8s
+from kubernetes import client as k8sclient
+from kubernetes.client.rest import ApiException as K8sApiException
 import logging
-import os
-from stat import S_ISDIR
-import threading
-import _thread
+import sys
+import yaml
+import time
 
+# Set the number of times the get_config() function will attempt
+# to retrieve the CMK configmap before giving up
+EXCEEDED = 30
 
-# CMK_LOCK_TIMEOUT is interpreted as seconds.
-ENV_LOCK_TIMEOUT = "CMK_LOCK_TIMEOUT"
-DEFAULT_LOCK_TIMEOUT = 30
-
-
-def max_lock_seconds():
-    return float(os.getenv(ENV_LOCK_TIMEOUT, DEFAULT_LOCK_TIMEOUT))
-
-
-# Returns a new config at the supplied path.
-def new(path):
-    if os.path.isdir(path) and len(os.listdir(path)) > 0:
-        raise FileExistsError(
-            "Config directory {} already initialized".format(path))
-    os.makedirs(os.path.join(path, "pools"))
-    open(os.path.join(path, "lock"), "w+")
-    return Config(path)
+exclusivity = {
+    "exclusive": True,
+    "exclusive-non-isolcpus": True,
+    "shared": False,
+    "infra": False
+}
 
 
 class Config:
-    def __init__(self, path):
-        self.path = os.path.normpath(path)
+
+    def __init__(self, cm_name):
+        self.c = None
+        self.cm_name = cm_name
 
     def lock(self):
-        fd = os.open(os.path.join(self.path, "lock"), os.O_RDWR)
-        return Lock(fd)
+        # The lock function is used to avoid two isolate
+        # commands simultaneously making updates to the
+        # CMK configuration configmap that is associated
+        # with the appropriate node. It does so by deleting
+        # the configmap before updating it, and then
+        # recreating it when the isolate command is done
+        # with it
 
-    def pools(self):
-        pools = OrderedDict()
-        pool_dir = os.path.join(self.path, "pools")
-        for f in sorted(os.listdir(pool_dir)):
-            pd = os.path.join(pool_dir, f)
-            if os.path.isdir(pd):
-                p = Pool(pd)
-                pools[p.name()] = p
-        return pools
+        self.c = get_config(self.cm_name)
+        k8s.delete_config_map(None, self.cm_name)
 
-    def pool(self, name):
-        return self.pools()[name]
+    def unlock(self):
+        set_config(self.c, self.cm_name)
 
-    # Writes a new pool to disk and returns the corresponding pool object.
-    def add_pool(self, name, exclusive):
-        if name in self.pools():
-            raise KeyError("Pool {} already exists".format(name))
-        os.makedirs(os.path.join(self.path, "pools", name))
-        ex_file = os.path.join(self.path, "pools", name, "exclusive")
-        with open(ex_file, "w+") as excl:
-            if exclusive:
-                excl.write("1")
-            else:
-                excl.write("0")
-            excl.flush()
-            os.fsync(excl)
-        return self.pool(name)
+    def add_pool(self, exclusive, name):
+        self.c.add_pool(exclusive, name)
+
+    def get_pool(self, name):
+        return self.c.get_pool(name)
+
+    def get_pools(self):
+        return self.c.get_pools()
+
+    def as_dict(self):
+        return self.c.as_dict()
+
+
+class Conf:
+
+    def __init__(self):
+        self.pools = dict()
+
+    def add_pool(self, exclusive, name):
+        p = Pool(exclusive, name)
+        self.pools[name] = p
+
+    def get_pool(self, name):
+        return self.pools[name]
+
+    def get_pools(self):
+        return self.pools.keys()
 
     def as_dict(self):
         result = {}
-        result["path"] = self.path
         pools = {}
-        for _, p in self.pools().items():
-            pools[p.name()] = p.as_dict()
+        for pool in self.get_pools():
+            pools[pool] = self.get_pool(pool).as_dict()
         result["pools"] = pools
         return result
 
 
 class Pool:
-    def __init__(self, path):
-        self.path = os.path.normpath(path)
 
-    def name(self):
-        return os.path.basename(self.path)
+    def __init__(self, exclusive, name):
+        self.exclusive = exclusive
+        self.name = name
+        self.sockets = dict()
 
-    def exclusive(self):
-        f = os.path.join(self.path, "exclusive")
-        with open(os.path.join(self.path, "exclusive")) as f:
-            c = f.read(1)
-            if c == "1":
-                return True
-            return False
-
-    def cpu_lists(self, socket_id=None):
-        if socket_id:
-            return self.socket_cpu_list(socket_id)
-
-        result = OrderedDict()
-        for f in sorted(os.listdir(self.path)):
-            fd_stat = os.stat(os.path.join(self.path, f)).st_mode
-            if not S_ISDIR(fd_stat):
-                continue
-            result.update(self.socket_cpu_list(f))
-        return result
-
-    def socket_cpu_list(self, socket_id):
-        result = OrderedDict()
-        socket_path = os.path.join(self.path, socket_id)
-        for f in sorted(os.listdir(socket_path)):
-            d = os.path.join(socket_path, f)
-            if os.path.isdir(d):
-                clist = CPUList(d)
-                result[clist.cpus()] = clist
-        return result
-
-    def cpu_list(self, socket_id, name):
-        return self.cpu_lists(socket_id)[name]
-
-    # Writes a new cpu list to disk and socket_idreturns the corresponding
-    # CPUList object.
-    def add_cpu_list(self, socket_id, cpus):
-        if cpus in self.cpu_lists(socket_id=socket_id):
-            raise KeyError("CPU list {} already exists".format(cpus))
-        os.makedirs(os.path.join(self.path, socket_id, cpus))
-        open(os.path.join(self.path, socket_id, cpus, "tasks"), "w+")
-        return self.cpu_list(socket_id, cpus)
+    def is_exclusive(self):
+        return self.exclusive
 
     def add_socket(self, socket_id):
-        os.makedirs(os.path.join(self.path, socket_id))
+        s = Socket(socket_id)
+        self.sockets[socket_id] = s
+
+    def get_socket(self, socket_id):
+        return self.sockets[socket_id]
+
+    def get_sockets(self):
+        return self.sockets.keys()
+
+    def get_core_lists(self, socket_id=None):
+        if socket_id:
+            return self.get_socket_clists(socket_id)
+
+        cores = []
+        for socket in self.get_sockets():
+            s = self.get_socket(socket)
+            cores += [s.get_core_list(cl)
+                      for cl in s.get_core_lists()]
+        return cores
+
+    def get_socket_clists(self, socket_id):
+        s = self.get_socket(socket_id)
+        return [s.get_core_list(cl) for cl in s.get_core_lists()]
+
+    def get_core_list(self, cl, socket_id=None):
+        if socket_id:
+            return self.get_socket(socket_id).get_core_list(cl)
+
+        for socket in self.get_sockets():
+            try:
+                return self.get_socket(socket).get_core_list(cl)
+            except KeyError:
+                continue
+
+    def update_clist(self, cl, pid):
+        for socket in self.get_sockets():
+            try:
+                core_list = self.get_socket(socket).get_core_list(cl)
+                core_list.add_task(pid)
+                return
+            except KeyError:
+                continue
+
+    def remove_task(self, cl, pid):
+        for socket in self.get_sockets():
+            try:
+                core_list = self.get_socket(socket).get_core_list(cl)
+                core_list.remove_task(pid)
+                return
+            except KeyError:
+                continue
 
     def as_dict(self):
         result = {}
-        result["exclusive"] = self.exclusive()
-        result["name"] = self.name()
+        result["exclusive"] = self.is_exclusive()
+        result["name"] = self.name
         clists = {}
-        for _, c in self.cpu_lists().items():
-            clists[c.cpus()] = c.as_dict()
+        for cl in self.get_core_lists():
+            clists[cl.core_id] = cl.as_dict()
         result["cpuLists"] = clists
         return result
 
-    def tasks_list(self):
-        result = []
-        for cpulist in self.cpu_lists().values():
-            result.extend(cpulist.tasks())
-        return result
+
+class Socket:
+
+    def __init__(self, socket_id):
+        self.socket_id = socket_id
+        self.core_lists = dict()
+
+    def add_core_list(self, core_id):
+        cl = CoreList(core_id)
+        self.core_lists[core_id] = cl
+
+    def get_core_list(self, core_id):
+        return self.core_lists[core_id]
+
+    def get_core_lists(self):
+        return self.core_lists.keys()
 
 
-class CPUList:
-    def __init__(self, path):
-        self.path = os.path.normpath(path)
+class CoreList:
 
-    def cpus(self):
-        return os.path.basename(self.path)
+    def __init__(self, core_id):
+        self.core_id = core_id
+        self.tasks = []
 
-    def tasks(self):
-        with open(os.path.join(self.path, "tasks")) as f:
-            return [int(pid.strip())
-                    for pid in f.read().split(",")
-                    if pid != ""]
+    def add_task(self, task):
+        self.tasks += [task]
 
-    def __write_tasks(self, tasks):
-        # Mode "w+" truncates the file prior to writing new content.
-        with open(os.path.join(self.path, "tasks"), "w+") as f:
-            f.write(",".join([str(t) for t in tasks]))
-            f.flush()
-            os.fsync(f)
+    def remove_task(self, task):
+        self.tasks = [t for t in self.tasks if t != task]
 
-    # Writes the supplied pid to disk for this cpu list.
-    def add_task(self, pid):
-        tasks = self.tasks()
-        tasks.append(pid)
-        self.__write_tasks(tasks)
-
-    # Removes the supplied pid from disk for this cpu list.
-    def remove_task(self, pid):
-        self.__write_tasks([t for t in self.tasks() if t != pid])
+    def get_tasks(self):
+        return self.tasks
 
     def as_dict(self):
         result = {}
-        result["cpus"] = self.cpus()
-        result["tasks"] = self.tasks()
+        result["cpus"] = self.core_id
+        result["tasks"] = self.get_tasks()
         return result
 
 
-class Lock:
-    def __init__(self, fd):
-        self.fd = fd
-        self.timer = None
+def new(platform, excl_non_isolcpus, name):
+    # Creates the new CMK configuration for the node. It create a
+    # configmap object and POSTs it to the K8s API Server
 
-    # Context guard
-    def __enter__(self):
-        self.__acquire()
-        return self
+    config = dict()
+    config = update_configmap_exclusive("exclusive", platform, config)
+    config = update_configmap_shared("shared", platform, config)
+    if excl_non_isolcpus != "-1" and platform.has_isolated_cores():
+        config = update_configmap_exclusive("exclusive-non-isolcpus",
+                                            platform, config)
+    config = update_configmap_shared("infra", platform, config)
 
-    # Context guard
-    def __exit__(self, type, value, traceback):
-        self.__release()
+    configmap = k8sclient.V1ConfigMap()
+    data = {
+        "config": yaml.dump(config)
+    }
+    clusterinit.update_configmap(configmap, name, data)
 
-    def __acquire(self):
-        max_lock = max_lock_seconds()
+    try:
+        k8s.create_config_map(None, configmap, "default")
+    except K8sApiException as err:
+        logging.error("Exception when creating config map {}"
+                      .format(name))
+        logging.error(err.reason)
+        sys.exit(1)
 
-        def timed_out():
-            logging.error("Lock timed out after {} seconds".format(max_lock))
-            # NOTE(CD):
-            #
-            # Bail and rely on the operating system to close the open lock
-            # file descriptor. They are closed on our behalf according to
-            # the POSIX standard. See https://linux.die.net/man/2/exit
-            #
-            # We emulate Ctrl-C instead of raising SystemExit via sys.exit()
-            # since exceptions are per-thread. SystemExit causes the
-            # interpreter to exit if unhandled. This is the only
-            # reliable way to trigger an exception in the main thread
-            # to make this testable. Open to improvements.
-            #
-            # The interpreter exits with status 1.
-            #
-            # See https://goo.gl/RXsXEs
-            _thread.interrupt_main()
 
-        self.timer = threading.Timer(max_lock, timed_out)
-        self.timer.start()
-        # acquire file lock
-        fcntl.flock(self.fd, fcntl.LOCK_EX)
+def update_configmap_exclusive(pool_name, platform, config):
+    # Creates the pool 'pool_name' in the config and sets it up
+    # to be a exclusive pool
 
-    def __release(self):
-        self.timer.cancel()
-        self.timer = None
-        fcntl.flock(self.fd, fcntl.LOCK_UN)
-        os.close(self.fd)
+    logging.info("Adding %s pool." % pool_name)
+    config[pool_name] = dict()
+    sockets = platform.sockets.values()
+    for socket in sockets:
+        config[pool_name][socket.socket_id] = dict()
+        cores = socket.get_cores_from_pool(pool_name)
+
+        for core in cores:
+            cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
+            config[pool_name][socket.socket_id][cpu_ids_str] = []
+    return config
+
+
+def update_configmap_shared(pool_name, platform, config):
+    # Creates the pool 'pool_name' in the config and sets it up
+    # to be a shared pool
+
+    logging.info("Adding %s pool." % pool_name)
+    config[pool_name] = dict()
+    sockets = platform.sockets.values()
+    for socket in sockets:
+        config[pool_name][socket.socket_id] = dict()
+        cores = socket.get_cores_from_pool(pool_name)
+        cpu_ids = []
+        for core in cores:
+            cpu_ids.extend(core.cpu_ids())
+
+        if not cpu_ids:
+            continue
+
+        cpu_ids_str = ",".join([str(c) for c in cpu_ids])
+        config[pool_name][socket.socket_id][cpu_ids_str] = []
+    return config
+
+
+def get_config(name):
+    # Returns the configmap 'cmk-config-<name>' where 'name' is the
+    # name of the node that this pod is running on. The function
+    # has to possibly retry trying to retrieve the configmap as
+    # it may have been temporarily deleted by an isolate command
+    # to avoid multiple commands from updating the configmap
+    # simultaneously. It gives up after a certain number of times
+    # to avoid an infinite loop if for some reason the configmap
+    # has been deleted
+
+    waited = 0
+    while True:
+        try:
+            c = k8s.get_config_map(None, name, "default")
+            if c is None:
+                if waited == EXCEEDED:
+                    logging.error("Time exceeded waiting"
+                                  " to retrieve configmap")
+                    logging.error("Exiting...")
+                    sys.exit(1)
+                time.sleep(1)
+                waited += 1
+                continue
+            c = yaml.safe_load(c["config"])
+            break
+        except K8sApiException as err:
+            logging.error("Error while retreiving configmap {}"
+                          .format(name))
+            logging.error(err.reason)
+            sys.exit(1)
+
+    return build_config(c)
+
+
+def build_config(c):
+    # Builds the CMK configuration from the configmap c. it builds it
+    # into the Config class
+
+    config = Conf()
+    for pool in c.keys():
+        config.add_pool(exclusivity[pool], pool)
+        for socket in c[pool].keys():
+            config.pools[pool].add_socket(socket)
+            for core_list in c[pool][socket].keys():
+                config.pools[pool].sockets[socket].add_core_list(core_list)
+                for task in c[pool][socket][core_list]:
+                    config.pools[pool].sockets[socket]\
+                                 .core_lists[core_list].add_task(task)
+
+    return config
+
+
+def set_config(c, name):
+    # POSTS the updated CMK configuration to the K8s API Server
+    # to be saved as a configmap
+
+    config = dict()
+    for pool in c.get_pools():
+        config[pool] = dict()
+        for socket in c.pools[pool].get_sockets():
+            config[pool][socket] = dict()
+            s = c.pools[pool].get_socket(socket)
+            for core_list in s.get_core_lists():
+                tasks = s.get_core_list(core_list).tasks
+                config[pool][socket][core_list] = tasks
+
+    configmap = k8sclient.V1ConfigMap()
+    data = {
+        "config": yaml.dump(config)
+    }
+    clusterinit.update_configmap(configmap, name, data)
+
+    try:
+        k8s.create_config_map(None, configmap, "default")
+    except K8sApiException as err:
+        logging.error("Exception when replacing config map {}"
+                      .format(name))
+        logging.error(err.reason)
+        sys.exit(1)

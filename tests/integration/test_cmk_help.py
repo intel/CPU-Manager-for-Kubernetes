@@ -23,23 +23,23 @@ Usage:
   cmk (-h | --help)
   cmk --version
   cmk cluster-init (--host-list=<list>|--all-hosts) [--cmk-cmd-list=<list>]
-                   [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
+                   [--cmk-img=<img>] [--cmk-img-pol=<pol>]
                    [--install-dir=<dir>] [--num-exclusive-cores=<num>]
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
                    [--excl-non-isolcpus=<list>]
-  cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
+  cmk init [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
-  cmk discover [--conf-dir=<dir>]
-  cmk describe [--conf-dir=<dir>]
-  cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
+  cmk discover
+  cmk describe
+  cmk reconcile[--publish] [--interval=<seconds>]
+  cmk isolate[--socket-id=<num>] --pool=<pool> <command>
               [-- <args>...][--no-affinity]
   cmk install [--install-dir=<dir>]
-  cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk node-report[--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
   cmk webhook [--conf-file=<file>]
   cmk reconfigure [--node-name=<name>] [--num-exclusive-cores=<num>]
@@ -68,7 +68,6 @@ Options:
   --cmk-img=<img>              CMK Docker image [default: cmk:v1.4.1].
   --cmk-img-pol=<pol>          Image pull policy for the CMK Docker image
                                [default: IfNotPresent].
-  --conf-dir=<dir>             CMK configuration directory [default: /etc/cmk].
   --install-dir=<dir>          CMK install directory [default: /opt/bin].
   --interval=<seconds>         Number of seconds to wait between rerunning.
                                If set to 0, will only run once. [default: 0]

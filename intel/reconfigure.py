@@ -1,9 +1,8 @@
 from kubernetes import client as k8sclient
 from kubernetes import stream
 from kubernetes.client.rest import ApiException as K8sApiException
-from . import k8s, config, topology, init, clusterinit
+from . import k8s, config, topology, init, clusterinit, util, discover
 import logging
-import shutil
 import os
 import sys
 import yaml
@@ -50,26 +49,33 @@ class Pid():
 
 
 def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
-                excl_non_isolcpus, conf_dir, exclusive_mode,
+                excl_non_isolcpus, exclusive_mode,
                 shared_mode, install_dir, namespace):
     # Build the current CMK confurations from the config directory
-    c = config.Config(conf_dir)
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    config_cm = "cmk-config-{}".format(node_name)
+
+    conf = config.Config(config_cm)
+    conf_non_deletion = config.get_config(config_cm)
     num_exclusive_cores = int(num_exclusive_cores)
     num_shared_cores = int(num_shared_cores)
 
-    built_config = build_config_map(conf_dir)
-    proc_info = built_config[0]
-    procs = built_config[1]
+    built_proc_info = build_proc_info(conf_non_deletion)
+    proc_info = built_proc_info[0]
+    procs = built_proc_info[1]
 
     num_excl_non_isols = len(topology.
                              parse_cpus_str(excl_non_isolcpus.split(",")))
     check_processes(proc_info, num_exclusive_cores, num_excl_non_isols)
 
-    reconfigure_directory(c, conf_dir, num_exclusive_cores,
+    conf.lock()
+    reconfigure_directory(conf, num_exclusive_cores,
                           num_shared_cores, exclusive_mode, shared_mode,
-                          excl_non_isolcpus, proc_info, procs)
+                          excl_non_isolcpus, proc_info, procs, config_cm)
 
-    set_config_map("cmk-config", namespace, procs)
+    configmap_name = "cmk-reconfigure-{}".format(node_name)
+    set_config_map(configmap_name, namespace, procs)
 
     # Run the re-affinitization command in each of the pods on the node
     all_pods = get_pods()
@@ -78,7 +84,7 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
 
     execute_reconfigure(install_dir, node_name, all_pods, namespace)
 
-    delete_config_map("cmk-config", namespace)
+    delete_config_map(configmap_name, namespace)
 
 
 def check_processes(proc_info, num_exclusive_cores, num_excl_non_isols):
@@ -137,23 +143,51 @@ def delete_config_map(name, namespace):
         sys.exit(1)
 
 
-def reconfigure_directory(c, conf_dir, num_exclusive_cores, num_shared_cores,
+def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
                           exclusive_mode, shared_mode, excl_non_isolcpus,
-                          proc_info, procs):
-    # Reconfigure the config directory with the updated configuration
-
-    with c.lock():
-        shutil.rmtree("{}/pools".format(conf_dir))
-        os.makedirs("{}/pools".format(conf_dir))
-
-    init.configure(c, conf_dir, num_exclusive_cores, num_shared_cores,
+                          proc_info, procs, config_cm):
+    init.configure(num_exclusive_cores, num_shared_cores,
                    exclusive_mode, shared_mode, excl_non_isolcpus)
 
+    # Repatch the nodes with ERs/OIRs
+    version = util.parse_version(k8s.get_kube_version(None))
+    if version == util.parse_version("v1.8.0"):
+        logging.fatal("K8s 1.8.0 is not supported. Update K8s to "
+                      "version >=1.8.1 or rollback to previous versions")
+        sys.exit(1)
+
+    if version >= util.parse_version("v1.8.1"):
+        # Patch the node with the appropriate CMK ER.
+        logging.debug("Patching the node with the appropriate CMK ER.")
+        discover.add_node_er()
+    else:
+        # Patch the node with the appropriate CMK OIR.
+        logging.debug("Patching the node with the appropriate CMK OIR.")
+        discover.add_node_oir()
+
+    # How this function works, is it takes the new configuration (after
+    # init.configure()) and compares it againts the objects in procs. If
+    # it finds that the core list for a process in the previous configuration
+    # is also in the  new configuration, it will prioritize giving the process
+    # the same core list. If it can't find a core list match, it checks for
+    # other cores on the same socket. Again if it can't find another core list
+    # on the same socket, it has to move to the next socket until eventually it
+    # finds a new core list for the process. There is guaranteed to be an
+    # available core list in the new configuration, determined by a previous
+    # call to check_processes()
+
+    new_conf = config.get_config(config_cm)
+
+    # This is a way of keeping track of which sokcets we've already tried
+    # to assign to the process. The sockets variable takes the form
+    # [Bool, Bool, ...] and a False means the socket has failed to
+    # satisfy the process' criteria
     def update_sockets(proc):
         proc.sockets[int(proc.socket)] = False
         index = 0
         proc.socket = str(index)
         while not proc.sockets[index]:
+            logging.info(index)
             index += 1
             proc.socket = str(index)
 
@@ -161,82 +195,80 @@ def reconfigure_directory(c, conf_dir, num_exclusive_cores, num_shared_cores,
     socket_mismatch = []
     clist_mismatch = []
     for proc in proc_info:
-        with c.lock():
-            pools = c.pools()
-            p = pools[proc.pool]
-            try:
-                clists = p.socket_cpu_list(proc.socket)
-                if len(clists) == 0:
-                    logging.info("Cannot satisfy socket requirement pool {}"
-                                 " socket {} clist {}"
-                                 .format(proc.pool, proc.socket,
-                                         proc.old_clist))
-                    update_sockets(proc)
-                    socket_mismatch.append(proc)
-                    continue
-                try:
-                    cl = clists[proc.old_clist]
-                    logging.info("Core list requirement satisfied pool {}"
-                                 " socket {} clist {}".format(proc.pool,
-                                                              proc.socket,
-                                                              proc.old_clist))
-                    cl.add_task(",".join(proc.pid))
-                    for pid in proc.pid:
-                        procs.process_map[pid].add_new_clist(cl.cpus())
-                except KeyError:
-                    logging.info("Cannot satisfy clist requirement pool {}"
-                                 " socket {} clist {}".format(proc.pool,
-                                                              proc.socket,
-                                                              proc.old_clist))
-                    clist_mismatch.append(proc)
-            except FileNotFoundError:
+        new_pool = new_conf.get_pool(proc.pool)
+        try:
+            clists = [cl.core_id for cl in
+                      new_pool.get_socket_clists(proc.socket)]
+            if len(clists) == 0:
                 logging.info("Cannot satisfy socket requirement pool {}"
                              " socket {} clist {}"
                              .format(proc.pool, proc.socket,
                                      proc.old_clist))
                 update_sockets(proc)
                 socket_mismatch.append(proc)
+                continue
+            if proc.old_clist in clists:
+                cl = new_pool.get_core_list(proc.old_clist, proc.socket)
+                logging.info("Core list requirement satisfied pool {}"
+                             " socket {} clist {}".format(proc.pool,
+                                                          proc.socket,
+                                                          proc.old_clist))
+
+                cl.tasks = proc.pid
+                for pid in proc.pid:
+                    procs.process_map[pid].add_new_clist(cl.core_id)
+            else:
+                logging.info("Cannot satisfy clist requirement pool {}"
+                             " socket {} clist {}".format(proc.pool,
+                                                          proc.socket,
+                                                          proc.old_clist))
+                clist_mismatch.append(proc)
+        except FileNotFoundError:
+            logging.info("Cannot satisfy socket requirement pool {}"
+                         " socket {} clist {}"
+                         .format(proc.pool, proc.socket,
+                                 proc.old_clist))
+            update_sockets(proc)
+            socket_mismatch.append(proc)
 
     # Try to find a match in the same socket first
     for proc in clist_mismatch:
-        with c.lock():
-            pools = c.pools()
-            p = pools[proc.pool]
-            satisfied = False
-            for cl in p.socket_cpu_list(proc.socket).values():
-                if len(cl.tasks()) == 0:
-                    cl.add_task(",".join(proc.pid))
+        new_pool = new_conf.get_pool(proc.pool)
+        satisfied = False
+        for cl in new_pool.get_socket_clists(proc.socket):
+            if len(cl.get_tasks()) == 0:
+                cl.tasks = proc.pid
+                for pid in proc.pid:
+                    procs.process_map[pid].add_new_clist(cl.core_id)
+                satisfied = True
+                break
+
+        if not satisfied:
+            socket_mismatch.append(proc)
+
+    # Move on to other sockets
+    for proc in socket_mismatch:
+        new_pool = new_conf.get_pool(proc.pool)
+        satisfied = False
+        while not satisfied:
+            for cl in new_pool.get_socket_clists(proc.socket):
+                if len(cl.get_tasks()) == 0:
+                    cl.tasks = proc.pid
                     for pid in proc.pid:
                         procs.process_map[pid].add_new_clist(cl.cpus())
                     satisfied = True
                     break
 
             if not satisfied:
-                socket_mismatch.append(proc)
+                logging.info("Cannot satisfy socket requirement pool {}"
+                             " socket {} clist {}"
+                             .format(proc.pool, proc.socket,
+                                     proc.old_clist))
+                update_sockets(proc)
 
-    # Move on to other sockets
-    for proc in socket_mismatch:
-        with c.lock():
-            pools = c.pools()
-            p = pools[proc.pool]
-            clists = p.socket_cpu_list(proc.socket).values()
-            satisfied = False
-            while not satisfied:
-                clists = p.socket_cpu_list(proc.socket).values()
-                for cl in p.socket_cpu_list(proc.socket).values():
-                    if len(cl.tasks()) == 0:
-                        cl.add_task(",".join(proc.pid))
-                        for pid in proc.pid:
-                            procs.process_map[pid].add_new_clist(cl.cpus())
-                        satisfied = True
-                        break
-
-                if not satisfied:
-                    logging.info("Cannot satisfy socket requirement pool {}"
-                                 " socket {} clist {}"
-                                 .format(proc.pool, proc.socket,
-                                         proc.old_clist))
-                    update_sockets(proc)
+    # Have to delete the old config and set the new one
+    k8s.delete_config_map(None, config_cm)
+    config.set_config(new_conf, config_cm)
 
 
 def get_pods():
@@ -258,25 +290,22 @@ def get_pods():
 
 
 def execute_reconfigure(install_dir, node_name, all_pods, namespace):
-    k8s.client_from_config(None)
-    c = k8sclient.Configuration()
-    c.assert_hostname = False
-    k8sclient.Configuration.set_default(c)
-    core_v1 = k8sclient.CoreV1Api()
-
-    exec_command = ['{}/cmk'.format(install_dir), 'reaffinitize',
+    exec_command = ['/opt/bin/cmk', 'reaffinitize',
                     '--node-name={}'.format(node_name),
                     '--namespace={}'.format(namespace)]
+
+    api = k8sclient.CoreV1Api()
+
     for pod in all_pods:
         logging.info("Executing on pod {} in namespace {}"
                      .format(pod["name"], pod["namespace"]))
         try:
             for c in pod["containers"]:
-                resp = stream.stream(core_v1.connect_get_namespaced_pod_exec,
+                resp = stream.stream(api.connect_get_namespaced_pod_exec,
                                      pod["name"], pod["namespace"],
                                      command=exec_command, container=c,
                                      stderr=True, stdin=False, stdout=True,
-                                     tty=False)
+                                     tty=False, _preload_content=True)
         except K8sApiException as err:
             logging.error("Error occured while executing command in pod: {}"
                           .format(err.reason))
@@ -286,38 +315,29 @@ def execute_reconfigure(install_dir, node_name, all_pods, namespace):
         logging.info("End of pod response")
 
 
-def build_config_map(path):
-    path = "{}/pools".format(path)
+def build_proc_info(conf):
     proc_info = []
     procs = Procs()
     pools = []
-    for pool in os.listdir(path):
+    for pool in conf.get_pools():
         pools = pools + [pool]
-        for socket in os.listdir("{}/{}".format(path, pool)):
-            if os.path.isdir("{}/{}/{}".format(path, pool, socket)):
-                for core_list in os.listdir("{}/{}/{}"
-                                            .format(path, pool, socket)):
-                    with open("{}/{}/{}/{}/tasks"
-                              .format(path, pool, socket, core_list)) as f:
-                        pid = f.read().strip()
-                        if pid != '':
-                            sockets = [True for s in
-                                       os.listdir("{}/{}".format(path, pool))
-                                       if
-                                       os.path.isdir("{}/{}/{}"
-                                                     .format(path, pool, s))]
-                            processes = [p for p in pid.split(",")]
-                            p = ProcessInfo(pool, socket, sockets,
-                                            core_list, processes)
-                            proc_info.append(p)
-                            for process in processes:
-                                procs.add_proc(process, core_list)
+        for socket in conf.get_pool(pool).get_sockets():
+            s = conf.get_pool(pool).get_socket(socket)
+            for core_list in s.get_core_lists():
+                cl = s.get_core_list(core_list)
+                pids = cl.get_tasks()
+                if len(pids) > 0:
+                    p = ProcessInfo(pool, socket, [True, True],
+                                    cl.core_id, pids)
+                    proc_info.append(p)
+                    for process in pids:
+                        procs.add_proc(process, cl.core_id)
 
     for p in pools:
         if p not in ["exclusive", "shared", "infra",
                      "exclusive-non-isolcpus"]:
-            logging.error("Error while reading configuration"
-                          " at {}, incorrect pool {}".format(path, p))
+            logging.error("Error while reading configuration,"
+                          " incorrect pool {}".format(p))
             sys.exit(1)
 
     return (proc_info, procs)

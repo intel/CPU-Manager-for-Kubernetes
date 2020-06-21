@@ -8,14 +8,15 @@ import yaml
 
 def reaffinitize(node_name, namespace):
 
-    procs = get_config_from_configmap("cmk-config", namespace)
+    configmap_name = "cmk-reconfigure-{}".format(node_name)
+    procs = get_config_from_configmap(configmap_name, namespace)
     reaffinitize_cores(procs)
 
 
 def get_config_from_configmap(name, namespace):
     try:
         config = k8s.get_config_map(None, name, namespace)
-        config = yaml.load(config["config"], Loader=yaml.FullLoader)
+        config = yaml.load(config["config"], Loader=yaml.Loader)
     except K8sApiException as err:
         logging.error("Error while retreiving configmap {}".format(name))
         logging.error(err.reason)

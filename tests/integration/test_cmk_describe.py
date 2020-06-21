@@ -17,7 +17,7 @@ from . import integration
 
 
 def test_cmk_describe_ok():
-    args = ["describe", "--conf-dir={}".format(helpers.conf_dir("ok"))]
+    args = ["describe"]
     assert helpers.execute(integration.cmk(), args) == b"""{
   "path": "/cmk/tests/data/config/ok",
   "pools": {

@@ -23,7 +23,7 @@ from kubernetes import client as k8sclient
 def test_clusterinit_invalid_cmd_list_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
     expected_err_msg = ("CMK command should be one of "
@@ -35,7 +35,7 @@ def test_clusterinit_invalid_cmd_list_failure1():
 def test_clusterinit_invalid_cmd_list_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
     expected_err_msg = ("CMK command should be one of "
@@ -47,7 +47,7 @@ def test_clusterinit_invalid_cmd_list_failure2():
 def test_clusterinit_invalid_cmd_list_failure3():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
     expected_err_msg = ("CMK command should be one of "
@@ -59,7 +59,7 @@ def test_clusterinit_invalid_cmd_list_failure3():
 def test_clusterinit_invalid_cmd_list_failure4():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "discover, init",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
     expected_err_msg = "init command should be run and listed first."
@@ -69,7 +69,7 @@ def test_clusterinit_invalid_cmd_list_failure4():
 def test_clusterinit_invalid_image_pol():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "fakepol1",
-                                 "/etc/cmk", "/opt/bin", "4", "2", "", "",
+                                 "/opt/bin", "4", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ('Image pull policy should be one of '
                         '[\'Never\', \'IfNotPresent\', \'Always\']')
@@ -79,7 +79,7 @@ def test_clusterinit_invalid_image_pol():
 def test_clusterinit_invalid_exclusive_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "-1", "2", "", "",
+                                 "/opt/bin", "-1", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
@@ -89,7 +89,7 @@ def test_clusterinit_invalid_exclusive_cores_failure1():
 def test_clusterinit_invalid_exclusive_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "3.5", "2", "", "",
+                                 "/opt/bin", "3.5", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
@@ -99,7 +99,7 @@ def test_clusterinit_invalid_exclusive_cores_failure2():
 def test_clusterinit_invalid_shared_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "2.5", "", "",
+                                 "/opt/bin", "1", "2.5", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
@@ -108,7 +108,7 @@ def test_clusterinit_invalid_shared_cores_failure1():
 def test_clusterinit_invalid_shared_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "10.5", "", "",
+                                 "/opt/bin", "1", "10.5", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
@@ -141,7 +141,7 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["init"], "fake_img",
-                                 "Never", "fake-conf-dir", "fake-install-dir",
+                                 "Never", "fake-install-dir",
                                  "2", "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         exp_err = "Exception when creating pod for ['init'] command(s)"
@@ -158,7 +158,7 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "fake-install-dir", "2",
                                  "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         exp_err = "Exception when creating pod for ['discover'] command(s)"
@@ -175,7 +175,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["install"], "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "fake-install-dir", "2",
                                  "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         exp_err = "Exception when creating pod for ['install'] command(s)"
@@ -192,7 +192,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["reconcile"], None, "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "fake-install-dir", "2",
                                  "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         exp_err = "Exception when creating pod for ['reconcile'] command(s)"
@@ -209,7 +209,7 @@ def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(["nodereport"], None, "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "fake-install-dir", "2",
                                  "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         exp_err = "Exception when creating pod for ['nodereport'] command(s)"
@@ -251,7 +251,7 @@ def test_clusterinit_pass_pull_secrets():
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
                                  "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "supersecret", "", "vertical",
                                  "vertical", "default", "-1")
         called_methods = mock.method_calls
@@ -271,7 +271,7 @@ def test_clusterinit_dont_pass_pull_secrets():
                MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
                                  "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
         called_methods = mock.method_calls
@@ -288,7 +288,7 @@ def test_clusterinit_pass_serviceaccountname():
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
                                  "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", serviceaccount_name,
                                  "vertical", "vertical", "default", "-1")
         called_methods = mock.method_calls
@@ -306,7 +306,7 @@ def test_clusterinit_dont_pass_serviceaccountname():
     with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
                                  "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
         called_methods = mock.method_calls
@@ -325,7 +325,7 @@ def test_clusterinit_update_pod_with_init_container():
             k8sclient.V1Container(name="cmk")
         ]),
         status=k8sclient.V1PodStatus()).to_dict()
-    cmd = "cmd"
+    cmd = "init"
     cmk_img = "cmk_img"
     cmk_img_pol = "policy"
     args = "argument"
@@ -340,7 +340,7 @@ def test_clusterinit_update_pod_with_init_container():
     assert pods[0]["imagePullPolicy"] == cmk_img_pol
     assert args in pods[0]["args"]
 
-    second_cmd = "cmd2"
+    second_cmd = "init"
     second_img = cmk_img
     second_img_pol = "Always"
     second_args = ["arg1", "arg2"]
@@ -361,7 +361,7 @@ def test_clusterinit_run_pods_failure(caplog):
                MagicMock(side_effect=fake_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
-                                 "fake-conf-dir", "fake-install-dir", "2",
+                                 "fake-install-dir", "2",
                                  "2", ["fakenode"], "", "", "vertical",
                                  "vertical", "default", "-1")
         caplog_tuple = caplog.record_tuples

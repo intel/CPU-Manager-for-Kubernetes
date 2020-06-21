@@ -19,6 +19,122 @@ from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
 
+# Only set up the Volume Mounts necessary for the container
+CONTAINER_VOLUME_MOUNTS = {
+    "init": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    },
+    "install": {
+        "volumeMounts": [
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+            }
+        ],
+        "securityContext": {
+            "privileged": True
+        }
+    },
+    "discover": {
+        "volumeMounts": [
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    },
+    "reconcile": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    },
+    "nodereport": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    },
+    "webhook": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    },
+    "reconfigure": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000,
+            "privileged": False
+        }
+    }
+}
+
+
 def get_pod_template(saname="cmk-serviceaccount"):
     pod_template = {
         "apiVersion": "v1",
@@ -40,12 +156,6 @@ def get_pod_template(saname="cmk-serviceaccount"):
                         "path": "/proc"
                     },
                     "name": "host-proc"
-                },
-                {
-                    "hostPath": {
-                        "path": "/etc/cmk"
-                    },
-                    "name": "cmk-conf-dir"
                 },
                 {
                     "hostPath": {
@@ -177,7 +287,7 @@ def admissionregistartion_api_client_from_config(config):
         return k8sclient.AdmissionregistrationV1beta1Api(api_client=client)
 
 
-def get_container_template():
+def get_container_template(cmd):
     container_template = {
         "args": [
             "ARGS"
@@ -199,24 +309,8 @@ def get_container_template():
         ],
         "image": "IMAGENAME",
         "name": "NAME",
-        "securityContext": {
-            "privileged": True
-        },
-        "volumeMounts": [
-            {
-                "mountPath": "/host/proc",
-                "name": "host-proc",
-                "readOnly": True
-            },
-            {
-                "mountPath": "/etc/cmk",
-                "name": "cmk-conf-dir"
-            },
-            {
-                "mountPath": "/opt/bin",
-                "name": "cmk-install-dir"
-            }
-        ],
+        "securityContext": CONTAINER_VOLUME_MOUNTS[cmd]["securityContext"],
+        "volumeMounts": CONTAINER_VOLUME_MOUNTS[cmd]["volumeMounts"],
         "imagePullPolicy": "Never"
     }
     return container_template
@@ -230,6 +324,14 @@ def get_node_list(config, label_selector=None):
     else:
         nodes = k8s_api.list_node().to_dict()
     return nodes["items"]
+
+
+# get_node_from_pod returns the node that a given pod is running on
+def get_node_from_pod(config, pod_name):
+    pods = get_pod_list(config)
+    for p in pods["items"]:
+        if p["metadata"]["name"] == pod_name:
+            return p["spec"]["node_name"]
 
 
 # get_pod_list() returns the pod list in the current Kubernetes cluster.

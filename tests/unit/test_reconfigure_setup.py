@@ -97,7 +97,7 @@ def test_execute_reconfigure_failure1(caplog):
     with patch('intel.k8s.create_pod') as mock:
         mock.side_effect = ApiException(status=0, reason="Fake Reason")
         with pytest.raises(SystemExit) as err:
-            reconfigure_setup.execute_reconfigure(2, 2, "-1", "/etc/cmk",
+            reconfigure_setup.execute_reconfigure(2, 2, "-1",
                                                   "packed", "packed",
                                                   "cmk:v1.4.1", "IfNotPresent",
                                                   "/opt/bin", node_list,
@@ -119,7 +119,7 @@ def test_execute_reconfigure_failure2(caplog):
     with patch('intel.clusterinit.wait_for_pod_phase') as mock:
         mock.side_effect = RuntimeError("Fake Error")
         with pytest.raises(SystemExit) as err:
-            reconfigure_setup.execute_reconfigure(2, 2, "-1", "/etc/cmk",
+            reconfigure_setup.execute_reconfigure(2, 2, "-1",
                                                   "packed", "packed",
                                                   "cmk:v1.4.1", "IfNotPresent",
                                                   "/opt/bin", node_list,

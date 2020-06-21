@@ -32,7 +32,6 @@ def test_cmk_nodereport_ok():
     }
   },
   "description": {
-    "path": "/cmk/tests/data/config/ok",
     "pools": {
       "exclusive": {
         "cpuLists": {
@@ -212,7 +211,7 @@ def test_cmk_nodereport_ok():
 """
     assert expected in helpers.execute(
         integration.cmk(),
-        ["node-report", "--conf-dir={}".format(helpers.conf_dir("ok"))],
+        ["node-report"],
         test_env).decode()
 
 
@@ -227,7 +226,6 @@ def test_cmk_nodereport_minimal():
     }
   },
   "description": {
-    "path": "/cmk/tests/data/config/minimal",
     "pools": {
       "exclusive": {
         "cpuLists": {
@@ -368,5 +366,5 @@ def test_cmk_nodereport_minimal():
 """
     assert expected in helpers.execute(
         integration.cmk(),
-        ["node-report", "--conf-dir={}".format(helpers.conf_dir("minimal"))],
+        ["node-report"],
         test_env).decode()

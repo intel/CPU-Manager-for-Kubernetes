@@ -1,9 +1,7 @@
-from .. import helpers
-from intel import reconfigure, proc, config
+from intel import reconfigure, config
 from kubernetes.client.rest import ApiException
 import pytest
-import shutil
-import tempfile
+import yaml
 from unittest.mock import patch, MagicMock
 
 
@@ -294,7 +292,7 @@ def test_get_pods():
     assert pods[1]["containers"][1] == "fake-container2"
 
 
-def test_build_config_map_failure(caplog):
+"""def test_build_config_map_failure(caplog):
     path = helpers.conf_dir('fail')
     with pytest.raises(SystemExit) as err:
         _ = reconfigure.build_config_map(path)
@@ -305,65 +303,52 @@ def test_build_config_map_failure(caplog):
                    " incorrect pool incorrect_pool_name"
     assert caplog_tuple[-1][2] == expected_msg
     assert err is not None
-    assert err.value.args[0] == 1
+    assert err.value.args[0] == 1"""
 
 
-def test_build_config_map_procs1():
-    path = helpers.conf_dir('ok')
-    c = reconfigure.build_config_map(path)
-    p = c[1]
-
-    assert len(p.process_map) == 11
-    assert p.process_map["2000"].old_clists == ["4,12"]
-    assert p.process_map["2001"].old_clists == ["5,13"]
-    assert p.process_map["2002"].old_clists == ["6,14"]
-    assert p.process_map["2003"].old_clists == ["7,15"]
-    assert p.process_map["1000"].old_clists == ["3,11"]
-    assert p.process_map["1001"].old_clists == ["3,11"]
-    assert p.process_map["1002"].old_clists == ["3,11"]
-    assert p.process_map["1003"].old_clists == ["3,11"]
-    assert p.process_map["3000"].old_clists == ["0-2,8-10"]
-    assert p.process_map["3001"].old_clists == ["0-2,8-10"]
-    assert p.process_map["3002"].old_clists == ["0-2,8-10"]
-
-
-def test_build_config_map_procs2():
-    path = helpers.conf_dir('two_exclusive')
-    c = reconfigure.build_config_map(path)
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value={'config': yaml.dump(config_before)}))
+@patch('intel.k8s.delete_config_map', MagicMock(return_value=''))
+def test_build_proc_info1():
+    conf = config.Config("fake-name")
+    conf.lock()
+    c = reconfigure.build_proc_info(conf)
     p = c[1]
 
     assert len(p.process_map) == 10
-    assert p.process_map["2000"].old_clists == ["4,12", "5,13"]
-    assert p.process_map["2002"].old_clists == ["6,14"]
-    assert p.process_map["2003"].old_clists == ["7,15"]
-    assert p.process_map["1000"].old_clists == ["3,11"]
-    assert p.process_map["1001"].old_clists == ["3,11"]
-    assert p.process_map["1002"].old_clists == ["3,11"]
-    assert p.process_map["1003"].old_clists == ["3,11"]
-    assert p.process_map["3000"].old_clists == ["0-2,8-10"]
-    assert p.process_map["3001"].old_clists == ["0-2,8-10"]
-    assert p.process_map["3002"].old_clists == ["0-2,8-10"]
+    assert p.process_map["2001"].old_clists == ["4,12"]
+    assert p.process_map["2002"].old_clists == ["5,13"]
+    assert p.process_map["1000"].old_clists == ["6,14,7,15"]
+    assert p.process_map["1001"].old_clists == ["6,14,7,15"]
+    assert p.process_map["1002"].old_clists == ["6,14,7,15"]
+    assert p.process_map["1003"].old_clists == ["6,14,7,15"]
+    assert p.process_map["3000"].old_clists == ["0,8,1,9,2,10"]
+    assert p.process_map["3001"].old_clists == ["0,8,1,9,2,10"]
+    assert p.process_map["3002"].old_clists == ["0,8,1,9,2,10"]
 
 
-def test_build_config_map_proc_info():
-    path = helpers.conf_dir('ok')
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value={'config': yaml.dump(config_before)}))
+@patch('intel.k8s.delete_config_map', MagicMock(return_value=''))
+def test_proc_info():
     clist_map = {
-        "4,12": ["2000"],
-        "5,13": ["2001"],
-        "6,14": ["2002"],
-        "7,15": ["2003"],
-        "0-2,8-10": ["3000", "3001", "3002"],
-        "3,11": ["1000", "1001", "1002", "1003"],
+        "3,11": [""],
+        "4,12": ["2001"],
+        "5,13": ["2002"],
+        "6,14,7,15": ["1000", "1001", "1002", "1003"],
+        "0,8,1,9,2,10": ["3000", "3001", "3002"]
     }
-    c = reconfigure.build_config_map(path)
+    conf = config.Config("fake-name")
+    conf.lock()
+    c = reconfigure.build_proc_info(conf)
     p = c[0]
 
-    assert len(p) == 6
+    assert len(p) == 5
     for proc_info in p:
         assert proc_info.pid == clist_map[proc_info.old_clist]
 
 
-def test_reconfigure_directory(monkeypatch):
+"""def test_reconfigure_directory(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("reconf_isolcpus"))
 
     clist_map = {
@@ -407,3 +392,4 @@ def test_execute_reconfigure_failure(caplog):
     caplog_tuple = caplog.record_tuples
     assert caplog_tuple[-1][2] == "Error occured while executing command"\
                                   " in pod: Fake Reason"
+"""

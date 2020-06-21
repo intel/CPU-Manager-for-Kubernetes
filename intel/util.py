@@ -73,6 +73,7 @@ def generate_cert(service, namespace, private_key):
         x509.DNSName("{0}".format(service)),
         x509.DNSName("{0}.{1}".format(service, namespace)),
         x509.DNSName("{0}.{1}.svc".format(service, namespace)),
+        x509.DNSName("localhost"),
     ])
 
     constraints = x509.BasicConstraints(ca=True, path_length=None)
@@ -85,7 +86,7 @@ def generate_cert(service, namespace, private_key):
                                 .add_extension(subj_alternative_names, False)
                                 .add_extension(constraints, False)
                                 .not_valid_before(now)
-                                .not_valid_after(now + timedelta(days=36500))
+                                .not_valid_after(now + timedelta(days=398))
                                 .public_key(private_key.public_key())
                                 .serial_number(x509.random_serial_number()))
 

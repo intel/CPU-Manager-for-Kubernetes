@@ -24,6 +24,10 @@ CMK_ER_NAME = ['cmk.intel.com/exclusive-cores',
                'cmk.intel.com/exclusive-non-isolcpus-cores']
 CMK_MUTATE_ANNOTATION = 'cmk.intel.com/mutate'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
+CIPHERS = "ECDHE-RSA-AES256-GCM-SHA384:\
+ECDHE-ECDSA-AES256-GCM-SHA384:\
+ECDHE-RSA-AES128-GCM-SHA256:\
+ECDHE-ECDSA-AES128-GCM-SHA256"
 
 
 class MutationError(Exception):
@@ -61,6 +65,12 @@ class WebhookServer(HTTPServer):
                                 handler_class)
             ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.config.cert, self.config.key)
+            ssl_context.options |= ssl.PROTOCOL_TLS
+            ssl_context.options |= ssl.OP_NO_SSLv2
+            ssl_context.options |= ssl.OP_NO_SSLv3
+            ssl_context.options |= ssl.OP_NO_TLSv1
+            ssl_context.options |= ssl.OP_NO_TLSv1_1
+            ssl_context.set_ciphers(CIPHERS)
         except KeyError as err:
             logging.error("Error applying server config {}.".format(str(err)))
             sys.exit(1)
@@ -114,6 +124,7 @@ def mutate(admission_review, mutations_file):
 
     if is_mutation_required(pod):
         mutations = load_mutations(mutations_file)
+        logging.info(mutations)
 
         # apply pod mutations
         try:

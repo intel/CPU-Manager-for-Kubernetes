@@ -5,7 +5,7 @@ import sys
 
 
 def reconfigure_setup(num_exclusive_cores, num_shared_cores,
-                      excl_non_isolcpus, conf_dir, exclusive_mode,
+                      excl_non_isolcpus, exclusive_mode,
                       shared_mode, cmk_img, cmk_img_pol, install_dir,
                       saname, namespace):
 
@@ -14,7 +14,7 @@ def reconfigure_setup(num_exclusive_cores, num_shared_cores,
     logging.info("Reconfiguring nodes {}".format(", ".join(cmk_nodes)))
 
     execute_reconfigure(num_exclusive_cores, num_shared_cores,
-                        excl_non_isolcpus, conf_dir, exclusive_mode,
+                        excl_non_isolcpus, exclusive_mode,
                         shared_mode, cmk_img, cmk_img_pol, install_dir,
                         cmk_nodes, saname, namespace)
 
@@ -37,21 +37,20 @@ def get_cmk_nodes():
 
 
 def execute_reconfigure(num_exclusive_cores, num_shared_cores,
-                        excl_non_isolcpus, conf_dir, exclusive_mode,
+                        excl_non_isolcpus, exclusive_mode,
                         shared_mode, cmk_img, cmk_img_pol, install_dir,
                         cmk_nodes, saname, namespace):
     for node_name in cmk_nodes:
         pod = k8s.get_pod_template()
-        clusterinit.update_pod(pod, "Never", conf_dir, install_dir,
-                               saname)
-        args = "{}/cmk reconfigure --node-name={}"\
+        clusterinit.update_pod(pod, "Never", install_dir, saname)
+        args = "/cmk/cmk.py reconfigure --node-name={}"\
                " --num-exclusive-cores={} --num-shared-cores={}"\
-               " --excl-non-isolcpus={} --conf-dir={}"\
-               " --exclusive-mode={} --shared-mode={} --install-dir={}"\
+               " --excl-non-isolcpus={} --exclusive-mode={}"\
+               " --shared-mode={} --install-dir={}"\
                " --namespace={}"\
-               .format(install_dir, node_name, num_exclusive_cores,
+               .format(node_name, num_exclusive_cores,
                        num_shared_cores, excl_non_isolcpus,
-                       conf_dir, exclusive_mode, shared_mode,
+                       exclusive_mode, shared_mode,
                        install_dir, namespace)
 
         clusterinit.update_pod_with_container(pod, "reconfigure", cmk_img,
