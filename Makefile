@@ -23,7 +23,14 @@ version=v1.4.1
 jenkins: docker
 
 docker:
-	docker build -t cmk:$(version) .
+	docker build \
+		--build-arg http_proxy=${http_proxy} \
+		--build-arg HTTP_PROXY=${HTTP_PROXY} \
+		--build-arg https_proxy=${https_proxy} \
+		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
+		--build-arg no_proxy=${no_proxy} \
+		--build-arg NO_PROXY=${NO_PROXY} \
+		-t cmk:$(version) .
 	@echo ""
 	@echo "To run the docker image, run command:"
 	@echo "docker run -it cmk:$(version) ..."
