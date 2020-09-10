@@ -19,6 +19,9 @@ import pytest
 import tempfile
 from unittest.mock import patch, MagicMock
 
+TOPOLOGY_PARSE = 'intel.topology.parse'
+TOPOLOGY_ISCPU = "intel.topology.lscpu"
+
 
 # Returns a socket with 4 physical cores and HT enabled.
 def quad_core():
@@ -88,7 +91,7 @@ def test_init_success1(monkeypatch):
 
     sockets = topology.Platform({0: quad_core()})
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 2, 1,
                   "vertical", "vertical", "-1")
@@ -115,7 +118,7 @@ def test_init_success1_isolcpus(monkeypatch):
     # sets isolcpus to lcpu IDs from cores 1, 2 and 3.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 2, 1,
@@ -144,7 +147,7 @@ def test_init_success2(monkeypatch):
 
     sockets = topology.Platform({0: quad_core()})
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 1, 2,
                   "vertical", "vertical", "-1")
@@ -169,7 +172,7 @@ def test_init_success2_isolcpus(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 1, 2,
@@ -197,7 +200,7 @@ def test_init_success3(monkeypatch):
 
     sockets = topology.Platform({0: quad_core()})
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 1, 1,
                   "vertical", "vertical", "-1")
@@ -222,7 +225,7 @@ def test_init_success_excl_non_isolcpus1(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 1, 1,
@@ -252,7 +255,7 @@ def test_init_success_excl_non_isolcpus2(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 1, 1,
@@ -298,7 +301,7 @@ def test_init_failure1(monkeypatch):
         })
     })
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError):
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
@@ -322,7 +325,7 @@ def test_init_failure2(monkeypatch):
         })
     })
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
@@ -353,7 +356,7 @@ def test_init_failure3(monkeypatch):
         })
     })
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
             init.init(os.path.join(temp_dir, "init"), 2, 1, "vertical",
@@ -367,7 +370,7 @@ def test_init_failure_excl_non_isolcpus1(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
@@ -383,7 +386,7 @@ def test_init_failure_excl_non_isolcpus2(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
@@ -399,7 +402,7 @@ def test_init_failure_excl_non_isolcpus3(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
@@ -414,7 +417,7 @@ def test_init_failure_excl_non_isolcpus4(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=eight_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
@@ -429,7 +432,7 @@ def test_init_failure_excl_non_isolcpus4(monkeypatch):
 def test_init_failure_excl_non_isolcpus5(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         with pytest.raises(RuntimeError) as err:
@@ -447,7 +450,7 @@ def test_init_config_exists_error(monkeypatch, caplog):
 
     sockets = topology.Platform({0: quad_core()})
 
-    with patch('intel.topology.parse', MagicMock(return_value=sockets)):
+    with patch(TOPOLOGY_PARSE, MagicMock(return_value=sockets)):
         temp_dir = tempfile.mkdtemp()
         # Init
         init.init(os.path.join(temp_dir, "init"), 2, 1,
@@ -472,7 +475,7 @@ def test_init_check_hugepages_error(caplog):
 def test_init_check_assignment_error(monkeypatch, caplog):
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
 
-    with patch("intel.topology.lscpu",
+    with patch(TOPOLOGY_ISCPU,
                MagicMock(return_value=quad_core_lscpu())):
         temp_dir = tempfile.mkdtemp()
         init.init(os.path.join(temp_dir, "init"), 2, 1,

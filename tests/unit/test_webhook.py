@@ -5,6 +5,7 @@ from yamlreader import YamlReaderError
 
 from intel import webhook, util
 
+MUTATIONS_YAML =  "mutations.yaml"
 
 def get_cmk_container():
     fake_cmk_container = {
@@ -153,7 +154,7 @@ def test_webhook_mutation_not_required():
 
 def test_webhook_load_mutations_success():
     conf_file = os.path.join(util.cmk_root(), "tests", "data",
-                             "webhook", "mutations.yaml")
+                             "webhook",MUTATIONS_YAML)
     mutations = webhook.load_mutations(conf_file)
     assert type(mutations) is dict
     assert "perPod" in mutations
@@ -183,7 +184,7 @@ def test_webhook_mutate_not_a_pod_fail(caplog):
 @patch('intel.webhook.merge', MagicMock())
 def test_webhook_mutate_success():
     conf_file = os.path.join(util.cmk_root(), "tests", "data",
-                             "webhook", "mutations.yaml")
+                             "webhook",MUTATIONS_YAML)
     ar = get_admission_review()
     request_uid = ar["request"]["uid"]
     webhook.mutate(ar, conf_file)
@@ -197,7 +198,7 @@ def test_webhook_mutate_success():
 @patch('intel.webhook.merge', MagicMock())
 def test_webhook_mutate_not_required(caplog):
     conf_file = os.path.join(util.cmk_root(), "tests", "data",
-                             "webhook", "mutations.yaml")
+                             "webhook",MUTATIONS_YAML)
     ar = get_admission_review()
     request_uid = ar["request"]["uid"]
     with patch('intel.webhook.is_mutation_required',
@@ -218,7 +219,7 @@ def test_webhook_mutate_not_required(caplog):
 @patch('intel.webhook.is_mutation_required', MagicMock(return_value=True))
 def test_webhook_mutate_pod_merge_fail(caplog):
     conf_file = os.path.join(util.cmk_root(), "tests", "data",
-                             "webhook", "mutations.yaml")
+                             "webhook",MUTATIONS_YAML)
     ar = get_admission_review()
     with patch('intel.webhook.merge', MagicMock(side_effect=YamlReaderError)):
         with pytest.raises(webhook.MutationError):
@@ -228,7 +229,7 @@ def test_webhook_mutate_pod_merge_fail(caplog):
 @patch('intel.webhook.is_mutation_required', MagicMock(return_value=True))
 def test_webhook_mutate_container_merge_fail(caplog):
     conf_file = os.path.join(util.cmk_root(), "tests", "data",
-                             "webhook", "mutations.yaml")
+                             "webhook",MUTATIONS_YAML)
     ar = get_admission_review()
     with patch('intel.webhook.merge',
                MagicMock(side_effect=[None, YamlReaderError])):

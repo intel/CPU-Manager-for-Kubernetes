@@ -155,30 +155,30 @@ Options:
 <table>
 <thead>
 <tr>
-<th align="left">Environment variable</th>
-<th align="left">Description</th>
+<th>Environment variable</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left"><code>CMK_LOCK_TIMEOUT</code></td>
-<td align="left">Maximum duration, in seconds, to hold the cmk configuration directory lock file. (Default: 30)</td>
+<td><code>CMK_LOCK_TIMEOUT</code></td>
+<td>Maximum duration, in seconds, to hold the cmk configuration directory lock file. (Default: 30)</td>
 </tr>
 <tr>
-<td align="left"><code>CMK_PROC_FS</code></td>
-<td align="left">Path to the <a href="http://man7.org/linux/man-pages/man5/proc.5.html" rel="nofollow">procfs</a> to consult for pid information. <code>cmk isolate</code> and <code>cmk reconcile</code> require access to the host's process information in <code>/proc</code>.</td>
+<td><code>CMK_PROC_FS</code></td>
+<td>Path to the <a href="http://man7.org/linux/man-pages/man5/proc.5.html" rel="nofollow">procfs</a> to consult for pid information. <code>cmk isolate</code> and <code>cmk reconcile</code> require access to the host's process information in <code>/proc</code>.</td>
 </tr>
 <tr>
-<td align="left"><code>CMK_LOG_LEVEL</code></td>
-<td align="left">Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO.</td>
+<td><code>CMK_LOG_LEVEL</code></td>
+<td>Adjusts logging verbosity. Valid values are: CRITICAL, ERROR, WARNING, INFO and DEBUG. The default log level is INFO.</td>
 </tr>
 <tr>
-<td align="left"><code>CMK_DEV_LSCPU_SYSFS</code></td>
-<td align="left">Path to the system root to be used by <code>lscpu</code> for enumerating the cpu topology. NOTE: should only be used for development purposes.</td>
+<td><code>CMK_DEV_LSCPU_SYSFS</code></td>
+<td>Path to the system root to be used by <code>lscpu</code> for enumerating the cpu topology. NOTE: should only be used for development purposes.</td>
 </tr>
 <tr>
-<td align="left"><code>CMK_NUM_CORES</code></td>
-<td align="left">Sets number of cores to be allocated by <code>cmk isolate</code>. If not set, "1" is being used as default.</td>
+<td><code>CMK_NUM_CORES</code></td>
+<td>Sets number of cores to be allocated by <code>cmk isolate</code>. If not set, "1" is being used as default.</td>
 </tr>
 </tbody>
 </table>
@@ -1118,30 +1118,30 @@ configuration:</p>
 <table>
 <thead>
 <tr>
-<th align="left">Key</th>
-<th align="left">Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left"><code>binding-address</code></td>
-<td align="left">The IP address on which to advertise the webhook server.</td>
+<td><code>binding-address</code></td>
+<td>The IP address on which to advertise the webhook server.</td>
 </tr>
 <tr>
-<td align="left"><code>port</code></td>
-<td align="left">The port on which to serve HTTPS with authentication and authorization.</td>
+<td><code>port</code></td>
+<td>The port on which to serve HTTPS with authentication and authorization.</td>
 </tr>
 <tr>
-<td align="left"><code>cert</code></td>
-<td align="left">SSL certification file used to secure communication with API server.</td>
+<td><code>cert</code></td>
+<td>SSL certification file used to secure communication with API server.</td>
 </tr>
 <tr>
-<td align="left"><code>key</code></td>
-<td align="left">The path to the file that contains the current private key matching <code>cert</code> file.</td>
+<td><code>key</code></td>
+<td>The path to the file that contains the current private key matching <code>cert</code> file.</td>
 </tr>
 <tr>
-<td align="left"><code>mutations</code></td>
-<td align="left">The path to the file containing definition of mutations applied to pod and containers.</td>
+<td><code>mutations</code></td>
+<td>The path to the file containing definition of mutations applied to pod and containers.</td>
 </tr>
 </tbody>
 </table>
@@ -1181,18 +1181,18 @@ configuration:</p>
 <table>
 <thead>
 <tr>
-<th align="left">Key</th>
-<th align="left">Description</th>
+<th>Key</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left"><code>perPod</code></td>
-<td align="left">Pod specification in the same format as regular <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#pod-v1-core" rel="nofollow">Kubernetes V1 API Pod</a> object. Note that it contains only elements, which need to be added (or updated) on top of the original pod specification.</td>
+<td><code>perPod</code></td>
+<td>Pod specification in the same format as regular <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#pod-v1-core" rel="nofollow">Kubernetes V1 API Pod</a> object. Note that it contains only elements, which need to be added (or updated) on top of the original pod specification.</td>
 </tr>
 <tr>
-<td align="left"><code>perContainer</code></td>
-<td align="left">Container specification in the same format as regular <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#container-v1-core" rel="nofollow">Kubernetes V1 API Container</a> object. Note that it contains only elements, which need to be added (or updated) on top of the original container specification.</td>
+<td><code>perContainer</code></td>
+<td>Container specification in the same format as regular <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#container-v1-core" rel="nofollow">Kubernetes V1 API Container</a> object. Note that it contains only elements, which need to be added (or updated) on top of the original container specification.</td>
 </tr>
 </tbody>
 </table>

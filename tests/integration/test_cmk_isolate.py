@@ -22,15 +22,21 @@ import pytest
 import subprocess
 import tempfile
 
+PROC_DIR = "/proc"
+CONF_DIR = "--conf-dir={}"
+POOL_SHARED = "--pool=shared"
+ENV_CMK = "env | grep CMK"
+POOL_EXC = "--pool=exclusive"
+CAT = "cat {}"
 
-proc_env = {proc.ENV_PROC_FS: "/proc"}
+proc_env = {proc.ENV_PROC_FS: PROC_DIR}
 
 
 def test_cmk_isolate_child_env():
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal")),
-            "--pool=shared",
-            "env | grep CMK"]
+            CONF_DIR.format(helpers.conf_dir("minimal")),
+            POOL_SHARED,
+            ENV_CMK]
 
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
 CMK_CPUS_ASSIGNED=0
@@ -42,9 +48,9 @@ CMK_PROC_FS=/proc
 
 def test_cmk_isolate_child_env_infra():
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal_infra")),
-            "--pool=shared",
-            "env | grep CMK"]
+            CONF_DIR.format(helpers.conf_dir("minimal_infra")),
+            POOL_SHARED,
+            ENV_CMK]
 
     assert helpers.execute(integration.cmk(), args, proc_env) == b"""\
 CMK_CPUS_ASSIGNED=1
@@ -57,8 +63,8 @@ CMK_PROC_FS=/proc
 
 def test_cmk_isolate_shared():
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal")),
-            "--pool=shared",
+            CONF_DIR.format(helpers.conf_dir("minimal")),
+            POOL_SHARED,
             "echo",
             "--",
             "foo"]
@@ -68,8 +74,8 @@ def test_cmk_isolate_shared():
 
 def test_cmk_isolate_exclusive():
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal")),
-            "--pool=exclusive",
+            CONF_DIR.format(helpers.conf_dir("minimal")),
+            POOL_EXC,
             "echo",
             "--",
             "foo"]
@@ -79,15 +85,14 @@ def test_cmk_isolate_exclusive():
 
 def test_cmk_isolate_saturated():
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("saturated")),
-            "--pool=exclusive",
+            CONF_DIR.format(helpers.conf_dir("saturated")),
+            POOL_EXC,
             "echo",
             "--",
             "foo"]
 
     with pytest.raises(subprocess.CalledProcessError):
         assert helpers.execute(integration.cmk(), args, proc_env)
-    # with pytest.raises(subprocess.CalledProcessError) as exinfo:
     #     assert b"No free cpu lists in pool exclusive" in exinfo.value.output
 
 
@@ -108,12 +113,12 @@ def test_cmk_isolate_pid_bookkeeping():
     p = subprocess.Popen([
             integration.cmk(),
             "isolate",
-            "--conf-dir={}".format(conf_dir),
-            "--pool=shared",
+            CONF_DIR.format(conf_dir),
+            POOL_SHARED,
             "echo 1 > {} && cat {}".format(fifo, fifo)])
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
-    helpers.execute("cat {}".format(fifo))
+    helpers.execute(CAT.format(fifo))
     clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
     # Signal subprocess to exit
@@ -141,12 +146,12 @@ def test_cmk_isolate_sigkill():
     p = subprocess.Popen([
             integration.cmk(),
             "isolate",
-            "--conf-dir={}".format(conf_dir),
-            "--pool=shared",
+            CONF_DIR.format(conf_dir),
+            POOL_SHARED,
             "echo 1 > {} && sleep 300".format(fifo)])
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
-    helpers.execute("cat {}".format(fifo))
+    helpers.execute(CAT.format(fifo))
     clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
 
@@ -175,12 +180,12 @@ def test_cmk_isolate_sigterm():
     p = subprocess.Popen([
             integration.cmk(),
             "isolate",
-            "--conf-dir={}".format(conf_dir),
-            "--pool=shared",
+            CONF_DIR.format(conf_dir),
+            POOL_SHARED,
             "echo 1 > {} && sleep 300".format(fifo)])
     cmk = psutil.Process(p.pid)
     # Wait for subprocess to exist
-    helpers.execute("cat {}".format(fifo))
+    helpers.execute(CAT.format(fifo))
     clist = c.pool("shared").cpu_list("0", "0")
     assert cmk.pid in clist.tasks()
 
@@ -193,11 +198,11 @@ def test_cmk_isolate_sigterm():
 
 
 def test_cmk_isolate_multiple_cores_exclusive():
-    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "2"}
+    env = {proc.ENV_PROC_FS: PROC_DIR, "CMK_NUM_CORES": "2"}
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
-            "--pool=exclusive",
-            "env | grep CMK"]
+            CONF_DIR.format(helpers.conf_dir("minimal_multi")),
+            POOL_EXC,
+            ENV_CMK]
 
     assert helpers.execute(integration.cmk(), args, env) == b"""\
 CMK_CPUS_ASSIGNED=0,1
@@ -209,11 +214,11 @@ CMK_NUM_CORES=2
 
 
 def test_cmk_isolate_multiple_cores_shared():
-    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "2"}
+    env = {proc.ENV_PROC_FS: PROC_DIR, "CMK_NUM_CORES": "2"}
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
-            "--pool=shared",
-            "env | grep CMK"]
+            CONF_DIR.format(helpers.conf_dir("minimal_multi")),
+            POOL_SHARED,
+            ENV_CMK]
 
     assert helpers.execute(integration.cmk(), args, env) == b"""\
 CMK_CPUS_ASSIGNED=0
@@ -225,11 +230,11 @@ CMK_NUM_CORES=2
 
 
 def test_cmk_isolate_multiple_cores_failed():
-    env = {proc.ENV_PROC_FS: "/proc", "CMK_NUM_CORES": "3"}
+    env = {proc.ENV_PROC_FS: PROC_DIR, "CMK_NUM_CORES": "3"}
     args = ["isolate",
-            "--conf-dir={}".format(helpers.conf_dir("minimal_multi")),
-            "--pool=exclusive",
-            "env | grep CMK"]
+            CONF_DIR.format(helpers.conf_dir("minimal_multi")),
+            POOL_EXC,
+            ENV_CMK]
 
     # should fail - there are only 2 cpuslists in that pool
     with pytest.raises(subprocess.CalledProcessError):

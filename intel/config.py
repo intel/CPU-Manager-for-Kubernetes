@@ -94,7 +94,6 @@ class Pool:
         return os.path.basename(self.path)
 
     def exclusive(self):
-        f = os.path.join(self.path, "exclusive")
         with open(os.path.join(self.path, "exclusive")) as f:
             c = f.read(1)
             if c == "1":

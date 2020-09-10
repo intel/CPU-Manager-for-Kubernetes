@@ -18,6 +18,8 @@ from intel import util
 from kubernetes import client as k8sclient, config as k8sconfig
 from kubernetes.client import V1Namespace, V1DeleteOptions
 
+VERSION_NAME = "v1.9.0"
+
 
 def get_pod_template(saname="cmk-serviceaccount"):
     pod_template = {
@@ -61,7 +63,7 @@ def get_pod_template(saname="cmk-serviceaccount"):
 
 def ds_from(pod, version):
     ds_template = {}
-    if version >= util.parse_version("v1.9.0"):
+    if version >= util.parse_version(VERSION_NAME):
         ds_template = {
             "apiVersion": "apps/v1",
             "kind": "DaemonSet",
@@ -248,7 +250,7 @@ def create_pod(config, podspec, ns_name):
 # create_legacy_ds() sends a request to the Kubernetes API server to create a
 # ds based on deamonset spec.
 def create_ds(config, spec, ns_name, version):
-    if version >= util.parse_version("v1.9.0"):
+    if version >= util.parse_version(VERSION_NAME):
         k8s_api = apps_api_client_from_config(config)
         return k8s_api.create_namespaced_daemon_set(ns_name, spec)
     else:
@@ -355,7 +357,7 @@ def delete_ds(config, version, ds_name, ns_name="default",
               body=V1DeleteOptions()):
     k8s_api_core = client_from_config(config)
 
-    if version >= util.parse_version("v1.9.0"):
+    if version >= util.parse_version(VERSION_NAME):
         k8s_api_apps = apps_api_client_from_config(config)
         k8s_api_apps.delete_namespaced_daemon_set(ds_name,
                                                   ns_name,
@@ -375,7 +377,6 @@ def delete_ds(config, version, ds_name, ns_name="default",
     for pod in data["items"]:
         logging.debug("Removing pod \"{}\"".format(pod["metadata"]["name"]))
         delete_pod(None, pod["metadata"]["name"], ns_name)
-    return
 
 
 def delete_service(config, name, ns_name="default", body=V1DeleteOptions()):

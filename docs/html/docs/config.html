@@ -137,30 +137,30 @@ directory format is described below.</p>
 <table>
 <thead>
 <tr>
-<th align="left">Path</th>
-<th align="left">Meaning</th>
+<th>Path</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left"><code>/etc/cmk/lock</code></td>
-<td align="left">A lock file to protect against conflicting concurrent modification.</td>
+<td><code>/etc/cmk/lock</code></td>
+<td>A lock file to protect against conflicting concurrent modification.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;</code></td>
-<td align="left">Directories, one per pool.</td>
+<td><code>/etc/cmk/pools/&lt;pool&gt;</code></td>
+<td>Directories, one per pool.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/exclusive</code></td>
-<td align="left">Determines whether each CPU list in the pool can be shared (value 0) or not (value 1). Shared CPU lists can accomodate multiple tasks simultaneously, while exclusive CPU lists may only be allocated to one task at a time.</td>
+<td><code>/etc/cmk/pools/&lt;pool&gt;/exclusive</code></td>
+<td>Determines whether each CPU list in the pool can be shared (value 0) or not (value 1). Shared CPU lists can accomodate multiple tasks simultaneously, while exclusive CPU lists may only be allocated to one task at a time.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;</code></td>
-<td align="left">Directories whose names conform to the Linux cpuset <a href="cpu-list">CPU list format</a>.</td>
+<td><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;</code></td>
+<td>Directories whose names conform to the Linux cpuset <a href="cpu-list">CPU list format</a>.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;/tasks</code></td>
-<td align="left">A file containing a comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated.</td>
+<td><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;/tasks</code></td>
+<td>A file containing a comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated.</td>
 </tr>
 </tbody>
 </table>

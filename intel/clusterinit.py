@@ -22,6 +22,9 @@ from kubernetes.client.rest import ApiException as K8sApiException
 
 from intel import k8s, util
 
+ABORTING_LOG = "Aborting cluster-init ..."   # Constant defined instead of duplicating 
+ABBORTING_WEBHOOK = "Aborting webhook deployment ..."
+
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  conf_dir, install_dir, num_exclusive_cores, num_shared_cores,
@@ -123,7 +126,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             wait_for_pod_phase(pod_name, pod_phase_name)
         except RuntimeError as err:
             logging.error("{}".format(err))
-            logging.error("Aborting cluster-init ...")
+            logging.error(ABORTING_LOG)
             sys.exit(1)
 
 
@@ -201,7 +204,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
             elif cmd_init_list:
                 logging.error("Exception when creating pod for {} command(s): "
                               "{}".format(cmd_init_list, err))
-            logging.error("Aborting cluster-init ...")
+            logging.error(ABORTING_LOG)
             sys.exit(1)
 
 
@@ -223,7 +226,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
         k8s.create_secret(None, secret, namespace)
     except K8sApiException as err:
         logging.error("Exception when creating secret: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
+        logging.error(ABBORTING_WEBHOOK)
         sys.exit(1)
 
     configmap = k8sclient.V1ConfigMap()
@@ -237,7 +240,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
         k8s.create_config_map(None, configmap, namespace)
     except K8sApiException as err:
         logging.error("Exception when creating config map: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
+        logging.error(ABBORTING_WEBHOOK)
         sys.exit(1)
 
     service = k8sclient.V1Service()
@@ -246,7 +249,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
         k8s.create_service(None, service, namespace)
     except K8sApiException as err:
         logging.error("Exception when creating service: {}".format(err))
-        logging.error("Aborting webhook deployment ...")
+        logging.error(ABBORTING_WEBHOOK)
         sys.exit(1)
 
     pod = k8s.get_pod_template()
@@ -261,7 +264,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     except K8sApiException as err:
         logging.error("Exception when creating webhook deployment: {}"
                       .format(err))
-        logging.error("Aborting webhook deployment ...")
+        logging.error(ABBORTING_WEBHOOK)
         sys.exit(1)
 
     config = k8sclient.V1beta1MutatingWebhookConfiguration()
@@ -280,7 +283,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     except K8sApiException as err:
         logging.error("Exception when creating webhook configuration: {}"
                       .format(err))
-        logging.error("Aborting webhook deployment ...")
+        logging.error(ABBORTING_WEBHOOK)
         sys.exit(1)
 
 
@@ -298,7 +301,7 @@ def get_cmk_node_list(host_list, all_hosts):
         except K8sApiException as err:
             logging.error("Exception when getting the node list: {}"
                           .format(err))
-            logging.error("Aborting cluster-init ...")
+            logging.error(ABORTING_LOG)
             sys.exit(1)
     return cmk_node_list
 
@@ -313,7 +316,7 @@ def wait_for_pod_phase(pod_name, phase_name):
         except K8sApiException as err:
             logging.error("Exception while waiting for Pod [{}] status: {}"
                           .format(pod_name, err))
-            logging.error("Aborting cluster-init ...")
+            logging.error(ABORTING_LOG)
             sys.exit(1)
 
         for pod in pod_list_resp["items"]:

@@ -19,47 +19,49 @@ from unittest.mock import patch, MagicMock
 from kubernetes.client.rest import ApiException as K8sApiException
 from kubernetes import client as k8sclient
 
+OPT_BIN = "/opt/bin"
+ETC_CMK = "/etc/cmk"
+EXPCTED_ERR_MGS = "CMK command should be one of ['init', 'discover', 'install', 'reconcile', 'nodereport']"
+FAKE_REASON = "fake reason"
+FAKE_BODY = "fake body"
+CREATE_POD = 'intel.k8s.create_pod'
+CLIENT_CONFIG = 'intel.k8s.client_from_config'
+INIT_DISCOVER_INSTALL = "init, discover, install"
 
 def test_clusterinit_invalid_cmd_list_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = ("CMK command should be one of "
-                        "['init', 'discover', 'install', 'reconcile', "
-                        "'nodereport']")
+    expected_err_msg = (EXPCTED_ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_cmd_list_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = ("CMK command should be one of "
-                        "['init', 'discover', 'install', 'reconcile', "
-                        "'nodereport']")
+    expected_err_msg = (EXPCTED_ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_cmd_list_failure3():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = ("CMK command should be one of "
-                        "['init', 'discover', 'install', 'reconcile', "
-                        "'nodereport']")
+    expected_err_msg = (EXPCTED_ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
 def test_clusterinit_invalid_cmd_list_failure4():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "discover, init",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
     expected_err_msg = "init command should be run and listed first."
@@ -69,7 +71,7 @@ def test_clusterinit_invalid_cmd_list_failure4():
 def test_clusterinit_invalid_image_pol():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "fakepol1",
-                                 "/etc/cmk", "/opt/bin", "4", "2", "", "",
+                                 ETC_CMK, OPT_BIN, "4", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ('Image pull policy should be one of '
                         '[\'Never\', \'IfNotPresent\', \'Always\']')
@@ -79,7 +81,7 @@ def test_clusterinit_invalid_image_pol():
 def test_clusterinit_invalid_exclusive_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "-1", "2", "", "",
+                                 ETC_CMK, OPT_BIN, "-1", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
@@ -89,7 +91,7 @@ def test_clusterinit_invalid_exclusive_cores_failure1():
 def test_clusterinit_invalid_exclusive_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "3.5", "2", "", "",
+                                 ETC_CMK, OPT_BIN, "3.5", "2", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
@@ -99,7 +101,7 @@ def test_clusterinit_invalid_exclusive_cores_failure2():
 def test_clusterinit_invalid_shared_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "2.5", "", "",
+                                 ETC_CMK, OPT_BIN, "1", "2.5", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
@@ -108,7 +110,7 @@ def test_clusterinit_invalid_shared_cores_failure1():
 def test_clusterinit_invalid_shared_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
-                                 "/etc/cmk", "/opt/bin", "1", "10.5", "", "",
+                                 ETC_CMK, OPT_BIN, "1", "10.5", "", "",
                                  "vertical", "vertical", "default", "-1")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
@@ -135,9 +137,9 @@ HTTP response body: fake body
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_init_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch(CREATE_POD,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["init"], "fake_img",
@@ -152,9 +154,9 @@ def test_clusterinit_run_cmd_pods_init_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_discover_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch(CREATE_POD,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["discover"], "fake_img", "Never",
@@ -169,9 +171,9 @@ def test_clusterinit_run_cmd_pods_discover_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_clusterinit_run_cmd_pods_install_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.k8s.create_pod',
+    with patch(CREATE_POD,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             clusterinit.run_pods(None, ["install"], "fake_img", "Never",
@@ -186,7 +188,7 @@ def test_clusterinit_run_cmd_pods_install_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
@@ -203,7 +205,7 @@ def test_clusterinit_run_cmd_pods_reconcile_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_run_cmd_pods_nodereport_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.k8s.create_ds',
                MagicMock(side_effect=fake_api_exception)):
@@ -248,10 +250,10 @@ def test_clusterinit_node_list_host_list():
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
+    with patch(CLIENT_CONFIG, MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
-                                 "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 INIT_DISCOVER_INSTALL,
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "supersecret", "", "vertical",
                                  "vertical", "default", "-1")
         called_methods = mock.method_calls
@@ -267,11 +269,11 @@ def test_clusterinit_pass_pull_secrets():
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_pull_secrets():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
-                                 "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 INIT_DISCOVER_INSTALL,
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
         called_methods = mock.method_calls
@@ -285,10 +287,10 @@ def test_clusterinit_dont_pass_pull_secrets():
 def test_clusterinit_pass_serviceaccountname():
     mock = MagicMock()
     serviceaccount_name = "testSAname"
-    with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
+    with patch(CLIENT_CONFIG, MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
-                                 "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 INIT_DISCOVER_INSTALL,
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", serviceaccount_name,
                                  "vertical", "vertical", "default", "-1")
         called_methods = mock.method_calls
@@ -303,10 +305,10 @@ def test_clusterinit_pass_serviceaccountname():
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
 def test_clusterinit_dont_pass_serviceaccountname():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config', MagicMock(return_value=mock)):
+    with patch(CLIENT_CONFIG, MagicMock(return_value=mock)):
         clusterinit.cluster_init("fakenode1", False,
-                                 "init, discover, install",
-                                 "cmk", "Never", "/etc/cmk", "/opt/bin",
+                                 INIT_DISCOVER_INSTALL,
+                                 "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
         called_methods = mock.method_calls
@@ -370,7 +372,7 @@ def test_clusterinit_run_pods_failure(caplog):
 
 
 def test_clusterinit_wait_for_pod_phase_error2(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with pytest.raises(SystemExit):
         with patch('intel.k8s.get_pod_list',
@@ -379,7 +381,7 @@ def test_clusterinit_wait_for_pod_phase_error2(caplog):
 
 
 def test_clusterinit_get_cmk_node_list_all_hosts_error(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with pytest.raises(SystemExit):
         with patch('intel.k8s.get_compute_nodes',
