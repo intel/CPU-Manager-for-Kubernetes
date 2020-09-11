@@ -23,6 +23,7 @@ FAKE_REASON = "fake reason"
 FAKE_BODY = "fake body"
 THIRD_PARTY_RESOURCE_CREATE = 'intel.third_party.ThirdPartyResource.create'
 
+
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
         self.status = status

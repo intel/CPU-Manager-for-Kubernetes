@@ -25,7 +25,8 @@ CUSTOM_RESOURCE = 'intel.custom_resource.CustomResourceDefinitionType.exists'
 CLIENT_API_CALL = 'api_client.call_api'
 FAKE_BODY = "fake body"
 FAKE_REASON = "fake reason"
-CREATED_CUSTOM_RESOURSE = 'intel.custom_resource.CustomResourceDefinition.create'
+CUSTOM_RESOURSE = 'intel.custom_resource.CustomResourceDefinition.create'
+
 
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
@@ -180,7 +181,7 @@ def test_custom_resource_save_success():
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock()
-        with patch(CREATED_CUSTOM_RESOURSE,
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
@@ -195,7 +196,7 @@ def test_custom_resource_save_crd_not_ready_failure(caplog):
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch(CREATED_CUSTOM_RESOURSE,
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
@@ -214,7 +215,7 @@ def test_third_party_resource_save_api_blocked_failure(caplog):
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch(CREATED_CUSTOM_RESOURSE,
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
@@ -231,7 +232,7 @@ def test_third_party_resource_save_failure(caplog):
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch(CREATED_CUSTOM_RESOURSE,
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             with pytest.raises(K8sApiException):
                 fake_crd.save()
@@ -250,7 +251,7 @@ def test_third_party_resource_save_recreate_failure(caplog):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_409_exception)
         mock_remove = MagicMock(side_effect=fake_api_exception)
-        with patch(CREATED_CUSTOM_RESOURSE,
+        with patch(CUSTOM_RESOURSE,
                    mock_create), \
             patch('intel.custom_resource.CustomResourceDefinition.remove',
                   mock_remove):

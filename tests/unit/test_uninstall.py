@@ -31,6 +31,8 @@ WRONG_REASON = "{\"reason\":\"WrongReason\"}"
 DISCOVER_PATCH_K8S_NODE = 'intel.discover.patch_k8s_node'
 NON_EXISTANT_MGS = "{\"message\":\"nonexistant\"}"
 MATADATA_LABELS_CMK_NODE = '/metadata/labels/cmk.intel.com~1cmk-node'
+NODEREPORT_REMOVED = "\"NodeReport\" for node \"{}\" removed."
+
 
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
@@ -110,7 +112,8 @@ def test_remove_all_report_crd_success(caplog):
         assert caplog_tuple[-1][2] == "\"cmk-reconcilereport\" for node " \
                                       "\"{}\" removed."\
             .format(os.getenv("NODE_NAME"))
-        assert caplog_tuple[-3][2] == CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-3][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_tpr_success(caplog):
@@ -125,7 +128,8 @@ def test_remove_report_tpr_success(caplog):
                          MagicMock(return_value=fake_tpr_report)):
         uninstall.remove_report_tpr("NodeReport")
         caplog_tuple = caplog.record_tuples
-        assert caplog_tuple[-1][2] == CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-1][2] == \
+            NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 # Remove success due to not existing report
@@ -150,12 +154,12 @@ def test_remove_report_tpr_success2(caplog):
             caplog_tuple[-2][2] == "\"NodeReport\" for node \"{}\" does" \
                                    " not exist.".format(os.getenv("NODE_NAME"))
         assert \
-            caplog_tuple[-1][2] == CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
+            caplog_tuple[-1][2] == \
+            NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_tpr_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
-                                      WRONG_REASON)
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE, WRONG_REASON)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
     fake_tpr_report = MagicMock()
@@ -189,7 +193,8 @@ def test_remove_report_crd_success(caplog):
                          MagicMock(return_value=fake_crd_report)):
         uninstall.remove_report_crd("cmk-nodereport", ["cmk-nr"])
         caplog_tuple = caplog.record_tuples
-        assert caplog_tuple[-1][2] == CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-1][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 # Remove success due to not existing report
@@ -213,9 +218,10 @@ def test_remove_report_crd_success2(caplog):
         caplog_tuple = caplog.record_tuples
         assert \
             caplog_tuple[-2][2] == "\"cmk-nodereport\" for node \"{}\" does "\
-                                   "not exist.".format(os.getenv("NODE_NAME"))
+            "not exist.".format(os.getenv("NODE_NAME"))
         assert \
-            caplog_tuple[-1][2] == CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
+            caplog_tuple[-1][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_crd_failure(caplog):

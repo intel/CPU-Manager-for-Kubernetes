@@ -22,6 +22,7 @@ from intel import clusterinit, k8s, util
 
 CLIENT_CONFIG = 'intel.k8s.client_from_config'
 
+
 def test_k8s_node_list_all():
     fake_node_list_resp = [
         {"metadata": {"name": "fakenode1"}, "spec": {}},

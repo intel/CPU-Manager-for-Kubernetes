@@ -22,7 +22,7 @@ from kubernetes.client.rest import ApiException as K8sApiException
 
 from intel import k8s, util
 
-ABORTING_LOG = "Aborting cluster-init ..."   # Constant defined instead of duplicating 
+ABORTING_LOG = "Aborting cluster-init ..."
 ABBORTING_WEBHOOK = "Aborting webhook deployment ..."
 
 

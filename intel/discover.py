@@ -25,6 +25,7 @@ from . import k8s
 
 ABORTING_DISCOVER = "Aborting discover ..."
 
+
 # discover reads the CMK configuration file, patches kubernetes nodes with
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.

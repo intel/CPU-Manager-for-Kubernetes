@@ -21,12 +21,14 @@ from kubernetes import client as k8sclient
 
 OPT_BIN = "/opt/bin"
 ETC_CMK = "/etc/cmk"
-EXPCTED_ERR_MGS = "CMK command should be one of ['init', 'discover', 'install', 'reconcile', 'nodereport']"
+ERR_MGS = "CMK command should be one of ['init', 'discover',"\
+    " 'install', 'reconcile', 'nodereport']"
 FAKE_REASON = "fake reason"
 FAKE_BODY = "fake body"
 CREATE_POD = 'intel.k8s.create_pod'
 CLIENT_CONFIG = 'intel.k8s.client_from_config'
 INIT_DISCOVER_INSTALL = "init, discover, install"
+
 
 def test_clusterinit_invalid_cmd_list_failure1():
     with pytest.raises(RuntimeError) as err:
@@ -34,7 +36,7 @@ def test_clusterinit_invalid_cmd_list_failure1():
                                  "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = (EXPCTED_ERR_MGS)
+    expected_err_msg = (ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
@@ -44,7 +46,7 @@ def test_clusterinit_invalid_cmd_list_failure2():
                                  "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = (EXPCTED_ERR_MGS)
+    expected_err_msg = (ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
@@ -54,7 +56,7 @@ def test_clusterinit_invalid_cmd_list_failure3():
                                  "cmk", "Never", ETC_CMK, OPT_BIN,
                                  "4", "2", "", "", "vertical", "vertical",
                                  "default", "-1")
-    expected_err_msg = (EXPCTED_ERR_MGS)
+    expected_err_msg = (ERR_MGS)
     assert err.value.args[0] == expected_err_msg
 
 
