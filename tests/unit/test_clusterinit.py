@@ -25,7 +25,7 @@ def test_clusterinit_invalid_cmd_list_failure1():
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, fakecmd2",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -37,7 +37,7 @@ def test_clusterinit_invalid_cmd_list_failure2():
         clusterinit.cluster_init("fakenode1", False, "fakecmd1, init",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -49,7 +49,7 @@ def test_clusterinit_invalid_cmd_list_failure3():
         clusterinit.cluster_init("fakenode1", False, "init, fakecmd1, install",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
     expected_err_msg = ("CMK command should be one of "
                         "['init', 'discover', 'install', 'reconcile', "
                         "'nodereport']")
@@ -61,7 +61,7 @@ def test_clusterinit_invalid_cmd_list_failure4():
         clusterinit.cluster_init("fakenode1", False, "discover, init",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
     expected_err_msg = "init command should be run and listed first."
     assert err.value.args[0] == expected_err_msg
 
@@ -70,7 +70,8 @@ def test_clusterinit_invalid_image_pol():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "fakepol1",
                                  "/opt/bin", "4", "2", "", "",
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
     expected_err_msg = ('Image pull policy should be one of '
                         '[\'Never\', \'IfNotPresent\', \'Always\']')
     assert err.value.args[0] == expected_err_msg
@@ -80,7 +81,8 @@ def test_clusterinit_invalid_exclusive_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/opt/bin", "-1", "2", "", "",
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
     assert err.value.args[0] == expected_err_msg
@@ -90,7 +92,8 @@ def test_clusterinit_invalid_exclusive_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/opt/bin", "3.5", "2", "", "",
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
     expected_err_msg = ("num_exclusive_cores cores should be a positive "
                         "integer.")
     assert err.value.args[0] == expected_err_msg
@@ -100,7 +103,8 @@ def test_clusterinit_invalid_shared_cores_failure1():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/opt/bin", "1", "2.5", "", "",
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -109,7 +113,8 @@ def test_clusterinit_invalid_shared_cores_failure2():
     with pytest.raises(RuntimeError) as err:
         clusterinit.cluster_init("fakenode1", False, "init", "cmk", "Never",
                                  "/opt/bin", "1", "10.5", "", "",
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
     expected_err_msg = "num_shared_cores cores should be a positive integer."
     assert err.value.args[0] == expected_err_msg
 
@@ -253,7 +258,8 @@ def test_clusterinit_pass_pull_secrets():
                                  "init, discover, install",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "supersecret", "", "vertical",
-                                 "vertical", "default", "-1")
+                                 "vertical", "default", "-1",
+                                 "fake-ca", "False")
         called_methods = mock.method_calls
         params = called_methods[0][1]
         pod_spec = params[1]
@@ -273,7 +279,7 @@ def test_clusterinit_dont_pass_pull_secrets():
                                  "init, discover, install",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
         called_methods = mock.method_calls
         params = called_methods[0][1]
         pod_spec = params[1]
@@ -290,7 +296,8 @@ def test_clusterinit_pass_serviceaccountname():
                                  "init, discover, install",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", serviceaccount_name,
-                                 "vertical", "vertical", "default", "-1")
+                                 "vertical", "vertical", "default", "-1",
+                                 "fake-ca", "False")
         called_methods = mock.method_calls
         params = called_methods[0][1]
         pod_spec = params[1]
@@ -308,7 +315,7 @@ def test_clusterinit_dont_pass_serviceaccountname():
                                  "init, discover, install",
                                  "cmk", "Never", "/opt/bin",
                                  "4", "2", "", "", "vertical", "vertical",
-                                 "default", "-1")
+                                 "default", "-1", "fake-ca", "False")
         called_methods = mock.method_calls
         params = called_methods[0][1]
         pod_spec = params[1]

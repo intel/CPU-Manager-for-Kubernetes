@@ -26,9 +26,19 @@ def init(num_exclusive_cores, num_shared_cores,
     logging.info("Requested exclusive cores = {}.".format(num_exclusive_cores))
     logging.info("Requested shared cores = {}.".format(num_shared_cores))
 
-    configure(num_exclusive_cores, num_shared_cores,
-              exclusive_allocation_mode, shared_allocation_mode,
-              excl_non_isolcpus)
+    platform = configure(num_exclusive_cores, num_shared_cores,
+                         exclusive_allocation_mode, shared_allocation_mode,
+                         excl_non_isolcpus)
+
+    # Use the pod's name to get which node this pod is running on. Use the
+    # node name to create the configmap for this node. The configmap holds
+    # the CPU configuration that CMK uses for bookkeeping. The node name
+    # is used to make the configmap's name unique - it takes the form of
+    # 'cmk-config-<node_name>
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    config.new(platform, excl_non_isolcpus, configmap_name)
 
 
 def configure(num_exclusive_cores, num_shared_cores,
@@ -175,15 +185,7 @@ def configure(num_exclusive_cores, num_shared_cores,
         assign(cores_shared, "shared", count=num_shared_cores)
         assign(cores, "infra")
 
-    # Use the pod's name to get which node this pod is running on. Use the
-    # node name to create the configmap for this node. The configmap holds
-    # the CPU configuration that CMK uses for bookkeeping. The node name
-    # is used to make the configmap's name unique - it takes the form of
-    # 'cmk-config-<node_name>
-    pod_name = os.environ["HOSTNAME"]
-    node_name = k8s.get_node_from_pod(None, pod_name)
-    configmap_name = "cmk-config-{}".format(node_name)
-    config.new(platform, excl_non_isolcpus, configmap_name)
+    return platform
 
 
 def check_hugepages():

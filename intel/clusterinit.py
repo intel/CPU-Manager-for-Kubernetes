@@ -26,7 +26,7 @@ from intel import k8s, util
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  pull_secret, serviceaccount, exclusive_mode, shared_mode,
-                 namespace, excl_non_isolcpus):
+                 namespace, excl_non_isolcpus, cafile, insecure):
 
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
@@ -82,7 +82,7 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     version = util.parse_version(k8s.get_kube_version(None))
     if version >= util.parse_version("v1.9.0"):
         deploy_webhook(namespace, install_dir, serviceaccount,
-                       cmk_img)
+                       cmk_img, cafile, insecure)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
@@ -207,7 +207,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
 
 # deploy_webhook() creates mutating webhook admission controller configuration,
 # pod and all required resources.
-def deploy_webhook(namespace, install_dir, saname, cmk_img):
+def deploy_webhook(namespace, install_dir, saname, cmk_img, cafile, insecure):
     prefix = "cmk-webhook"
 
     service_name = '-'.join([prefix, "service"])
@@ -241,7 +241,7 @@ def deploy_webhook(namespace, install_dir, saname, cmk_img):
         sys.exit(1)
 
     service = k8sclient.V1Service()
-    update_service(service, service_name, app_name, 443)
+    update_service(service, service_name, app_name, 8443)
     try:
         k8s.create_service(None, service, namespace)
     except K8sApiException as err:
@@ -253,7 +253,7 @@ def deploy_webhook(namespace, install_dir, saname, cmk_img):
     pod_name = '-'.join([prefix, "pod"])
     update_pod_with_metadata(pod, pod_name, app_name)
     update_pod_with_webhook_container(pod, cmk_img, configmap_name,
-                                      secret_name)
+                                      secret_name, cafile, insecure)
     update_pod_with_restart_policy(pod, "Always")
     deployment = k8s.deployment_from(pod)
     try:
@@ -395,9 +395,10 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
 
 
 def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
-                                      secret_name):
+                                      secret_name, cafile, insecure):
     container = k8s.get_container_template("webhook")
-    args = ("/opt/bin/cmk webhook --conf-file /etc/webhook/server.yaml")
+    args = ("/opt/bin/cmk webhook --conf-file /etc/webhook/server.yaml"
+            " --cafile {} --insecure {}".format(cafile, insecure))
     container["args"] = [args]
     container["image"] = cmk_img
     container["name"] = "cmk-webhook"
@@ -414,13 +415,15 @@ def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
         'name': 'configmap',
         'configMap': {
             'name': configmap_name
-        }
+        },
+        'readOnly': True
     })
     pod["spec"]["volumes"].append({
         'name': 'certs',
         'secret': {
             'secretName': secret_name
-         }
+        },
+        'readOnly': True
     })
     pod["spec"]["tolerations"] = [{"operator": "Exists"}]
     pod["spec"]["containers"].append(container)
@@ -437,6 +440,7 @@ def update_secret(secret, name, data, secret_type):
 def update_configmap(configmap, name, data):
     configmap.metadata = k8sclient.V1ObjectMeta()
     configmap.metadata.name = name
+    configmap.metadata.annotations = {"Owner": ""}
     configmap.data = data
 
 
@@ -446,7 +450,7 @@ def update_service(service, name, app, port):
     service.metadata.labels = {"app": app}
     service.spec = k8sclient.V1ServiceSpec()
     service.spec.selector = {"app": app}
-    service_port = k8sclient.V1ServicePort(port=443, target_port=8443)
+    service_port = k8sclient.V1ServicePort(port=443, target_port=port)
     service.spec.ports = [service_port]
 
 

@@ -30,10 +30,11 @@ CONTAINER_VOLUME_MOUNTS = {
             }
         ],
         "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     },
     "install": {
@@ -51,10 +52,11 @@ CONTAINER_VOLUME_MOUNTS = {
         "volumeMounts": [
         ],
         "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     },
     "reconcile": {
@@ -71,10 +73,11 @@ CONTAINER_VOLUME_MOUNTS = {
             }
         ],
         "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     },
     "nodereport": {
@@ -91,10 +94,11 @@ CONTAINER_VOLUME_MOUNTS = {
             }
         ],
         "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     },
     "webhook": {
@@ -111,10 +115,10 @@ CONTAINER_VOLUME_MOUNTS = {
             }
         ],
         "securityContext": {
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     },
     "reconfigure": {
@@ -126,10 +130,11 @@ CONTAINER_VOLUME_MOUNTS = {
             }
         ],
         "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
             "runAsUser": 1000,
             "runAsGroup": 3000,
-            "fsGroup": 2000,
-            "privileged": False
+            "fsGroup": 2000
         }
     }
 }
@@ -368,6 +373,11 @@ def create_config_map(config, spec, ns_name):
     return k8s_api.create_namespaced_config_map(ns_name, spec)
 
 
+def patch_config_map(config, cm_name, spec, ns_name):
+    k8s_api = client_from_config(config)
+    return k8s_api.patch_namespaced_config_map(cm_name, ns_name, spec)
+
+
 def create_secret(config, spec, ns_name):
     k8s_api = client_from_config(config)
     return k8s_api.create_namespaced_secret(ns_name, spec)
@@ -442,7 +452,7 @@ def get_config_map(config, name, ns_name):
     configmaps = k8s_api.list_namespaced_config_map(ns_name)
     for cm in configmaps.items:
         if cm.metadata.name == name:
-            return cm.data
+            return cm
 
 
 # Delete namespace by name.

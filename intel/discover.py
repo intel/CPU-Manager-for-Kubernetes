@@ -54,7 +54,8 @@ def add_node_oir():
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    c = config.get_config(configmap_name)
+    c = config.Config(configmap_name, pod_name)
+    c.lock()
 
     num_excl_non_isolcpus = None
     if "exclusive" not in c.get_pools():
@@ -63,6 +64,7 @@ def add_node_oir():
     if "exclusive-non-isolcpus" in c.get_pools():
         num_excl_non_isolcpus = len(c.get_pool("exclusive-non-isolcpus")
                                     .get_core_lists())
+    c.unlock()
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
@@ -103,7 +105,8 @@ def add_node_er():
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    c = config.get_config(configmap_name)
+    c = config.Config(configmap_name, pod_name)
+    c.lock()
 
     num_excl_non_isolcpus = None
     if "exclusive" not in c.get_pools():
@@ -112,6 +115,7 @@ def add_node_er():
     if "exclusive-non-isolcpus" in c.get_pools():
         num_excl_non_isolcpus = len(c.get_pool("exclusive-non-isolcpus")
                                     .get_core_lists())
+    c.unlock()
 
     patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")
     patch_body = [{

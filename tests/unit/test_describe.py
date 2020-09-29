@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from intel import describe
+from intel import describe, config
 from unittest.mock import patch, MagicMock
 from contextlib import redirect_stdout
-import yaml
 import io
+
+
+class MockConfig(config.Config):
+
+    def __init__(self, conf):
+        self.cm_name = "fake-name"
+        self.owner = "fake-owner"
+        self.c_data = conf
+
+    def lock(self):
+        return
+
+    def unlock(self):
+        return
 
 
 FAKE_CONFIG = {
@@ -45,17 +58,17 @@ FAKE_CONFIG = {
 }
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value={'config': yaml.dump(FAKE_CONFIG)}))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_describe():
-    f = io.StringIO()
-    with redirect_stdout(f):
-        describe.describe()
-    out = f.getvalue()
-    assert out == """{
+    c = MockConfig(config.build_config(FAKE_CONFIG))
+    with patch('intel.config.Config', MagicMock(return_value=c)):
+        f = io.StringIO()
+        with redirect_stdout(f):
+            describe.describe()
+        out = f.getvalue()
+        assert out == """{
   "pools": {
     "exclusive": {
       "cpuLists": {

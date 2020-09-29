@@ -56,35 +56,41 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
     node_name = k8s.get_node_from_pod(None, pod_name)
     config_cm = "cmk-config-{}".format(node_name)
 
-    conf = config.Config(config_cm)
-    conf_non_deletion = config.get_config(config_cm)
+    conf = config.Config(config_cm, pod_name)
     num_exclusive_cores = int(num_exclusive_cores)
     num_shared_cores = int(num_shared_cores)
 
-    built_proc_info = build_proc_info(conf_non_deletion)
-    proc_info = built_proc_info[0]
-    procs = built_proc_info[1]
-
-    num_excl_non_isols = len(topology.
-                             parse_cpus_str(excl_non_isolcpus.split(",")))
-    check_processes(proc_info, num_exclusive_cores, num_excl_non_isols)
-
     conf.lock()
-    reconfigure_directory(conf, num_exclusive_cores,
-                          num_shared_cores, exclusive_mode, shared_mode,
-                          excl_non_isolcpus, proc_info, procs, config_cm)
+    try:
+        built_proc_info = build_proc_info(conf.c_data)
+        proc_info = built_proc_info[0]
+        procs = built_proc_info[1]
 
-    configmap_name = "cmk-reconfigure-{}".format(node_name)
-    set_config_map(configmap_name, namespace, procs)
+        num_excl_non_isols = len(topology.
+                                 parse_cpus_str(excl_non_isolcpus.
+                                                split(",")))
+        check_processes(proc_info, num_exclusive_cores, num_excl_non_isols)
 
-    # Run the re-affinitization command in each of the pods on the node
-    all_pods = get_pods()
-    logging.info("Pods in node {}:".format(node_name))
-    logging.info(all_pods)
+        # Maybe can remove config_cm var and conf.c_data
+        conf.c_data = reconfigure_directory(conf.c_data, num_exclusive_cores,
+                                            num_shared_cores, exclusive_mode,
+                                            shared_mode, excl_non_isolcpus,
+                                            proc_info, procs, config_cm)
 
-    execute_reconfigure(install_dir, node_name, all_pods, namespace)
+        configmap_name = "cmk-reconfigure-{}".format(node_name)
+        set_config_map(configmap_name, namespace, procs)
 
-    delete_config_map(configmap_name, namespace)
+        # Run the re-affinitization command in each of the pods on the node
+        all_pods = get_pods()
+        logging.info("Pods in node {}:".format(node_name))
+        logging.info(all_pods)
+
+        execute_reconfigure(install_dir, node_name, all_pods, namespace)
+
+    finally:
+        conf.unlock()
+
+        delete_config_map(configmap_name, namespace)
 
 
 def check_processes(proc_info, num_exclusive_cores, num_excl_non_isols):
@@ -146,8 +152,18 @@ def delete_config_map(name, namespace):
 def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
                           exclusive_mode, shared_mode, excl_non_isolcpus,
                           proc_info, procs, config_cm):
-    init.configure(num_exclusive_cores, num_shared_cores,
-                   exclusive_mode, shared_mode, excl_non_isolcpus)
+    platform = init.configure(num_exclusive_cores, num_shared_cores,
+                              exclusive_mode, shared_mode,
+                              excl_non_isolcpus)
+
+    conf = dict()
+    conf = config.update_configmap_exclusive("exclusive", platform, conf)
+    conf = config.update_configmap_shared("shared", platform, conf)
+    if excl_non_isolcpus != "-1" and platform.has_isolated_cores():
+        conf = config.update_configmap_exclusive("exclusive-non-isolcpus",
+                                                 platform, conf)
+    conf = config.update_configmap_shared("infra", platform, conf)
+    conf = config.build_config(conf)
 
     # Repatch the nodes with ERs/OIRs
     version = util.parse_version(k8s.get_kube_version(None))
@@ -176,8 +192,6 @@ def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
     # available core list in the new configuration, determined by a previous
     # call to check_processes()
 
-    new_conf = config.get_config(config_cm)
-
     # This is a way of keeping track of which sokcets we've already tried
     # to assign to the process. The sockets variable takes the form
     # [Bool, Bool, ...] and a False means the socket has failed to
@@ -195,7 +209,7 @@ def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
     socket_mismatch = []
     clist_mismatch = []
     for proc in proc_info:
-        new_pool = new_conf.get_pool(proc.pool)
+        new_pool = conf.get_pool(proc.pool)
         try:
             clists = [cl.core_id for cl in
                       new_pool.get_socket_clists(proc.socket)]
@@ -233,7 +247,7 @@ def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
 
     # Try to find a match in the same socket first
     for proc in clist_mismatch:
-        new_pool = new_conf.get_pool(proc.pool)
+        new_pool = conf.get_pool(proc.pool)
         satisfied = False
         for cl in new_pool.get_socket_clists(proc.socket):
             if len(cl.get_tasks()) == 0:
@@ -248,7 +262,7 @@ def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
 
     # Move on to other sockets
     for proc in socket_mismatch:
-        new_pool = new_conf.get_pool(proc.pool)
+        new_pool = conf.get_pool(proc.pool)
         satisfied = False
         while not satisfied:
             for cl in new_pool.get_socket_clists(proc.socket):
@@ -266,9 +280,7 @@ def reconfigure_directory(c, num_exclusive_cores, num_shared_cores,
                                      proc.old_clist))
                 update_sockets(proc)
 
-    # Have to delete the old config and set the new one
-    k8s.delete_config_map(None, config_cm)
-    config.set_config(new_conf, config_cm)
+    return conf
 
 
 def get_pods():

@@ -25,9 +25,7 @@ CMK_ER_NAME = ['cmk.intel.com/exclusive-cores',
 CMK_MUTATE_ANNOTATION = 'cmk.intel.com/mutate'
 ENV_NUM_CORES = 'CMK_NUM_CORES'
 CIPHERS = "ECDHE-RSA-AES256-GCM-SHA384:\
-ECDHE-ECDSA-AES256-GCM-SHA384:\
-ECDHE-RSA-AES128-GCM-SHA256:\
-ECDHE-ECDSA-AES128-GCM-SHA256"
+ECDHE-ECDSA-AES256-GCM-SHA384"
 
 
 class MutationError(Exception):
@@ -58,13 +56,21 @@ class WebhookServerConfig(object):
 
 
 class WebhookServer(HTTPServer):
-    def __init__(self, config, handler_class):
+    def __init__(self, config, handler_class, cafile, insecure):
         self.config = config
+        self.cafile = cafile
+        self.insecure = insecure
         try:
             HTTPServer.__init__(self, (self.config.address, self.config.port),
                                 handler_class)
             ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.config.cert, self.config.key)
+            if self.insecure == "False":
+                logging.info("Setting up webhook server to authenticate using"
+                             " mutual TLS...")
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                ssl_context.load_verify_locations(cafile=self.cafile)
+
             ssl_context.options |= ssl.PROTOCOL_TLS
             ssl_context.options |= ssl.OP_NO_SSLv2
             ssl_context.options |= ssl.OP_NO_SSLv3
@@ -80,11 +86,21 @@ class WebhookServer(HTTPServer):
 class WebhookRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         if self.path.startswith("/mutate"):
+            if self.headers['Content-Type'] != "application/json":
+                logging.error("Incorrect content type")
+                self.send_response(500)
             content_length = int(self.headers['Content-Length'])
+            if content_length > 10000:
+                logging.error("HTTP body too large")
+                self.send_response(500)
+
             post_data = self.rfile.read(content_length).decode('utf-8')
 
             try:
                 admission_review = json.loads(post_data)
+                if admission_review["kind"] != "AdmissionReview":
+                    logging.error("Request must be an admission review")
+                    raise MutationError
                 mutate(admission_review, self.server.config.mutations)
                 response = json.dumps(admission_review)
 
@@ -124,7 +140,6 @@ def mutate(admission_review, mutations_file):
 
     if is_mutation_required(pod):
         mutations = load_mutations(mutations_file)
-        logging.info(mutations)
 
         # apply pod mutations
         try:
@@ -266,11 +281,12 @@ def is_mutation_required(pod):
     return False
 
 
-def webhook(config_file):
+def webhook(config_file, cafile, insecure):
     config = WebhookServerConfig()
     config.load(config_file)
 
-    webhook_server = WebhookServer(config, WebhookRequestHandler)
+    webhook_server = WebhookServer(config, WebhookRequestHandler,
+                                   cafile, insecure)
 
     try:
         webhook_server.serve_forever()

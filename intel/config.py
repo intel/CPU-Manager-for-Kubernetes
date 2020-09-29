@@ -5,6 +5,7 @@ import logging
 import sys
 import yaml
 import time
+import random
 
 # Set the number of times the get_config() function will attempt
 # to retrieve the CMK configmap before giving up
@@ -20,36 +21,78 @@ exclusivity = {
 
 class Config:
 
-    def __init__(self, cm_name):
+    def __init__(self, cm_name, owner):
         self.c = None
+        self.c_data = None
         self.cm_name = cm_name
+        self.owner = owner
 
     def lock(self):
         # The lock function is used to avoid two isolate
         # commands simultaneously making updates to the
         # CMK configuration configmap that is associated
-        # with the appropriate node. It does so by deleting
-        # the configmap before updating it, and then
-        # recreating it when the isolate command is done
-        # with it
+        # with the appropriate node. It does so by updating
+        # the configmap's 'owner' annotation with the name of the
+        # pod updating it. If the the 'owner' annotation is not
+        # an empty string then the configmap is considered
+        # 'locked'
 
-        self.c = get_config(self.cm_name)
-        k8s.delete_config_map(None, self.cm_name)
+        time.sleep(random.random())
+        while True:
+            try:
+                c = k8s.get_config_map(None, self.cm_name, "default")
+                owner = c.metadata.annotations["Owner"]
+                if owner != "":
+                    time.sleep(1)
+                    continue
+                else:
+                    c.metadata.annotations["Owner"] = self.owner
+                    try:
+                        k8s.patch_config_map(None, self.cm_name, c, "default")
+                    except K8sApiException as err:
+                        logging.error("Error while retreiving configmap {}"
+                                      .format(self.cm_name))
+                        logging.error(err.reason)
+                        sys.exit(1)
+
+                self.c = c
+                self.c_data = build_config(yaml.safe_load(c.data["config"]))
+                break
+            except K8sApiException as err:
+                logging.error("Error while retreiving configmap {}"
+                              .format(self.cm_name))
+                logging.error(err.reason)
+                sys.exit(1)
 
     def unlock(self):
-        set_config(self.c, self.cm_name)
+        self.c.metadata.annotations["Owner"] = ""
+        config = build_configmap(self.c_data)
+        configmap = k8sclient.V1ConfigMap()
+        data = {
+            "config": yaml.dump(config)
+        }
+        clusterinit.update_configmap(configmap, self.cm_name, data)
+        try:
+            k8s.patch_config_map(None, self.cm_name, configmap, "default")
+        except K8sApiException as err:
+            logging.error("Error while retreiving configmap {}"
+                          .format(self.cm_name))
+            logging.error(err.reason)
+            sys.exit(1)
+        self.c = None
+        self.c_data = None
 
     def add_pool(self, exclusive, name):
-        self.c.add_pool(exclusive, name)
+        self.c_data.add_pool(exclusive, name)
 
     def get_pool(self, name):
-        return self.c.get_pool(name)
+        return self.c_data.get_pool(name)
 
     def get_pools(self):
-        return self.c.get_pools()
+        return self.c_data.get_pools()
 
     def as_dict(self):
-        return self.c.as_dict()
+        return self.c_data.as_dict()
 
 
 class Conf:
@@ -255,43 +298,9 @@ def update_configmap_shared(pool_name, platform, config):
     return config
 
 
-def get_config(name):
-    # Returns the configmap 'cmk-config-<name>' where 'name' is the
-    # name of the node that this pod is running on. The function
-    # has to possibly retry trying to retrieve the configmap as
-    # it may have been temporarily deleted by an isolate command
-    # to avoid multiple commands from updating the configmap
-    # simultaneously. It gives up after a certain number of times
-    # to avoid an infinite loop if for some reason the configmap
-    # has been deleted
-
-    waited = 0
-    while True:
-        try:
-            c = k8s.get_config_map(None, name, "default")
-            if c is None:
-                if waited == EXCEEDED:
-                    logging.error("Time exceeded waiting"
-                                  " to retrieve configmap")
-                    logging.error("Exiting...")
-                    sys.exit(1)
-                time.sleep(1)
-                waited += 1
-                continue
-            c = yaml.safe_load(c["config"])
-            break
-        except K8sApiException as err:
-            logging.error("Error while retreiving configmap {}"
-                          .format(name))
-            logging.error(err.reason)
-            sys.exit(1)
-
-    return build_config(c)
-
-
 def build_config(c):
     # Builds the CMK configuration from the configmap c. it builds it
-    # into the Config class
+    # into the Conf class
 
     config = Conf()
     for pool in c.keys():
@@ -307,10 +316,7 @@ def build_config(c):
     return config
 
 
-def set_config(c, name):
-    # POSTS the updated CMK configuration to the K8s API Server
-    # to be saved as a configmap
-
+def build_configmap(c):
     config = dict()
     for pool in c.get_pools():
         config[pool] = dict()
@@ -321,16 +327,4 @@ def set_config(c, name):
                 tasks = s.get_core_list(core_list).tasks
                 config[pool][socket][core_list] = tasks
 
-    configmap = k8sclient.V1ConfigMap()
-    data = {
-        "config": yaml.dump(config)
-    }
-    clusterinit.update_configmap(configmap, name, data)
-
-    try:
-        k8s.create_config_map(None, configmap, "default")
-    except K8sApiException as err:
-        logging.error("Exception when replacing config map {}"
-                      .format(name))
-        logging.error(err.reason)
-        sys.exit(1)
+    return config

@@ -16,7 +16,7 @@ def reaffinitize(node_name, namespace):
 def get_config_from_configmap(name, namespace):
     try:
         config = k8s.get_config_map(None, name, namespace)
-        config = yaml.load(config["config"], Loader=yaml.Loader)
+        config = yaml.safe_load(config["config"])
     except K8sApiException as err:
         logging.error("Error while retreiving configmap {}".format(name))
         logging.error(err.reason)

@@ -34,57 +34,59 @@ def isolate(pool_name, no_affinity, command, args, socket_id=None):
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
 
-    c = config.Config(configmap_name)
-    conf_non_deletion = config.get_config(configmap_name)
-    if pool_name not in conf_non_deletion.get_pools():
-        raise KeyError("Requested pool {} does not exist"
-                       .format(pool_name))
+    c = config.Config(configmap_name, pod_name)
+    try:
+        c.lock()
+        pools = c.c_data.pools
+        if pool_name not in c.get_pools():
+            raise KeyError("Requested pool {} does not exist"
+                           .format(pool_name))
 
-    c.lock()
-    pool = c.get_pool(pool_name)
+        pool = c.get_pool(pool_name)
 
-    socket_aware_pools = ["exclusive", "shared", "exclusive-non-isolcpus"]
-    if socket_id == "-1" or pool_name not in socket_aware_pools:
-        selected_socket = None
-    else:
-        selected_socket = socket_id
+        socket_aware_pools = ["exclusive", "shared", "exclusive-non-isolcpus"]
+        if socket_id == "-1" or pool_name not in socket_aware_pools:
+            selected_socket = None
+        else:
+            selected_socket = socket_id
 
-    clists = None
-    if pool.is_exclusive():
-        n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
-        if n_cpus < 1:
-            raise ValueError("Requested numbers of cores "
-                             "must be positive integer")
+        clists = None
+        if pool.is_exclusive():
+            n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
+            if n_cpus < 1:
+                raise ValueError("Requested numbers of cores "
+                                 "must be positive integer")
 
-        available_clists = [cl.core_id for cl in
-                            pool.get_core_lists(selected_socket)
-                            if len(cl.tasks) == 0]
+            available_clists = [cl.core_id for cl in
+                                pool.get_core_lists(selected_socket)
+                                if len(cl.tasks) == 0]
 
-        if len(available_clists) < n_cpus:
-            raise SystemError("Not enough free cpu lists in pool {}"
-                              .format(pool_name))
+            if len(available_clists) < n_cpus:
+                raise SystemError("Not enough free cpu lists in pool {}"
+                                  .format(pool_name))
 
-        clists = available_clists[:n_cpus]
-    else:
-        # NOTE(CD): This allocation algorithm is probably an
-        # oversimplification, however for known use cases the non-exclusive
-        # pools should never have more than one cpu list anyhow.
-        # If that ceases to hold in the future, we could explore population
-        # or load-based spreading. Keeping it simple for now.
-        try:
-            core_lists = [cl.core_id for cl in
-                          pool.get_core_lists(selected_socket)]
-            clists = [random.choice(core_lists)]
-        except IndexError:
-            raise SystemError("No cpu lists in pool {}".format(pool_name))
+            clists = available_clists[:n_cpus]
+        else:
+            # NOTE(CD): This allocation algorithm is probably an
+            # oversimplification, however for known use cases the non-exclusive
+            # pools should never have more than one cpu list anyhow.
+            # If that ceases to hold in the future, we could explore population
+            # or load-based spreading. Keeping it simple for now.
+            try:
+                core_lists = [cl.core_id for cl in
+                              pool.get_core_lists(selected_socket)]
+                clists = [random.choice(core_lists)]
+            except IndexError:
+                raise SystemError("No cpu lists in pool {}".format(pool_name))
 
-    if not clists:
-        raise SystemError("No free cpu lists in pool {}".format(pool_name))
+        if not clists:
+            raise SystemError("No free cpu lists in pool {}".format(pool_name))
 
-    for cl in clists:
-        pool.update_clist(cl, str(proc.getpid()))
+        for cl in clists:
+            pool.update_clist(cl, str(proc.getpid()))
 
-    c.unlock()
+    finally:
+        c.unlock()
 
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
@@ -96,13 +98,13 @@ def isolate(pool_name, no_affinity, command, args, socket_id=None):
         os.environ[ENV_CPUS_ASSIGNED_MASK] = cpus_bit_mask
 
         # Advertise shared pool CPU IDs
-        shared_pool = c.get_pool("shared")
+        shared_pool = pools["shared"]
         if shared_pool is not None:
             shared_clists = [cl.core_id for cl in shared_pool.get_core_lists()]
             os.environ[ENV_CPUS_SHARED] = ','.join(shared_clists)
 
         # Advertise infra pool CPU IDs
-        infra_pool = c.get_pool("infra")
+        infra_pool = pools["infra"]
         if infra_pool is not None:
             infra_clists = [cl.core_id for cl in infra_pool.get_core_lists()]
             os.environ[ENV_CPUS_INFRA] = ','.join(infra_clists)
@@ -142,7 +144,7 @@ command because the --no-affinity flag was supplied""")
         node_name = k8s.get_node_from_pod(None, pod_name)
         configmap_name = "cmk-config-{}".format(node_name)
 
-        c = config.Config(configmap_name)
+        c = config.Config(configmap_name, pod_name)
         c.lock()
         pool = c.get_pool(pool_name)
         pid = str(proc.getpid())

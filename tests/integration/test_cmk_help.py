@@ -28,27 +28,28 @@ Usage:
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
-                   [--excl-non-isolcpus=<list>]
+                   [--excl-non-isolcpus=<list>] [--cafile=<file>]
+                   [--insecure=<bool>]
   cmk init [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
   cmk discover
   cmk describe
-  cmk reconcile[--publish] [--interval=<seconds>]
-  cmk isolate[--socket-id=<num>] --pool=<pool> <command>
+  cmk reconcile [--publish] [--interval=<seconds>]
+  cmk isolate [--socket-id=<num>] --pool=<pool> <command>
               [-- <args>...][--no-affinity]
   cmk install [--install-dir=<dir>]
-  cmk node-report[--publish] [--interval=<seconds>]
+  cmk node-report [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
-  cmk webhook [--conf-file=<file>]
+  cmk webhook [--conf-file=<file>] [--cafile=<file>] [--insecure=<bool>]
   cmk reconfigure [--node-name=<name>] [--num-exclusive-cores=<num>]
                   [--num-shared-cores=<num>] [--excl-non-isolcpus=<list>]
-                  [--conf-dir=<dir>] [--exclusive-mode=<mode>]
+                  [--exclusive-mode=<mode>]
                   [--shared-mode=<mode>] [--install-dir=<dir>]
                   [--namespace=<name>]
   cmk reconfigure_setup [--num-exclusive-cores=<num>] [--num-shared-cores=<num>]
-                        [--excl-non-isolcpus=<list>] [--conf-dir=<dir>]
+                        [--excl-non-isolcpus=<list>]
                         [--exclusive-mode=<mode>] [--shared-mode=<mode>]
                         [--cmk-img=<img>] [--cmk-img-pol=<pol>]
                         [--install-dir=<dir>] [--saname=<name>]
@@ -100,4 +101,10 @@ Options:
                                hyperthreads of the core will be added to the pool
                                [default: -1]
   --node-name=<name>           The name of the node that is being reaffinitized
+  --cafile=<file>              The location of the cafile used by the webhook to
+                               authenticate the Kubernetes API server.
+                               [default: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt]
+  --insecure=<bool>            Determines whether the webhook service will be set up to
+                               authenticate using mutual TLS or not.
+                               [default: False]
 """  # noqa: E501

@@ -1,7 +1,6 @@
-from intel import isolate
+from intel import isolate, config
 from unittest.mock import patch, MagicMock
 import pytest
-import yaml
 
 
 EXCL_ONE = [
@@ -77,11 +76,25 @@ FAKE_CONFIG = {
 }
 
 
-def return_config(config):
+def return_config(conf):
     c = FAKE_CONFIG
-    for item in config:
+    for item in conf:
         c[item["pool"]][item["socket"]][item["cl"]] = item["tasks"]
-    return {'config': yaml.dump(c)}
+    return config.build_config(c)
+
+
+class MockConfig(config.Config):
+
+    def __init__(self, conf):
+        self.cm_name = "fake-name"
+        self.owner = "fake-owner"
+        self.c_data = conf
+
+    def lock(self):
+        return
+
+    def unlock(self):
+        return
 
 
 class MockProcess():
@@ -113,9 +126,6 @@ class MockChild():
         return
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
@@ -124,193 +134,154 @@ class MockChild():
        MagicMock(return_value="fake-node"))
 @patch('intel.k8s.delete_config_map',
        MagicMock(return_value=''))
+@patch('intel.config.Config.lock', MagicMock(return_value=''))
+@patch('intel.config.Config.unlock', MagicMock(return_value=''))
 def test_isolate_exclusive1():
     p = MockProcess()
-    with patch('psutil.Process',
-               MagicMock(return_value=p)):
-        isolate.isolate("exclusive", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [0, 11]
+    c = MockConfig(return_config([]))
+    with patch('psutil.Process', MagicMock(return_value=p)):
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("exclusive", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [0, 11]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config(EXCL_ONE)))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_exclusive2():
     p = MockProcess()
+    c = MockConfig(return_config(EXCL_ONE))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("exclusive", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [1, 12]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("exclusive", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [1, 12]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_exclusive3():
     p = MockProcess()
+    c = MockConfig(return_config([]))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("exclusive", False, "fake-cmd",
-                        ["fake-args"], socket_id="1")
-        assert p.cpu_affinity() == [3, 14]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("exclusive", False, "fake-cmd",
+                            ["fake-args"], socket_id="1")
+            assert p.cpu_affinity() == [3, 14]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_shared1():
     p = MockProcess()
+    c = MockConfig(return_config([]))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("shared", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [4, 15, 5, 16]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("shared", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [4, 15, 5, 16]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config(SHAR_ONE)))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_shared2():
     p = MockProcess()
+    c = MockConfig(return_config(SHAR_ONE))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("shared", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [4, 15, 5, 16]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("shared", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [4, 15, 5, 16]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_infra1():
     p = MockProcess()
+    c = MockConfig(return_config([]))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("infra", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("infra", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config(INF_ONE)))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_infra2():
     p = MockProcess()
+    c = MockConfig(return_config(INF_ONE))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("infra", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("infra", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
 
 
-"""@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
-@patch('subprocess.Popen', MagicMock(return_value=MockChild()))
-@patch('intel.proc.getpid', MagicMock(return_value=1234))
-@patch('signal.signal', MagicMock(return_value=None))
-def test_isolate_exclusive_non_isolcpus1():
-    p = MockProcess()
-    with patch('psutil.Process',
-               MagicMock(return_value=p)):
-        isolate.isolate("exclusive-non-isolcpus", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [9, 20]"""
-
-
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config(EXNI_ONE)))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_exclusive_non_isolcpus2():
     p = MockProcess()
+    c = MockConfig(return_config(EXNI_ONE))
     with patch('psutil.Process',
                MagicMock(return_value=p)):
-        isolate.isolate("exclusive-non-isolcpus", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
-        assert p.cpu_affinity() == [10, 21]
+        with patch('intel.config.Config', MagicMock(return_value=c)):
+            isolate.isolate("exclusive-non-isolcpus", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
+            assert p.cpu_affinity() == [10, 21]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_pool_not_exist():
-    with pytest.raises(KeyError) as err:
-        isolate.isolate("fake-pool", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
+    c = MockConfig(return_config([]))
+    with patch('intel.config.Config', MagicMock(return_value=c)):
+        with pytest.raises(KeyError) as err:
+            isolate.isolate("fake-pool", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
 
-    assert err is not None
-    assert err.value.args[0] == "Requested pool fake-pool does not exist"
+        assert err is not None
+        assert err.value.args[0] == "Requested pool fake-pool does not exist"
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
@@ -318,21 +289,18 @@ def test_pool_not_exist():
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_n_cpus_lt_one():
-    with pytest.raises(ValueError) as err:
-        isolate.isolate("exclusive", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
+    c = MockConfig(return_config([]))
+    with patch('intel.config.Config', MagicMock(return_value=c)):
+        with pytest.raises(ValueError) as err:
+            isolate.isolate("exclusive", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
 
-    assert err is not None
-    assert err.value.args[0] == "Requested numbers of cores "\
-                                "must be positive integer"
+        assert err is not None
+        assert err.value.args[0] == "Requested numbers of cores "\
+                                    "must be positive integer"
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
@@ -340,33 +308,30 @@ def test_n_cpus_lt_one():
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_not_enough_cpus():
-    with pytest.raises(SystemError) as err:
-        isolate.isolate("exclusive", False, "fake-cmd",
-                        ["fake-args"], socket_id=None)
+    c = MockConfig(return_config([]))
+    with patch('intel.config.Config', MagicMock(return_value=c)):
+        with pytest.raises(SystemError) as err:
+            isolate.isolate("exclusive", False, "fake-cmd",
+                            ["fake-args"], socket_id=None)
 
-    assert err is not None
-    assert err.value.args[0] == "Not enough free cpu lists "\
-                                "in pool exclusive"
+        assert err is not None
+        assert err.value.args[0] == "Not enough free cpu lists "\
+                                    "in pool exclusive"
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value=return_config([])))
-@patch('intel.config.set_config', MagicMock(return_value=None))
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.environ', MagicMock(return_value="fake-pod"))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
-@patch('intel.k8s.delete_config_map',
-       MagicMock(return_value=''))
 def test_isolate_shared_failure1():
-    with pytest.raises(SystemError) as err:
-        isolate.isolate("shared", False, "fake-cmd",
-                        ["fake-args"], socket_id="1")
+    c = MockConfig(return_config([]))
+    with patch('intel.config.Config', MagicMock(return_value=c)):
+        with pytest.raises(SystemError) as err:
+            isolate.isolate("shared", False, "fake-cmd",
+                            ["fake-args"], socket_id="1")
 
-    assert err is not None
-    assert err.value.args[0] == "No cpu lists in pool shared"
+        assert err is not None
+        assert err.value.args[0] == "No cpu lists in pool shared"

@@ -38,6 +38,11 @@ def sysfs_dir(name):
     return os.path.join(util.cmk_root(), "tests", "data", "sysfs", name)
 
 
+def sst_cp_dir():
+    return os.path.join(util.cmk_root(), "tests", "data", "sst", "cp",
+                        "{}", "cpufreq", "energy_performance_preference")
+
+
 def rand_str(length=8, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for c in range(length))
 

@@ -1,17 +1,21 @@
 from intel import reconfigure, config
 from kubernetes.client.rest import ApiException
 import pytest
-import yaml
 from unittest.mock import patch, MagicMock
 
 
-class MockConfig():
+class MockConfig(config.Config):
 
-    def __init__(self):
-        self.assert_hostname = False
+    def __init__(self, conf):
+        self.cm_name = "fake-name"
+        self.owner = "fake-owner"
+        self.c_data = conf
 
-    def connect_get_namespaced_pod_exec(self):
-        return ""
+    def lock(self):
+        return
+
+    def unlock(self):
+        return
 
 
 returned_pods = {
@@ -292,27 +296,9 @@ def test_get_pods():
     assert pods[1]["containers"][1] == "fake-container2"
 
 
-"""def test_build_config_map_failure(caplog):
-    path = helpers.conf_dir('fail')
-    with pytest.raises(SystemExit) as err:
-        _ = reconfigure.build_config_map(path)
-
-    caplog_tuple = caplog.record_tuples
-    expected_msg = "Error while reading configuration"\
-                   " at /cmk/tests/data/config/fail/pools,"\
-                   " incorrect pool incorrect_pool_name"
-    assert caplog_tuple[-1][2] == expected_msg
-    assert err is not None
-    assert err.value.args[0] == 1"""
-
-
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value={'config': yaml.dump(config_before)}))
-@patch('intel.k8s.delete_config_map', MagicMock(return_value=''))
 def test_build_proc_info1():
-    conf = config.Config("fake-name")
-    conf.lock()
-    c = reconfigure.build_proc_info(conf)
+    conf = MockConfig(config.build_config(config_before))
+    c = reconfigure.build_proc_info(conf.c_data)
     p = c[1]
 
     assert len(p.process_map) == 10
@@ -327,9 +313,6 @@ def test_build_proc_info1():
     assert p.process_map["3002"].old_clists == ["0,8,1,9,2,10"]
 
 
-@patch('intel.k8s.get_config_map',
-       MagicMock(return_value={'config': yaml.dump(config_before)}))
-@patch('intel.k8s.delete_config_map', MagicMock(return_value=''))
 def test_proc_info():
     clist_map = {
         "3,11": [""],
@@ -338,58 +321,10 @@ def test_proc_info():
         "6,14,7,15": ["1000", "1001", "1002", "1003"],
         "0,8,1,9,2,10": ["3000", "3001", "3002"]
     }
-    conf = config.Config("fake-name")
-    conf.lock()
-    c = reconfigure.build_proc_info(conf)
+    conf = MockConfig(config.build_config(config_before))
+    c = reconfigure.build_proc_info(conf.c_data)
     p = c[0]
 
     assert len(p) == 5
     for proc_info in p:
         assert proc_info.pid == clist_map[proc_info.old_clist]
-
-
-"""def test_reconfigure_directory(monkeypatch):
-    monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("reconf_isolcpus"))
-
-    clist_map = {
-        "2001": "3,14",
-        "2002": "2,13",
-        "1000": "4,15,5,16",
-        "1001": "4,15,5,16",
-        "1002": "4,15,5,16",
-        "1003": "4,15,5,16",
-        "3000": "0,11,1,12",
-        "3001": "0,11,1,12",
-        "3002": "0,11,1,12"
-    }
-
-    with patch('intel.topology.lscpu', MagicMock(return_value=lscpu_cores())):
-        temp_dir = tempfile.mkdtemp()
-        temp_dir_root = temp_dir+"reconfigure"
-        shutil.copytree(helpers.conf_dir('reconf_before'), temp_dir_root)
-        c = config.Config(temp_dir_root)
-        procs = reconfigure.build_config_map(temp_dir_root)
-        reconfigure.reconfigure_directory(c, temp_dir_root, 2, 2,
-                                          "vertical", "vertical", "-1",
-                                          procs[0], procs[1])
-        for p in procs[1].process_map.keys():
-            assert procs[1].process_map[p].new_clist == clist_map[p]
-
-
-@patch('intel.k8s.client_from_config', MagicMock(return_value=""))
-@patch('kubernetes.client.Configuration',
-       MagicMock(return_value=MockConfig()))
-@patch('kubernetes.client.Configuration.set_default',
-       MagicMock(return_value=""))
-@patch('kubernetes.client.CoreV1Api',
-       MagicMock(return_value=MockConfig()))
-def test_execute_reconfigure_failure(caplog):
-    with patch('kubernetes.stream.stream') as mock:
-        mock.side_effect = ApiException(status=0, reason="Fake Reason")
-        reconfigure.execute_reconfigure("/opt/bin", "fake-node", single_pod,
-                                        "fake-namespace")
-
-    caplog_tuple = caplog.record_tuples
-    assert caplog_tuple[-1][2] == "Error occured while executing command"\
-                                  " in pod: Fake Reason"
-"""

@@ -2,7 +2,6 @@ from intel import reaffinitize, reconfigure
 from unittest.mock import patch, MagicMock
 from kubernetes.client.rest import ApiException
 import pytest
-import yaml
 
 
 class MockProcess:
@@ -73,25 +72,6 @@ def test_get_config_from_configmap_failure(caplog):
 
         assert err is not None
         assert err.value.args[0] == 1
-
-
-def test_get_config_from_configmap_success():
-    procs = return_procs_class()
-    with patch('intel.k8s.get_config_map',
-               MagicMock(return_value={"config": yaml.dump(procs)})):
-        config = reaffinitize.get_config_from_configmap("fake-name",
-                                                        "fake-namespace")
-
-    assert len(config.process_map.keys()) == 3
-    assert "1000" in config.process_map.keys()
-    assert "1001" in config.process_map.keys()
-    assert "1002" in config.process_map.keys()
-    assert config.process_map["1000"].old_clists == ["1,11"]
-    assert config.process_map["1000"].new_clist == "1,11"
-    assert config.process_map["1001"].old_clists == ["3,13"]
-    assert config.process_map["1001"].new_clist == "2,12"
-    assert config.process_map["1002"].old_clists == ["5,15", "6,16"]
-    assert config.process_map["1002"].new_clist == "4,14,5,15"
 
 
 def test_reaffinitize_cores():

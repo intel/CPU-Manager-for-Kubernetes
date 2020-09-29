@@ -22,6 +22,10 @@ from . import config, proc, third_party, custom_resource, k8s, util
 
 
 def reconcile(seconds, publish):
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    c = config.Config(configmap_name, pod_name)
     report = None
 
     if seconds is None:
@@ -32,13 +36,11 @@ def reconcile(seconds, publish):
     should_exit = (seconds <= 0)
 
     while True:
-        pod_name = os.environ["HOSTNAME"]
-        node_name = k8s.get_node_from_pod(None, pod_name)
-        configmap_name = "cmk-config-{}".format(node_name)
-        conf = config.get_config(configmap_name)
-        report = generate_report(conf)
+        c.lock()
+        report = generate_report(c)
         print(report.json())
-        reclaim_cpu_lists(conf, report)
+        reclaim_cpu_lists(c, report)
+        c.unlock()
 
         if publish and report is not None:
             logging.debug("Publishing reconcile report to "
@@ -84,9 +86,9 @@ def reclaim_cpu_lists(conf, report):
     for r in report["reclaimedCpuLists"]:
         pool = conf.get_pool(r.pool())
         cl = pool.get_core_list(r.cpus())
-        logging.debug("Removing pid {} from cpu list \"{}\" in pool {}".format(
+        logging.info("Removing pid {} from cpu list \"{}\" in pool {}".format(
             r.pid(), r.cpus(), r.pool()))
-        cl.remove_task(r.pid())
+        cl.remove_task(str(r.pid()))
 
 
 def generate_report(conf):

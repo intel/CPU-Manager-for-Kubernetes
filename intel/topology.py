@@ -319,7 +319,7 @@ def lscpu():
         cmd_out = subprocess.check_output("lscpu -p", shell=True)
     else:
         cmd_out = subprocess.check_output(
-            "lscpu -p -s %s" % sys_fs_path, shell=True)
+            "lscpu -p -s %s" % sys_fs_path, shell=False)
 
     return cmd_out.decode("UTF-8")
 
