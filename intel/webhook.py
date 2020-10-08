@@ -108,6 +108,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(response.encode('utf-8'))
+            except ValueErr as err:
+                logging.error("Error while loading request {}".format(
+                              err))
+                self.send_response(500)
             except MutationError:
                 logging.error("Error mutating resource")
                 self.send_response(500)
