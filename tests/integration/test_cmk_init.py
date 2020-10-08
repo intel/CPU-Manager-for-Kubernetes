@@ -20,6 +20,11 @@ import pytest
 import tempfile
 import subprocess
 
+CONF_DIR = "--conf-dir={}"
+SOCKET_ID = "--socket-id=-1"
+NUM_EXCLUSIVE = "--num-exclusive-cores=1"
+NUM_SHARED = "--num-shared-cores=1"
+
 
 # Physical CPU cores on the first socket.
 cores = topology.parse(topology.lscpu()).get_socket(0).cores
@@ -32,7 +37,7 @@ proc_env_ok = {
 
 def test_cmk_init():
     args = ["init",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init")),
+            CONF_DIR.format(os.path.join(tempfile.mkdtemp(), "init")),
             "--excl-non-isolcpus=-1"]
 
     helpers.execute(integration.cmk(), args, proc_env_ok)
@@ -40,7 +45,7 @@ def test_cmk_init():
 
 def test_cmk_init_exists():
     args = ["init",
-            "--conf-dir={}".format(helpers.conf_dir("minimal"))]
+            CONF_DIR.format(helpers.conf_dir("minimal"))]
 
     with pytest.raises(subprocess.CalledProcessError):
         helpers.execute(integration.cmk(), args, proc_env_ok)
@@ -48,10 +53,10 @@ def test_cmk_init_exists():
 
 def test_cmk_init_wrong_assignment():
     args = ["init",
-            "--socket-id=-1",
-            "--num-exclusive-cores=1",
-            "--num-shared-cores=1",
-            "--conf-dir={}".format(helpers.conf_dir("ok"))]
+            SOCKET_ID,
+            NUM_EXCLUSIVE,
+            NUM_SHARED,
+            CONF_DIR.format(helpers.conf_dir("ok"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
         helpers.execute(integration.cmk(), args, proc_env_ok)
@@ -65,7 +70,7 @@ def test_cmk_init_insufficient_isolated_cores():
         topology.ENV_LSCPU_SYSFS: helpers.sysfs_dir("xeon_d")
     }
 
-    args = ["init", "--conf-dir={}".format(
+    args = ["init", CONF_DIR.format(
         os.path.join(tempfile.mkdtemp(), "init"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
@@ -84,10 +89,10 @@ def test_cmk_init_isolated_cores_mismatch():
     }
 
     args = ["init",
-            "--socket-id=-1",
-            "--num-exclusive-cores=1",
-            "--num-shared-cores=1",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
+            SOCKET_ID,
+            NUM_EXCLUSIVE,
+            NUM_SHARED,
+            CONF_DIR.format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
         integration.cmk(), args, proc_env_isolated_mismatch)
@@ -103,10 +108,10 @@ def test_cmk_init_partial_isolation():
     }
 
     args = ["init",
-            "--socket-id=-1",
-            "--num-exclusive-cores=1",
-            "--num-shared-cores=1",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
+            SOCKET_ID,
+            NUM_EXCLUSIVE,
+            NUM_SHARED,
+            CONF_DIR.format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
         integration.cmk(), args, proc_env_partially_isolated)
@@ -117,10 +122,10 @@ def test_cmk_init_partial_isolation():
 
 def test_cmk_init_insufficient_cores():
     args = ["init",
-            "--socket-id=-1",
+            SOCKET_ID,
             "--num-exclusive-cores=10",
             "--num-shared-cores=5",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
+            CONF_DIR.format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     with pytest.raises(subprocess.CalledProcessError) as e:
         helpers.execute(integration.cmk(), args, proc_env_ok)
@@ -136,7 +141,7 @@ def test_cmk_init_isolcpus():
     }
 
     args = ["init",
-            "--conf-dir={}".format(os.path.join(tempfile.mkdtemp(), "init"))]
+            CONF_DIR.format(os.path.join(tempfile.mkdtemp(), "init"))]
 
     output = helpers.execute(
         integration.cmk(), args, proc_env_partially_isolated)

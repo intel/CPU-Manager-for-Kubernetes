@@ -153,7 +153,6 @@ def main():
         return
     if args["webhook"]:
         webhook.webhook(args["--conf-file"])
-        return
 
 
 def setup_logging():

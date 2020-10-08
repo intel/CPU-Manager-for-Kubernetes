@@ -87,7 +87,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_response(500)
         else:
             self.send_response(400)
-        return
 
 
 def load_mutations(filepath):

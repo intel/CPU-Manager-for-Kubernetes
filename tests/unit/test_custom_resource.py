@@ -20,6 +20,14 @@ from kubernetes.client.rest import ApiException as K8sApiException
 from http import client
 
 
+CLIENT_CONFIG = 'intel.k8s.extensions_client_from_config'
+CUSTOM_RESOURCE = 'intel.custom_resource.CustomResourceDefinitionType.exists'
+CLIENT_API_CALL = 'api_client.call_api'
+FAKE_BODY = "fake body"
+FAKE_REASON = "fake reason"
+CUSTOM_RESOURSE = 'intel.custom_resource.CustomResourceDefinition.create'
+
+
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
         self.status = status
@@ -58,33 +66,33 @@ class FakeCRD:
 
 def test_custom_resource_definition_type_save_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
-        with patch('intel.custom_resource.CustomResourceDefinitionType.exists',
+        with patch(CUSTOM_RESOURCE,
                    MagicMock(side_effect=[False, True])):
             fake_type.save()
-        assert mock.method_calls[0][0] == 'api_client.call_api'
+        assert mock.method_calls[0][0] == CLIENT_API_CALL
         assert 'POST' in mock.method_calls[0][1]
 
 
 def test_custom_resource_definition_type_save_failure():
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
         mock.api_client.call_api = MagicMock(side_effect=fake_api_exception)
         with pytest.raises(K8sApiException):
             fake_type.save()
-        assert mock.method_calls[0][0] == 'api_client.call_api'
+        assert mock.method_calls[0][0] == CLIENT_API_CALL
         assert 'POST' in mock.method_calls[0][1]
 
 
 def test_custom_resource_type_exists_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
         mock.api_client.call_api = MagicMock()
@@ -93,13 +101,13 @@ def test_custom_resource_type_exists_success():
 
 
 def test_custom_resource_type_exists_success2():
-    fake_http_resp = FakeHTTPResponse(client.NOT_FOUND, "fake reason",
-                                      "fake body")
+    fake_http_resp = FakeHTTPResponse(client.NOT_FOUND, FAKE_REASON,
+                                      FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     assert fake_api_exception.status == client.NOT_FOUND
 
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
         mock.api_client.call_api = MagicMock(side_effect=fake_api_exception)
@@ -108,10 +116,10 @@ def test_custom_resource_type_exists_success2():
 
 
 def test_custom_resource_type_exists_failure():
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
         mock.api_client.call_api = MagicMock(side_effect=fake_api_exception)
@@ -121,7 +129,7 @@ def test_custom_resource_type_exists_failure():
 
 def test_custom_resource_type_create_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
         v1beta = k8s.extensions_client_from_config()
@@ -129,7 +137,7 @@ def test_custom_resource_type_create_success():
                                                                 fake_type,
                                                                 "default",
                                                                 "fake-crd")
-        with patch('intel.custom_resource.CustomResourceDefinitionType.exists',
+        with patch(CUSTOM_RESOURCE,
                    MagicMock(side_effect=[False, True])):
             result = fake_type.create("fake-crd", namespace="default")
             assert vars(result) == vars(expected_crd)
@@ -137,58 +145,58 @@ def test_custom_resource_type_create_success():
 
 def test_custom_resource_type_remove_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_type = FakeCRD.generate_crd_type()
-        with patch('intel.custom_resource.CustomResourceDefinitionType.exists',
+        with patch(CUSTOM_RESOURCE,
                    MagicMock(return_value=True)):
             fake_type.remove()
-        assert mock.method_calls[0][0] == 'api_client.call_api'
+        assert mock.method_calls[0][0] == CLIENT_API_CALL
         assert 'DELETE' in mock.method_calls[0][1]
 
 
 def test_custom_resource_create_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         fake_crd.create()
-        assert mock.method_calls[0][0] == 'api_client.call_api'
+        assert mock.method_calls[0][0] == CLIENT_API_CALL
         assert 'POST' in mock.method_calls[0][1]
 
 
 def test_custom_resource_remove_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         fake_crd.remove()
-        assert mock.method_calls[0][0] == 'api_client.call_api'
+        assert mock.method_calls[0][0] == CLIENT_API_CALL
         assert 'DELETE' in mock.method_calls[0][1]
 
 
 def test_custom_resource_save_success():
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock()
-        with patch('intel.custom_resource.CustomResourceDefinition.create',
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
 
 
 def test_custom_resource_save_crd_not_ready_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(client.NOT_FOUND, "fake reason",
-                                      "fake body")
+    fake_http_resp = FakeHTTPResponse(client.NOT_FOUND, FAKE_REASON,
+                                      FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch('intel.custom_resource.CustomResourceDefinition.create',
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
@@ -199,15 +207,15 @@ def test_custom_resource_save_crd_not_ready_failure(caplog):
 
 
 def test_third_party_resource_save_api_blocked_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(client.METHOD_NOT_ALLOWED, "fake reason",
-                                      "fake body")
+    fake_http_resp = FakeHTTPResponse(client.METHOD_NOT_ALLOWED, FAKE_REASON,
+                                      FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch('intel.custom_resource.CustomResourceDefinition.create',
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             fake_crd.save()
         assert mock_create.called
@@ -217,14 +225,14 @@ def test_third_party_resource_save_api_blocked_failure(caplog):
 
 
 def test_third_party_resource_save_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_exception)
-        with patch('intel.custom_resource.CustomResourceDefinition.create',
+        with patch(CUSTOM_RESOURSE,
                    mock_create):
             with pytest.raises(K8sApiException):
                 fake_crd.save()
@@ -232,18 +240,18 @@ def test_third_party_resource_save_failure(caplog):
 
 
 def test_third_party_resource_save_recreate_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, FAKE_BODY)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    fake_http_409_resp = FakeHTTPResponse(client.CONFLICT, "fake reason",
-                                          "fake body")
+    fake_http_409_resp = FakeHTTPResponse(client.CONFLICT, FAKE_REASON,
+                                          FAKE_BODY)
     fake_api_409_exception = K8sApiException(http_resp=fake_http_409_resp)
     mock = MagicMock()
-    with patch('intel.k8s.extensions_client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         fake_crd = FakeCRD.generate_crd()
         mock_create = MagicMock(side_effect=fake_api_409_exception)
         mock_remove = MagicMock(side_effect=fake_api_exception)
-        with patch('intel.custom_resource.CustomResourceDefinition.create',
+        with patch(CUSTOM_RESOURSE,
                    mock_create), \
             patch('intel.custom_resource.CustomResourceDefinition.remove',
                   mock_remove):

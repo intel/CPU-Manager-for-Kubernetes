@@ -242,26 +242,26 @@ in CMK.</p>
 <table>
 <thead>
 <tr>
-<th align="left">Issue</th>
-<th align="left">Description</th>
+<th>Issue</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left">Potential race between scheduler and pool state.</td>
-<td align="left">If a pod that consumes an exclusive opaque integer resource crashes in a way that prevents the <code>isolate</code> launcher from releasing the assigned cores, then although the OIR becomes available, the next invocation of <code>isolate</code> may not be able to safely make an allocation. This could occur for a number of reasons, most likely among them are: child process fails to terminate within the allowed grace period after receiving the TERM signal (Kubelet follows up with KILL) or receiving KILL from the kernel OOM (out-of-memory) killer. In this case, <code>isolate</code> must crash with a nonzero exit status. This will appear to the operator as a failed pod launch, and the scheduler will try to reschedule the pod. This condition will persist on that node until <code>reconcile</code> runs, at which point it will observe that the container's PID is invalid and free the cores for reuse by updating the <code>tasks</code> file.</td>
+<td>Potential race between scheduler and pool state.</td>
+<td>If a pod that consumes an exclusive opaque integer resource crashes in a way that prevents the <code>isolate</code> launcher from releasing the assigned cores, then although the OIR becomes available, the next invocation of <code>isolate</code> may not be able to safely make an allocation. This could occur for a number of reasons, most likely among them are: child process fails to terminate within the allowed grace period after receiving the TERM signal (Kubelet follows up with KILL) or receiving KILL from the kernel OOM (out-of-memory) killer. In this case, <code>isolate</code> must crash with a nonzero exit status. This will appear to the operator as a failed pod launch, and the scheduler will try to reschedule the pod. This condition will persist on that node until <code>reconcile</code> runs, at which point it will observe that the container's PID is invalid and free the cores for reuse by updating the <code>tasks</code> file.</td>
 </tr>
 <tr>
-<td align="left">Potential conflict with kernel PID reuse.</td>
-<td align="left">This should be extremely rare in practice, but it relates to the above scenario. If a PID of a <code>cmk</code> subcommand leaks as described above and is recycled by the kernel before <code>reconcile</code> runs, then when <code>reconcile</code> does run, it will see that the PID refers to a running process and will not remove that PID from the <code>tasks</code> file. There is currently no mitigation in place to protect against this scenario.</td>
+<td>Potential conflict with kernel PID reuse.</td>
+<td>This should be extremely rare in practice, but it relates to the above scenario. If a PID of a <code>cmk</code> subcommand leaks as described above and is recycled by the kernel before <code>reconcile</code> runs, then when <code>reconcile</code> does run, it will see that the PID refers to a running process and will not remove that PID from the <code>tasks</code> file. There is currently no mitigation in place to protect against this scenario.</td>
 </tr>
 <tr>
-<td align="left">CMK <code>init</code> flag values for <code>--num-shared-cores</code> and <code>--num-exclusive-cores</code> must be positive integers.</td>
-<td align="left">Zero is unsupported by the tool chain.</td>
+<td>CMK <code>init</code> flag values for <code>--num-shared-cores</code> and <code>--num-exclusive-cores</code> must be positive integers.</td>
+<td>Zero is unsupported by the tool chain.</td>
 </tr>
 <tr>
-<td align="left">The flag values for <code>--interval</code> (used in <code>cmk reconcile</code> and <code>cmk node-report</code>) must be integers.</td>
-<td align="left">Fractional seconds are not supported by the tool chain.</td>
+<td>The flag values for <code>--interval</code> (used in <code>cmk reconcile</code> and <code>cmk node-report</code>) must be integers.</td>
+<td>Fractional seconds are not supported by the tool chain.</td>
 </tr>
 </tbody>
 </table>

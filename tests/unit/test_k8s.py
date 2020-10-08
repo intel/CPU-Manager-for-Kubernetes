@@ -20,6 +20,8 @@ from urllib3.util.retry import MaxRetryError
 
 from intel import clusterinit, k8s, util
 
+CLIENT_CONFIG = 'intel.k8s.client_from_config'
+
 
 def test_k8s_node_list_all():
     fake_node_list_resp = [
@@ -49,7 +51,7 @@ def test_k8s_get_compute_nodes():
 def test_k8s_set_label():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.set_node_label(None, "fakenode1", "foo", "bar")
         called_methods = mock.method_calls
@@ -65,7 +67,7 @@ def test_k8s_set_label():
 def test_k8s_unset_label():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.unset_node_label(None, "fakenode1", "foo")
         called_methods = mock.method_calls
@@ -80,7 +82,7 @@ def test_k8s_unset_label():
 def test_k8s_create_namespace():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.create_namespace(None, "test_namespace")
         called_methods = mock.method_calls
@@ -93,7 +95,7 @@ def test_k8s_create_namespace():
 def test_k8s_delete_namespace():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.delete_namespace(None, "test_namespace")
         called_methods = mock.method_calls
@@ -106,7 +108,7 @@ def test_k8s_delete_namespace():
 def test_k8s_delete_pod():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.delete_pod(None, "test_pod", ns_name="test_namespace")
         called_methods = mock.method_calls
@@ -120,7 +122,7 @@ def test_k8s_delete_pod():
 def test_k8s_create_pod():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.get_pod_list(None)
         called_methods = mock.method_calls
@@ -131,7 +133,7 @@ def test_k8s_create_pod():
 def test_k8s_pod_list():
     mock = MagicMock()
 
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.create_pod(None, "pod_spec", ns_name="test_namespace")
         called_methods = mock.method_calls
@@ -144,7 +146,7 @@ def test_k8s_pod_list():
 
 def test_k8s_node_list_with_label_selector():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.get_node_list(None, label_selector="some_label")
         called_methods = mock.method_calls
@@ -156,7 +158,7 @@ def test_k8s_node_list_with_label_selector():
 
 def test_k8s_node_list_wo_label_selector():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.get_node_list(None)
         called_methods = mock.method_calls
@@ -168,7 +170,7 @@ def test_k8s_node_list_wo_label_selector():
 
 def test_k8s_get_namespaces():
     mock = MagicMock()
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock)):
         k8s.get_namespaces(None)
         called_methods = mock.method_calls
@@ -209,7 +211,7 @@ def test_k8s_core_client_from_config():
 def test_k8s_delete_ds():
     mock_core = MagicMock()
     mock_ext = MagicMock()
-    with patch('intel.k8s.client_from_config',
+    with patch(CLIENT_CONFIG,
                MagicMock(return_value=mock_core)), \
         patch('intel.k8s.extensions_client_from_config',
               MagicMock(return_value=mock_ext)):
