@@ -27,9 +27,10 @@ ABBORTING_WEBHOOK = "Aborting webhook deployment ..."
 
 
 def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
-                 conf_dir, install_dir, num_exclusive_cores, num_shared_cores,
+                 install_dir, num_exclusive_cores, num_shared_cores,
                  pull_secret, serviceaccount, exclusive_mode, shared_mode,
-                 namespace, excl_non_isolcpus, no_taint=False):
+                 namespace, excl_non_isolcpus, cafile, insecure,
+                 no_taint=False):
 
     logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
@@ -71,12 +72,12 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     # Run the pods based on the cmk_cmd_init_list and cmk_cmd_list with
     # provided options.
     if cmk_cmd_init_list:
-        run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
+        run_pods(None, cmk_cmd_init_list, cmk_img, cmk_img_pol,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
                  exclusive_mode, namespace, excl_non_isolcpus, no_taint)
     if cmk_cmd_list:
-        run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol, conf_dir,
+        run_pods(cmk_cmd_list, None, cmk_img, cmk_img_pol,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
                  exclusive_mode, namespace, excl_non_isolcpus, no_taint)
@@ -84,15 +85,15 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
     # Run mutating webhook admission controller on supported cluster
     version = util.parse_version(k8s.get_kube_version(None))
     if version >= util.parse_version("v1.9.0"):
-        deploy_webhook(namespace, conf_dir, install_dir, serviceaccount,
-                       cmk_img)
+        deploy_webhook(namespace, install_dir, serviceaccount,
+                       cmk_img, cafile, insecure)
 
 
 # run_pods() runs the pods based on the cmd_list and cmd_init_list
 # using run_cmd_pods. It waits for the pods to go into a pod phase based
 # on pod_phase_name.
 # Note: Only one of cmd_list or cmd_init_list should be specified.
-def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
+def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
              install_dir, num_exclusive_cores, num_shared_cores, cmk_node_list,
              pull_secret, serviceaccount, shared_mode, exclusive_mode,
              namespace, excl_non_isolcpus, no_taint):
@@ -102,7 +103,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
         logging.info("Creating cmk pod for {} commands ..."
                      .format(cmd_init_list))
 
-    run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
+    run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
                  exclusive_mode, namespace, excl_non_isolcpus, no_taint)
@@ -132,7 +133,7 @@ def run_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
 # run_cmd_pods() makes the appropriate changes to pod templates and runs the
 # pod on each node provided by cmk_node_list.
-def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
+def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
                  install_dir, num_exclusive_cores, num_shared_cores,
                  cmk_node_list, pull_secret, serviceaccount, shared_mode,
                  exclusive_mode, namespace, excl_non_isolcpus, no_taint):
@@ -141,7 +142,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
     if pull_secret:
         update_pod_with_pull_secret(pod, pull_secret)
     if cmd_list:
-        update_pod(pod, "Always", conf_dir, install_dir, serviceaccount)
+        update_pod(pod, "Always", install_dir, serviceaccount)
         if version >= util.parse_version("v1.7.0"):
             pod["spec"]["tolerations"] = [{
                 "operator": "Exists"}]
@@ -154,7 +155,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
             update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args)
     elif cmd_init_list:
-        update_pod(pod, "Never", conf_dir, install_dir, serviceaccount)
+        update_pod(pod, "Never", install_dir, serviceaccount)
         for cmd in cmd_init_list:
             args = ""
             if cmd == "init":
@@ -212,7 +213,7 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol, conf_dir,
 
 # deploy_webhook() creates mutating webhook admission controller configuration,
 # pod and all required resources.
-def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
+def deploy_webhook(namespace, install_dir, saname, cmk_img, cafile, insecure):
     prefix = "cmk-webhook"
 
     service_name = '-'.join([prefix, "service"])
@@ -246,7 +247,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
         sys.exit(1)
 
     service = k8sclient.V1Service()
-    update_service(service, service_name, app_name, 443)
+    update_service(service, service_name, app_name, 8443)
     try:
         k8s.create_service(None, service, namespace)
     except K8sApiException as err:
@@ -258,7 +259,7 @@ def deploy_webhook(namespace, conf_dir, install_dir, saname, cmk_img):
     pod_name = '-'.join([prefix, "pod"])
     update_pod_with_metadata(pod, pod_name, app_name)
     update_pod_with_webhook_container(pod, cmk_img, configmap_name,
-                                      secret_name)
+                                      secret_name, cafile, insecure)
     update_pod_with_restart_policy(pod, "Always")
     deployment = k8s.deployment_from(pod)
     try:
@@ -333,11 +334,10 @@ def wait_for_pod_phase(pod_name, phase_name):
 
 
 # update_pod() updates the pod template with the provided options.
-def update_pod(pod, restart_pol, conf_dir, install_dir, serviceaccount):
+def update_pod(pod, restart_pol, install_dir, serviceaccount):
     pod["spec"]["serviceAccountName"] = serviceaccount
     pod["spec"]["restartPolicy"] = restart_pol
-    pod["spec"]["volumes"][1]["hostPath"]["path"] = conf_dir
-    pod["spec"]["volumes"][2]["hostPath"]["path"] = install_dir
+    pod["spec"]["volumes"][1]["hostPath"]["path"] = install_dir
 
 
 def update_pod_with_node_details(pod, node_name, cmd_list):
@@ -362,7 +362,7 @@ def update_pod_with_restart_policy(pod, restart_pol):
 # update_pod_with_container() updates the pod template with a container using
 # the provided options.
 def update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args):
-    container_template = k8s.get_container_template()
+    container_template = k8s.get_container_template(cmd)
     container_template["image"] = cmk_img
     container_template["imagePullPolicy"] = cmk_img_pol
     container_template["args"][0] = args
@@ -374,7 +374,7 @@ def update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args):
 # update_pod_with_init_container() updates the pod template with a init
 # container using the provided options.
 def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
-    container_template = k8s.get_container_template()
+    container_template = k8s.get_container_template(cmd)
     container_template["image"] = cmk_img
     container_template["imagePullPolicy"] = cmk_img_pol
     container_template["args"][0] = args
@@ -401,9 +401,10 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
 
 
 def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
-                                      secret_name):
-    container = k8s.get_container_template()
-    args = ("/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml")
+                                      secret_name, cafile, insecure):
+    container = k8s.get_container_template("webhook")
+    args = ("/opt/bin/cmk webhook --conf-file /etc/webhook/server.yaml"
+            " --cafile {} --insecure {}".format(cafile, insecure))
     container["args"] = [args]
     container["image"] = cmk_img
     container["name"] = "cmk-webhook"
@@ -420,13 +421,15 @@ def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
         'name': 'configmap',
         'configMap': {
             'name': configmap_name
-        }
+        },
+        'readOnly': True
     })
     pod["spec"]["volumes"].append({
         'name': 'certs',
         'secret': {
             'secretName': secret_name
-         }
+        },
+        'readOnly': True
     })
     pod["spec"]["tolerations"] = [{"operator": "Exists"}]
     pod["spec"]["containers"].append(container)
@@ -443,6 +446,7 @@ def update_secret(secret, name, data, secret_type):
 def update_configmap(configmap, name, data):
     configmap.metadata = k8sclient.V1ObjectMeta()
     configmap.metadata.name = name
+    configmap.metadata.annotations = {"Owner": ""}
     configmap.data = data
 
 
@@ -452,7 +456,7 @@ def update_service(service, name, app, port):
     service.metadata.labels = {"app": app}
     service.spec = k8sclient.V1ServiceSpec()
     service.spec.selector = {"app": app}
-    service_port = k8sclient.V1ServicePort(port=port, target_port=port)
+    service_port = k8sclient.V1ServicePort(port=443, target_port=port)
     service.spec.ports = [service_port]
 
 
@@ -484,7 +488,7 @@ def get_default_webhook_server_config():
     config = {
         "server": {
             "binding-address": "0.0.0.0",
-            "port": 443,
+            "port": 8443,
             "cert": "/etc/ssl/cert.pem",
             "key": "/etc/ssl/key.pem",
             "mutations": "/etc/webhook/mutations.yaml"
@@ -503,7 +507,7 @@ def get_default_webhook_mutations_config():
                     }
                 },
                 "spec": {
-                    "serviceAccount": "cmk-serviceaccount",
+                    "serviceAccountName": "cmk-serviceaccount",
                     "tolerations": [
                         {
                             "operator": "Exists"
@@ -514,12 +518,6 @@ def get_default_webhook_mutations_config():
                             "name": "cmk-host-proc",
                             "hostPath": {
                                 "path": "/proc"
-                            }
-                        },
-                        {
-                            "name": "cmk-config-dir",
-                            "hostPath": {
-                                "path": "/etc/cmk"
                             }
                         },
                         {
@@ -545,12 +543,9 @@ def get_default_webhook_mutations_config():
                         "readOnly": True
                     },
                     {
-                        "name": "cmk-config-dir",
-                        "mountPath": "/etc/cmk"
-                    },
-                    {
                         "name": "cmk-install-dir",
-                        "mountPath": "/opt/bin"
+                        "mountPath": "/opt/bin",
+                        "readOnly": True
                     }
                 ]
             }

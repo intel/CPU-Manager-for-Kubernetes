@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from intel import config, util
+from intel import config, util, k8s
 import json
 import logging
 import os
 import sys
-
-
 from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
-from . import k8s
+
+ABORTING_DISCOVER = "Aborting discover ..."
 
 ABORTING_DISCOVER = "Aborting discover ..."
 
@@ -29,7 +28,7 @@ ABORTING_DISCOVER = "Aborting discover ..."
 # discover reads the CMK configuration file, patches kubernetes nodes with
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.
-def discover(conf_dir, no_taint=False):
+def discover(no_taint=False):
 
     version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
@@ -40,11 +39,11 @@ def discover(conf_dir, no_taint=False):
     if version >= util.parse_version("v1.8.1"):
         # Patch the node with the appropriate CMK ER.
         logging.debug("Patching the node with the appropriate CMK ER.")
-        add_node_er(conf_dir)
+        add_node_er()
     else:
         # Patch the node with the appropriate CMK OIR.
         logging.debug("Patching the node with the appropriate CMK OIR.")
-        add_node_oir(conf_dir)
+        add_node_oir()
 
     # Add appropriate CMK label to the node.
     logging.debug("Adding appropriate CMK label to the node.")
@@ -57,16 +56,21 @@ def discover(conf_dir, no_taint=False):
 
 
 # add_node_oir patches the node with the appropriate CMK OIR.
-def add_node_oir(conf_dir):
-    c = config.Config(conf_dir)
+def add_node_oir():
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    c = config.Config(configmap_name, pod_name)
+    c.lock()
+
     num_excl_non_isolcpus = None
-    with c.lock():
-        if "exclusive" not in c.pools():
-            raise KeyError("Exclusive pool does not exist")
-        num_slots = len(c.pool("exclusive").cpu_lists())
-        if "exclusive-non-isolcpus" in c.pools():
-            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
-                                        .cpu_lists())
+    if "exclusive" not in c.get_pools():
+        raise KeyError("Exclusive pool does not exist")
+    num_slots = len(c.get_pool("exclusive").get_core_lists())
+    if "exclusive-non-isolcpus" in c.get_pools():
+        num_excl_non_isolcpus = len(c.get_pool("exclusive-non-isolcpus")
+                                    .get_core_lists())
+    c.unlock()
 
     patch_path = ("/status/capacity/pod.alpha.kubernetes.io~1opaque-int-"
                   "resource-cmk")
@@ -103,16 +107,21 @@ def add_node_oir(conf_dir):
 
 
 # add_node_er patches the node with the appropriate CMK extended resources.
-def add_node_er(conf_dir):
-    c = config.Config(conf_dir)
+def add_node_er():
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    c = config.Config(configmap_name, pod_name)
+    c.lock()
+
     num_excl_non_isolcpus = None
-    with c.lock():
-        if "exclusive" not in c.pools():
-            raise KeyError("Exclusive pool does not exist")
-        num_slots = len(c.pool("exclusive").cpu_lists())
-        if "exclusive-non-isolcpus" in c.pools():
-            num_excl_non_isolcpus = len(c.pool("exclusive-non-isolcpus")
-                                        .cpu_lists())
+    if "exclusive" not in c.get_pools():
+        raise KeyError("Exclusive pool does not exist")
+    num_slots = len(c.get_pool("exclusive").get_core_lists())
+    if "exclusive-non-isolcpus" in c.get_pools():
+        num_excl_non_isolcpus = len(c.get_pool("exclusive-non-isolcpus")
+                                    .get_core_lists())
+    c.unlock()
 
     patch_path = ("/status/capacity/cmk.intel.com~1exclusive-cores")
     patch_body = [{

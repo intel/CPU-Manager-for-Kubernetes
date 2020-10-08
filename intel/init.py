@@ -12,27 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, topology, discover, sst_bf as sst, sst_cp as cp
+from . import config, k8s, topology, discover, sst_bf as sst, sst_cp as cp
 import logging
 import sys
+import os
 
 
-def init(conf_dir, num_exclusive_cores, num_shared_cores,
+def init(num_exclusive_cores, num_shared_cores,
          exclusive_allocation_mode, shared_allocation_mode,
          excl_non_isolcpus):
     check_hugepages()
 
-    logging.info("Writing config to {}.".format(conf_dir))
     logging.info("Requested exclusive cores = {}.".format(num_exclusive_cores))
     logging.info("Requested shared cores = {}.".format(num_shared_cores))
 
-    try:
-        c = config.new(conf_dir)
-    except FileExistsError:
-        logging.info("Configuration directory already exists.")
-        check_assignment(conf_dir, num_exclusive_cores, num_shared_cores)
-        return
+    platform = configure(num_exclusive_cores, num_shared_cores,
+                         exclusive_allocation_mode, shared_allocation_mode,
+                         excl_non_isolcpus)
 
+    # Use the pod's name to get which node this pod is running on. Use the
+    # node name to create the configmap for this node. The configmap holds
+    # the CPU configuration that CMK uses for bookkeeping. The node name
+    # is used to make the configmap's name unique - it takes the form of
+    # 'cmk-config-<node_name>
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    config.new(platform, excl_non_isolcpus, configmap_name)
+
+
+def configure(num_exclusive_cores, num_shared_cores,
+              exclusive_allocation_mode, shared_allocation_mode,
+              excl_non_isolcpus):
     sst_bf = False
     try:
         sst_bf = discover.get_node_label(sst.NFD_LABEL) in ["true", "True"]
@@ -174,12 +185,7 @@ def init(conf_dir, num_exclusive_cores, num_shared_cores,
         assign(cores_shared, "shared", count=num_shared_cores)
         assign(cores, "infra")
 
-    with c.lock():
-        write_exclusive_pool("exclusive", platform, c)
-        write_shared_pool("shared", platform, c)
-        if excl_non_isolcpus != "-1" and platform.has_isolated_cores():
-            write_exclusive_pool("exclusive-non-isolcpus", platform, c)
-        write_shared_pool("infra", platform, c)
+    return platform
 
 
 def check_hugepages():
@@ -199,27 +205,6 @@ def check_hugepages():
     except FileNotFoundError:
         logging.info("meminfo file '%s' not found: skipping huge pages check" %
                      meminfo_path)
-
-
-def check_assignment(conf_dir, num_exclusive_cores, num_shared_cores):
-    c = config.Config(conf_dir)
-
-    num_exclusive_lists = len(c.pool("exclusive").cpu_lists())
-    num_shared_lists = len(c.pool("shared").cpu_lists())
-
-    alloc_error = None
-
-    if num_exclusive_lists is not num_exclusive_cores:
-        alloc_error = True
-        logging.error("{} exclusive cores ({} requested)".format(
-            num_exclusive_lists, num_exclusive_cores))
-    if num_shared_lists is not num_shared_cores:
-        alloc_error = True
-        logging.error("{} shared cores ({} requested)".format(
-            num_shared_lists, num_shared_cores))
-
-    if alloc_error:
-        sys.exit(1)
 
 
 def check_isolated_cores(platform, num_exclusive_cores, num_shared_cores):
@@ -389,40 +374,3 @@ def assign_excl_non_isolcpus(cores, pool, parsed_cpus):
 
     for c in cores_to_assign:
         c.pool = pool
-
-
-def write_exclusive_pool(pool_name, platform, config):
-    logging.info("Adding %s pool." % pool_name)
-    pool = config.add_pool(pool_name, True)
-
-    sockets = platform.sockets.values()
-    for socket in sockets:
-        pool.add_socket(str(socket.socket_id))
-        cores = socket.get_cores_from_pool(pool_name)
-
-        for core in cores:
-            cpu_ids_str = ",".join([str(c) for c in core.cpu_ids()])
-            pool.add_cpu_list(str(socket.socket_id), cpu_ids_str)
-            logging.info("Adding cpu list %s from socket %s to %s pool." %
-                         (cpu_ids_str, socket.socket_id, pool_name))
-
-
-def write_shared_pool(pool_name, platform, config):
-    logging.info("Adding %s pool." % pool_name)
-    pool = config.add_pool(pool_name, False)
-
-    sockets = platform.sockets.values()
-    for socket in sockets:
-        pool.add_socket(str(socket.socket_id))
-        cores = socket.get_cores_from_pool(pool_name)
-        cpu_ids = []
-        for core in cores:
-            cpu_ids.extend(core.cpu_ids())
-
-        if not cpu_ids:
-            continue
-
-        cpu_ids_str = ",".join([str(c) for c in cpu_ids])
-        pool.add_cpu_list(str(socket.socket_id), cpu_ids_str)
-        logging.info("Adding cpu list %s to %s pool." %
-                     (cpu_ids_str, pool_name))

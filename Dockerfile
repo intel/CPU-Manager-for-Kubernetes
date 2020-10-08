@@ -14,10 +14,10 @@
 
 FROM python:3.6.8
 
-ADD requirements.txt /requirements.txt
+COPY requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-ADD . /cmk
+COPY . /cmk
 WORKDIR /cmk
 
 RUN chmod +x /cmk/cmk.py
