@@ -73,9 +73,6 @@ def generate_cert(service, namespace, private_key):
         x509.DNSName("{0}".format(service)),
         x509.DNSName("{0}.{1}".format(service, namespace)),
         x509.DNSName("{0}.{1}.svc".format(service, namespace)),
-        x509.DNSName("localhost"),
-        x509.DNSName("silpixa00399862.ir.intel.com"),
-        x509.DNSName("silpixa00399862"),
     ])
 
     constraints = x509.BasicConstraints(ca=True, path_length=None)

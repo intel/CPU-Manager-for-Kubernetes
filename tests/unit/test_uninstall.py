@@ -20,6 +20,19 @@ import pytest
 import tempfile
 from unittest.mock import patch, MagicMock
 
+FAKE_REASON = "fake reason"
+FAKE_MESSAGE = "{\"message\":\"fake message\"}"
+PATCH_NODE_STATUS = 'intel.discover.patch_k8s_node_status'
+KUBERNETES_LOAD_INCLUSTER = 'kubernetes.config.load_incluster_config'
+KUBERNETES_CLIENT_EXTENSIONS = 'kubernetes.client.ExtensionsV1beta1Api'
+CMK_NODEREPORT_REMOVED = "\"cmk-nodereport\" for node \"{}\" removed."
+REASON_NOT_FOUND = "{\"reason\":\"NotFound\"}"
+WRONG_REASON = "{\"reason\":\"WrongReason\"}"
+DISCOVER_PATCH_K8S_NODE = 'intel.discover.patch_k8s_node'
+NON_EXISTANT_MGS = "{\"message\":\"nonexistant\"}"
+MATADATA_LABELS_CMK_NODE = '/metadata/labels/cmk.intel.com~1cmk-node'
+NODEREPORT_REMOVED = "\"NodeReport\" for node \"{}\" removed."
+
 
 class FakeHTTPResponse:
     def __init__(self, status=None, reason=None, data=None):
@@ -44,11 +57,11 @@ def get_expected_log_error(err_msg, http_response):
 
 
 def test_uninstall_remove_node_cmk_oir_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason",
-                                      "{\"message\":\"fake message\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON,
+                                      FAKE_MESSAGE)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
-    with patch('intel.discover.patch_k8s_node_status',
+    with patch(PATCH_NODE_STATUS,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_cmk_oir()
@@ -67,9 +80,9 @@ def test_remove_all_report_tpr_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)), \
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(third_party.ThirdPartyResourceType,
                          'create',
@@ -87,9 +100,9 @@ def test_remove_all_report_crd_success(caplog):
     mock = MagicMock()
     mock.remove.return_value = 0
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)), \
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
@@ -99,38 +112,38 @@ def test_remove_all_report_crd_success(caplog):
         assert caplog_tuple[-1][2] == "\"cmk-reconcilereport\" for node " \
                                       "\"{}\" removed."\
             .format(os.getenv("NODE_NAME"))
-        assert caplog_tuple[-3][2] == "\"cmk-nodereport\" for node \"{}\" " \
-                                      "removed.".format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-3][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_tpr_success(caplog):
     fake_tpr_report = MagicMock()
     fake_tpr_report.remove.return_value = 0
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
         uninstall.remove_report_tpr("NodeReport")
         caplog_tuple = caplog.record_tuples
-        assert caplog_tuple[-1][2] == "\"NodeReport\" for node \"{}\" " \
-                                      "removed.".format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-1][2] == \
+            NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 # Remove success due to not existing report
 def test_remove_report_tpr_success2(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"NotFound\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      REASON_NOT_FOUND)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
     fake_tpr_report = MagicMock()
     fake_tpr_report.remove.side_effect = fake_api_exception
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
@@ -141,21 +154,20 @@ def test_remove_report_tpr_success2(caplog):
             caplog_tuple[-2][2] == "\"NodeReport\" for node \"{}\" does" \
                                    " not exist.".format(os.getenv("NODE_NAME"))
         assert \
-            caplog_tuple[-1][2] == "\"NodeReport\" for node \"{}\" " \
-                                   "removed.".format(os.getenv("NODE_NAME"))
+            caplog_tuple[-1][2] == \
+            NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_tpr_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"WrongReason\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE, WRONG_REASON)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
     fake_tpr_report = MagicMock()
     fake_tpr_report.remove.side_effect = fake_api_exception
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(third_party.ThirdPartyResourceType, 'create',
                          MagicMock(return_value=fake_tpr_report)):
@@ -172,31 +184,31 @@ def test_remove_report_crd_success(caplog):
     fake_crd_report = MagicMock()
     fake_crd_report.remove.return_value = 0
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
                          MagicMock(return_value=fake_crd_report)):
         uninstall.remove_report_crd("cmk-nodereport", ["cmk-nr"])
         caplog_tuple = caplog.record_tuples
-        assert caplog_tuple[-1][2] == "\"cmk-nodereport\" for node \"{}\" " \
-                                      "removed.".format(os.getenv("NODE_NAME"))
+        assert caplog_tuple[-1][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 # Remove success due to not existing report
 def test_remove_report_crd_success2(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"NotFound\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      REASON_NOT_FOUND)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
     fake_crd_report = MagicMock()
     fake_crd_report.remove.side_effect = fake_api_exception
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
@@ -206,23 +218,23 @@ def test_remove_report_crd_success2(caplog):
         caplog_tuple = caplog.record_tuples
         assert \
             caplog_tuple[-2][2] == "\"cmk-nodereport\" for node \"{}\" does "\
-                                   "not exist.".format(os.getenv("NODE_NAME"))
+            "not exist.".format(os.getenv("NODE_NAME"))
         assert \
-            caplog_tuple[-1][2] == "\"cmk-nodereport\" for node \"{}\" " \
-                                   "removed.".format(os.getenv("NODE_NAME"))
+            caplog_tuple[-1][2] == \
+            CMK_NODEREPORT_REMOVED.format(os.getenv("NODE_NAME"))
 
 
 def test_remove_report_crd_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"WrongReason\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      WRONG_REASON)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
     fake_crd_report = MagicMock()
     fake_crd_report.remove.side_effect = fake_api_exception
 
-    with patch('kubernetes.config.load_incluster_config',
+    with patch(KUBERNETES_LOAD_INCLUSTER,
                MagicMock(return_value=0)),\
-            patch('kubernetes.client.ExtensionsV1beta1Api',
+            patch(KUBERNETES_CLIENT_EXTENSIONS,
                   MagicMock(return_value=0)), \
             patch.object(custom_resource.CustomResourceDefinitionType,
                          'create',
@@ -238,7 +250,7 @@ def test_remove_report_crd_failure(caplog):
 
 
 def test_uninstall_remove_node_taint_failure1(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     node_name = os.getenv("NODE_NAME")
 
@@ -262,11 +274,11 @@ def test_uninstall_remove_node_taint_failure2(caplog):
                 }
             }
         }
-    fake_http_resp = FakeHTTPResponse(500, "fake reason", "fake body")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON, "fake body")
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     with patch('intel.discover.get_k8s_node',
                MagicMock(return_value=fake_node_resp)), \
-            patch('intel.discover.patch_k8s_node',
+            patch(DISCOVER_PATCH_K8S_NODE,
                   MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_taint()
@@ -282,15 +294,15 @@ def test_uninstall_remove_node_taint_failure2(caplog):
 
 # Test removing non existing label
 def test_uninstall_remove_node_label_success(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason",
-                                      "{\"message\":\"nonexistant\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON,
+                                      NON_EXISTANT_MGS)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
-    with patch('intel.discover.patch_k8s_node',
+    with patch(DISCOVER_PATCH_K8S_NODE,
                MagicMock(side_effect=fake_api_exception)):
         uninstall.remove_node_label()
         caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
+        patch_path = MATADATA_LABELS_CMK_NODE
         exp_str = "Removed node label \"{}\".".format(patch_path)
         exp_str2 = "Label \"{}\" does not exist.".format(patch_path)
         assert caplog_tuple[-2][2] == exp_str2
@@ -299,25 +311,25 @@ def test_uninstall_remove_node_label_success(caplog):
 
 # Test removing existing label
 def test_uninstall_remove_node_label_success2(caplog):
-    with patch('intel.discover.patch_k8s_node',
+    with patch(DISCOVER_PATCH_K8S_NODE,
                MagicMock(return_value=0)):
         uninstall.remove_node_label()
         caplog_tuple = caplog.record_tuples
-        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
+        patch_path = MATADATA_LABELS_CMK_NODE
         exp_str = "Removed node label \"{}\".".format(patch_path)
         assert caplog_tuple[-1][2] == exp_str
 
 
 def test_uninstall_remove_node_label_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason",
-                                      "{\"message\":\"fake message\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON,
+                                      FAKE_MESSAGE)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
-    with patch('intel.discover.patch_k8s_node',
+    with patch(DISCOVER_PATCH_K8S_NODE,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_label()
-        patch_path = '/metadata/labels/cmk.intel.com~1cmk-node'
+        patch_path = MATADATA_LABELS_CMK_NODE
         exp_err = "Aborting uninstall: Exception when removing node label" \
                   " \"{}\"".format(patch_path)
         exp_log_err = get_expected_log_error(exp_err, fake_http_resp)
@@ -328,11 +340,11 @@ def test_uninstall_remove_node_label_failure(caplog):
 
 # Test removing non existing oir
 def test_uninstall_remove_node_oir_success(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "fake reason",
-                                      "{\"message\":\"nonexistant\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_REASON,
+                                      NON_EXISTANT_MGS)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
 
-    with patch('intel.discover.patch_k8s_node_status',
+    with patch(PATCH_NODE_STATUS,
                MagicMock(side_effect=fake_api_exception)):
         uninstall.remove_node_cmk_oir()
         caplog_tuple = caplog.record_tuples
@@ -348,7 +360,7 @@ def test_uninstall_remove_node_oir_success(caplog):
 
 # Test removing existing oir
 def test_uninstall_remove_node_oir_success2(caplog):
-    with patch('intel.discover.patch_k8s_node_status',
+    with patch(PATCH_NODE_STATUS,
                MagicMock(return_value=0)):
         uninstall.remove_node_cmk_oir()
         caplog_tuple = caplog.record_tuples
@@ -397,8 +409,8 @@ def test_remove_binary_failure(caplog):
 
 
 def test_delete_cmk_pod_failure(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"WrongReason\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      WRONG_REASON)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     pod_base_name = "cmk-some-cmd-pod"
     with patch('intel.k8s.delete_pod',
@@ -417,8 +429,8 @@ def test_delete_cmk_pod_failure(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_delete_cmk_pod_failure2(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"WrongReason\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      WRONG_REASON)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     pod_base_name = "cmk-some-cmd-ds"
     with patch('intel.k8s.delete_ds',
@@ -437,8 +449,8 @@ def test_delete_cmk_pod_failure2(caplog):
 
 @patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.8.0"))
 def test_delete_cmk_pod_success(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"NotFound\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      REASON_NOT_FOUND)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     pod_base_name = "cmk-some-cmd-ds"
     with patch('intel.k8s.delete_ds',
@@ -456,8 +468,8 @@ def test_delete_cmk_pod_success(caplog):
 
 
 def test_delete_cmk_pod_success2(caplog):
-    fake_http_resp = FakeHTTPResponse(500, "{\"message\":\"fake message\"}",
-                                      "{\"reason\":\"NotFound\"}")
+    fake_http_resp = FakeHTTPResponse(500, FAKE_MESSAGE,
+                                      REASON_NOT_FOUND)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
     pod_base_name = "cmk-some-cmd-pod"
     with patch('intel.k8s.delete_pod',
@@ -496,7 +508,7 @@ def test_remove_resource_tracking_unsupported(caplog):
 
 
 def test_remove_node_cmk_er_success(caplog):
-    with patch('intel.discover.patch_k8s_node_status', MagicMock()):
+    with patch(PATCH_NODE_STATUS, MagicMock()):
         uninstall.remove_node_cmk_er()
         caplog_tuple = caplog.record_tuples
         assert caplog_tuple[-1][2] == "Removed node ERs"
@@ -504,9 +516,9 @@ def test_remove_node_cmk_er_success(caplog):
 
 def test_remove_node_cmk_er_failure(caplog):
     fake_http_resp = FakeHTTPResponse(500, "{\"reason\":\"fake reason\"}",
-                                      "{\"message\":\"nonexistant\"}")
+                                      NON_EXISTANT_MGS)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.discover.patch_k8s_node_status',
+    with patch(PATCH_NODE_STATUS,
                MagicMock(side_effect=fake_api_exception)):
         uninstall.remove_node_cmk_er()
         caplog_tuple = caplog.record_tuples
@@ -516,9 +528,9 @@ def test_remove_node_cmk_er_failure(caplog):
 
 def test_remove_node_cmk_er_failure2(caplog):
     fake_http_resp = FakeHTTPResponse(500, "{\"reason\":\"fake reason\"}",
-                                      "{\"message\":\"fake message\"}")
+                                      FAKE_MESSAGE)
     fake_api_exception = K8sApiException(http_resp=fake_http_resp)
-    with patch('intel.discover.patch_k8s_node_status',
+    with patch(PATCH_NODE_STATUS,
                MagicMock(side_effect=fake_api_exception)):
         with pytest.raises(SystemExit):
             uninstall.remove_node_cmk_er()

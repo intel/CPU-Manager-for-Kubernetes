@@ -28,6 +28,8 @@ from . import discover
 from . import k8s
 from . import util
 
+VERSION = "v1.7.0"
+
 
 def uninstall(install_dir, conf_dir, namespace):
     delete_cmk_pod("cmk-init-install-discover-pod", namespace,
@@ -70,7 +72,7 @@ def remove_binary(install_dir):
 def remove_all_report():
     version = util.parse_version(k8s.get_kube_version(None))
 
-    if version >= util.parse_version("v1.7.0"):
+    if version >= util.parse_version(VERSION):
         remove_report_crd("cmk-nodereport", ["cmk-nr"])
         remove_report_crd("cmk-reconcilereport", ["cmk-rr"])
 
@@ -263,7 +265,7 @@ def remove_node_taint():
     version = util.parse_version(k8s.get_kube_version(None))
     node_taints_list = []
 
-    if version >= util.parse_version("v1.7.0"):
+    if version >= util.parse_version(VERSION):
         node_taints = node_resp["spec"]["taints"]
         if node_taints:
             node_taints_list = node_taints
@@ -278,7 +280,7 @@ def remove_node_taint():
     node_taints_list = \
         [taint for taint in node_taints_list if taint["key"] != "cmk"]
 
-    if version >= util.parse_version("v1.7.0"):
+    if version >= util.parse_version(VERSION):
         value = node_taints_list
     else:
         value = json.dumps(node_taints_list)

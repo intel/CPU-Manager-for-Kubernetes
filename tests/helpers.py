@@ -44,7 +44,7 @@ def sst_cp_dir():
 
 
 def rand_str(length=8, chars=string.ascii_lowercase + string.digits):
-    return ''.join(random.choice(chars) for c in range(length))
+    return ''.join(random.choice(chars) for _ in range(length))
 
 
 # Returns resulting stdout buffer from interpreting the supplied command with

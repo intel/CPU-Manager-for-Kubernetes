@@ -21,6 +21,9 @@ from kubernetes.client.rest import ApiException as K8sApiException
 from .util import ldh_convert_check
 
 
+APPLICATION_JSON = "application/json"
+APIS_PATH = "/apis"
+
 # Example usage:
 #
 # from kubernetes import config as k8sconfig, client as k8sclient
@@ -73,14 +76,14 @@ class ThirdPartyResourceType:
 
     def exists(self, namespace="default"):
         header_params = {
-            'Content-Type': "application/json",
-            'Accept': "application/json"
+            'Content-Type': APPLICATION_JSON,
+            'Accept': APPLICATION_JSON
         }
 
         auth_settings = ['BearerToken']
 
         resource_path = "/".join([
-            "/apis",
+            APIS_PATH,
             self.type_url,
             self.type_version,
             "namespaces", namespace,
@@ -128,15 +131,15 @@ class ThirdPartyResource:
         }
 
         self.header_params = {
-            'Content-Type': "application/json",
-            'Accept': "application/json"
+            'Content-Type': APPLICATION_JSON,
+            'Accept': APPLICATION_JSON
         }
 
         self.auth_settings = ['BearerToken']
 
     def remove(self):
         resource_path = "/".join([
-            "/apis",
+            APIS_PATH,
             self.resource_type.type_url,
             self.resource_type.type_version,
             "namespaces", self.namespace,
@@ -152,7 +155,7 @@ class ThirdPartyResource:
 
     def create(self):
         resource_path = "/".join([
-            "/apis",
+            APIS_PATH,
             self.resource_type.type_url,
             self.resource_type.type_version,
             "namespaces", self.namespace,

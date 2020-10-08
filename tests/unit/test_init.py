@@ -19,6 +19,9 @@ from unittest.mock import patch, MagicMock
 import pytest
 import yaml
 
+TOPOLOGY_PARSE = 'intel.topology.parse'
+TOPOLOGY_ISCPU = "intel.topology.lscpu"
+
 
 def return_quad_core():
     sockets = topology.Socket(0, {

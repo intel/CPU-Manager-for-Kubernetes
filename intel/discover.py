@@ -20,6 +20,8 @@ import sys
 from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 
+ABORTING_DISCOVER = "Aborting discover ..."
+
 
 # discover reads the CMK configuration file, patches kubernetes nodes with
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
@@ -79,7 +81,7 @@ def add_node_oir():
     except K8sApiException as err:
         logging.error("Exception when patching node with OIR: {}"
                       .format(err))
-        logging.error("Aborting discover ...")
+        logging.error(ABORTING_DISCOVER)
         sys.exit(1)
 
     if num_excl_non_isolcpus:
@@ -96,7 +98,7 @@ def add_node_oir():
         except K8sApiException as err:
             logging.error("Exception when patching node with OIR: {}"
                           .format(err))
-            logging.error("Aborting discover ...")
+            logging.error(ABORTING_DISCOVER)
             sys.exit(1)
 
 
@@ -129,7 +131,7 @@ def add_node_er():
     except K8sApiException as err:
         logging.error("Exception when patching node with OIR: {}"
                       .format(err))
-        logging.error("Aborting discover ...")
+        logging.error(ABORTING_DISCOVER)
         sys.exit(1)
 
     if num_excl_non_isolcpus:
@@ -147,7 +149,7 @@ def add_node_er():
             logging.error("Exception when patching node with "
                           "exclusive-non-isolcpus ER: {}"
                           .format(err))
-            logging.error("Aborting discover ...")
+            logging.error(ABORTING_DISCOVER)
             sys.exit(1)
 
 
@@ -163,7 +165,7 @@ def add_node_label():
         patch_k8s_node(patch_body)
     except K8sApiException as err:
         logging.error("Exception when labeling the node: {}".format(err))
-        logging.error("Aborting discover ...")
+        logging.error(ABORTING_DISCOVER)
         sys.exit(1)
 
 
@@ -186,7 +188,7 @@ def add_node_taint():
         node_resp = get_k8s_node(node_name)
     except K8sApiException as err:
         logging.error("Exception when getting the node obj: {}".format(err))
-        logging.error("Aborting discover ...")
+        logging.error(ABORTING_DISCOVER)
         sys.exit(1)
 
     version = util.parse_version(k8s.get_kube_version(None))
@@ -233,7 +235,7 @@ def add_node_taint():
         patch_k8s_node(patch_body)
     except K8sApiException as err:
         logging.error("Exception when tainting the node: {}".format(err))
-        logging.error("Aborting discover ...")
+        logging.error(ABORTING_DISCOVER)
         sys.exit(1)
 
 
