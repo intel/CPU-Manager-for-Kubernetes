@@ -29,12 +29,20 @@ Usage:
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
                    [--excl-non-isolcpus=<list>] [--cafile=<file>]
+<<<<<<< HEAD
                    [--insecure=<bool>] [--no-taint]
+=======
+                   [--insecure=<bool>]
+>>>>>>> Updating repo to be up-to-date with Github repo
   cmk init [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
+<<<<<<< HEAD
   cmk discover [--no-taint]
+=======
+  cmk discover
+>>>>>>> Updating repo to be up-to-date with Github repo
   cmk describe
   cmk reconcile [--publish] [--interval=<seconds>]
   cmk isolate [--socket-id=<num>] --pool=<pool> <command>

@@ -19,6 +19,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 import yaml
 
+
 TOPOLOGY_PARSE = 'intel.topology.parse'
 TOPOLOGY_ISCPU = "intel.topology.lscpu"
 
@@ -348,69 +349,6 @@ def test_init_success_excl_non_isolcpus2(monkeypatch):
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
         init.init(1, 1, "vertical", "vertical", "0,3-5")
-
-
-def test_init_success_excl_non_isolcpus1(monkeypatch):
-    monkeypatch.setenv(proc.ENV_PROC_FS,
-                       helpers.procfs_dir("exclusive_non_isolcpus"))
-
-    with patch(TOPOLOGY_ISCPU,
-               MagicMock(return_value=eight_core_lscpu())):
-        temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 1,
-                  "vertical", "vertical", "0")
-        c = config.Config(os.path.join(temp_dir, "init"))
-        pools = c.pools()
-        assert len(pools) == 4
-        assert "shared" in pools
-        assert "exclusive" in pools
-        assert "infra" in pools
-        assert "exclusive-non-isolcpus" in pools
-        cl_exclusive = pools["exclusive"].cpu_lists()
-        cl_shared = pools["shared"].cpu_lists()
-        cl_infra = pools["infra"].cpu_lists()
-        cl_excl_non_isolcpus = pools["exclusive-non-isolcpus"].cpu_lists()
-        assert not pools["shared"].exclusive()
-        assert pools["exclusive"].exclusive()
-        assert not pools["infra"].exclusive()
-        assert pools["exclusive-non-isolcpus"].exclusive()
-        assert cl_exclusive["1,9"]
-        assert cl_shared["2,10"]
-        assert cl_excl_non_isolcpus["0,8"]
-        assert cl_infra["3,11,4,12,5,13,6,14,7,15"]
-
-
-def test_init_success_excl_non_isolcpus2(monkeypatch):
-    monkeypatch.setenv(proc.ENV_PROC_FS,
-                       helpers.procfs_dir("exclusive_non_isolcpus"))
-
-    with patch(TOPOLOGY_ISCPU,
-               MagicMock(return_value=eight_core_lscpu())):
-        temp_dir = tempfile.mkdtemp()
-        init.init(os.path.join(temp_dir, "init"), 1, 1,
-                  "vertical", "vertical", "0,3-5")
-        c = config.Config(os.path.join(temp_dir, "init"))
-        pools = c.pools()
-        assert len(pools) == 4
-        assert "shared" in pools
-        assert "exclusive" in pools
-        assert "infra" in pools
-        assert "exclusive-non-isolcpus" in pools
-        cl_exclusive = pools["exclusive"].cpu_lists()
-        cl_shared = pools["shared"].cpu_lists()
-        cl_infra = pools["infra"].cpu_lists()
-        cl_excl_non_isolcpus = pools["exclusive-non-isolcpus"].cpu_lists()
-        assert not pools["shared"].exclusive()
-        assert pools["exclusive"].exclusive()
-        assert not pools["infra"].exclusive()
-        assert pools["exclusive-non-isolcpus"].exclusive()
-        assert cl_exclusive["1,9"]
-        assert cl_shared["2,10"]
-        assert "0,8" in cl_excl_non_isolcpus
-        assert "3,11" in cl_excl_non_isolcpus
-        assert "4,12" in cl_excl_non_isolcpus
-        assert "5,13" in cl_excl_non_isolcpus
-        assert cl_infra["6,14,7,15"]
 
 
 def test_init_failure1(monkeypatch):

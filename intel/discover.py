@@ -20,7 +20,6 @@ import sys
 from kubernetes import config as k8sconfig, client as k8sclient
 from kubernetes.client.rest import ApiException as K8sApiException
 
-ABORTING_DISCOVER = "Aborting discover ..."
 
 ABORTING_DISCOVER = "Aborting discover ..."
 
