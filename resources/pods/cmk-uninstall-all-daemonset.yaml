@@ -32,6 +32,8 @@ spec:
         app: cmk-uninstall-all-nodes
     spec:
       serviceAccountName: cmk-serviceaccount
+      securityContext:
+        readOnlyRootFilesystem: true
 # Needed for k8s >= 1.7
 #      tolerations:
 #      - operator: "Exists"
@@ -60,6 +62,12 @@ spec:
           readOnly: true
         - mountPath: "/opt/bin"
           name: cmk-install-dir
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - all
       volumes:
       - hostPath:
           path: "/proc"

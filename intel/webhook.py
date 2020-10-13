@@ -108,7 +108,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(response.encode('utf-8'))
-            except ValueErr as err:
+            except ValueError as err:
                 logging.error("Error while loading request {}".format(
                               err))
                 self.send_response(500)

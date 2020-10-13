@@ -26,6 +26,8 @@ metadata:
     cmk.intel.com/mutate: "true" # accepted values to trigger mutation: "true", "True", "1"
   namespace: cmk-namespace
 spec:
+  securityContext:
+    readOnlyRootFilesystem: true
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive-non-isolcpus
@@ -40,3 +42,9 @@ spec:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
       limits:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all

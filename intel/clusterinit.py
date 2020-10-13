@@ -31,7 +31,6 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  pull_secret, serviceaccount, exclusive_mode, shared_mode,
                  namespace, excl_non_isolcpus, cafile, insecure):
 
-    logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
 

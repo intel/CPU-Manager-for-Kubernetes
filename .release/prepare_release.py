@@ -93,6 +93,10 @@ def main():
         logging.error("Missing environment variable CMK_RELEASE_VER")
         exit(1)
 
+    if callable(release_tag) or not isinstance(release_tag, str):
+        logging.error("Aborting: CMK Release Tag is invalid")
+        exit(1)
+
     if not githelpers.is_tag_valid(release_tag):
         logging.error("Aborting: Tag \"CMK_RELEASE_VER={}\" is not valid tag".format(release_tag))
         exit(1)

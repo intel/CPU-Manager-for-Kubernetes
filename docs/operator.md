@@ -71,6 +71,30 @@ service account, tolerations required for a pod to be scheduled on the CMK enabl
 and appropriately annotates pod. Containers specifications are updated with volume mounts
 (referencing volumes added to the pod) and environmental variable `CMK_PROC_FS`.
 
+The mutating admission controller is set up by default using mutual TLS, where the webhook 
+service looks to authenticate the Kubernetes API server as well. This requires that the Kubernetes 
+API server be set up to pass webhooks a specified certificate and key. By default the webhook 
+looks to authenticate the certificate it gets passed with the CA file that the Kubernetes API 
+server passes in to each pod when they are created. You can pass in the CA file location you 
+want to use when running the webhook by using the `--cafile` argument. You can also set the 
+argument `--insecure` to false and the webhook service will revert back to regular TLS. To 
+set up the Kubernetes API server to pass webhook services certificates and keys, do the 
+following:
+
+	When starting the Kubernetes API server, set the `--admission-control-config-file` 
+	to the location of your admission control configuration file, for example 
+	/var/lib/kubernetes/cmk_config.yaml.
+	
+	In the admission control configuration file, specify where the WebhookAdmissionConfiguration
+	controller should read the credentials, which are stored in a kubeConfig file. This kubeConfig 
+	file contains the certificate and key data, base64 encoded, that the webhook service will 
+	use. This certificate should be the one used by your Kubernetes cluster or admin, as it 
+	needs to be validated against the Kubernetes CA.
+	
+The official Kubernetes documentation for setting up the Kubernetes API server to send webhook 
+services certificates can be found here:
+https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers
+
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.

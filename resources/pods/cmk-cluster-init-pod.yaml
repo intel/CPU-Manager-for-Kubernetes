@@ -20,6 +20,8 @@ metadata:
   name: cmk-cluster-init-pod
   namespace: cmk-namespace
 spec:
+  securityContext:
+    readOnlyRootFilesystem: true
   serviceAccountName: cmk-serviceaccount
   containers:
   - args:
@@ -30,4 +32,10 @@ spec:
     - "-c"
     image: cmk:v1.4.1
     name: cmk-cluster-init-pod
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   restartPolicy: Never

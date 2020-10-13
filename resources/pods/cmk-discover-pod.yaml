@@ -21,6 +21,8 @@ metadata:
   namespace: cmk-namespace
 spec:
   serviceAccountName: cmk-serviceaccount
+  securityContext:
+    readOnlyRootFilesystem: true
   containers:
   - args:
     - "/cmk/cmk.py discover --conf-dir=/etc/cmk"
@@ -37,6 +39,12 @@ spec:
     volumeMounts:
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   restartPolicy: Never
   volumes:
   - hostPath:

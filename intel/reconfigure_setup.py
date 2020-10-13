@@ -60,9 +60,7 @@ def execute_reconfigure(num_exclusive_cores, num_shared_cores,
                                                  ["reconfigure"])
 
         try:
-            cr_pod_resp = k8s.create_pod(None, pod, namespace)
-            logging.info("Response while creating pod for"
-                          " reconfigure command: {}".format(cr_pod_resp))
+            _ = k8s.create_pod(None, pod, namespace)
         except K8sApiException as err:
             logging.error("Exception when creating pod for"
                           " reconfigure command: {}".format(err.reason))

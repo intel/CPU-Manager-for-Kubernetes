@@ -29,6 +29,8 @@ spec:
       labels:
         app: cmk-webhook-app
     spec:
+      securityContext:
+        readOnlyRootFilesystem: true
       tolerations:
       - operator: "Exists"
       containers:
@@ -45,6 +47,12 @@ spec:
         - mountPath: /etc/ssl
           name: cmk-webhook-certs
           readOnly: True
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - all
       volumes:
       - name: cmk-webhook-configmap
         configMap:

@@ -64,6 +64,10 @@ def main():
         logging.error("Missing environment variable GITHUB_TOKEN")
         exit(1)
 
+    if callable(github_token) or not isinstance(github_token, str):
+        logging.error("Aborting: Github token is invalid")
+        exit(1)
+
     githelpers.is_branch_clean()
     release_tag = validate_commit_msg_get_tag()
     org_name, repo_name = get_org_and_repo_name()

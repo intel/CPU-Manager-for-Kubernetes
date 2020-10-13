@@ -32,7 +32,7 @@ def execute_git_cmd(cmd):
 
 def execute_cmd(cmd):
     try:
-        out = subprocess.check_output(cmd, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+        out = subprocess.check_output(cmd, shell=False, universal_newlines=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
         logging.error("Aborting: Got error while calling \"{}\"".format(cmd))
         logging.error("Details: {}".format(err))
@@ -42,7 +42,7 @@ def execute_cmd(cmd):
 
 
 def execute_cmd_visible(cmd):
-    with subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+    with subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE,
                                universal_newlines=True, stderr=subprocess.STDOUT) as proc:
         for line in proc.stdout:
             print(line, end='')
