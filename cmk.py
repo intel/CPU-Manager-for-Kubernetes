@@ -25,12 +25,12 @@ Usage:
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
-                   [--excl-non-isolcpus=<list>]
+                   [--excl-non-isolcpus=<list>] [--no-taint]
   cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
-  cmk discover [--conf-dir=<dir>]
+  cmk discover [--conf-dir=<dir>] [--no-taint]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
@@ -85,6 +85,7 @@ Options:
                                exclusive pool, not governed by isolcpus. Both
                                hyperthreads of the core will be added to the pool
                                [default: -1]
+  --no-taint                   Don't taint Kubernetes nodes.
 """  # noqa: E501
 from intel import (
     clusterinit, describe, discover, init, install,
@@ -109,7 +110,8 @@ def main():
                                  args["--pull-secret"],
                                  args["--saname"], args["--exclusive-mode"],
                                  args["--shared-mode"], args["--namespace"],
-                                 args["--excl-non-isolcpus"])
+                                 args["--excl-non-isolcpus"],
+                                 args["--no-taint"])
         return
     if args["init"]:
         init.init(args["--conf-dir"],
@@ -120,7 +122,7 @@ def main():
                   args["--excl-non-isolcpus"])
         return
     if args["discover"]:
-        discover.discover(args["--conf-dir"])
+        discover.discover(args["--conf-dir"], args["--no-taint"])
         return
     if args["describe"]:
         describe.describe(args["--conf-dir"])

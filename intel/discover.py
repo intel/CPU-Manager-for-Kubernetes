@@ -29,7 +29,7 @@ ABORTING_DISCOVER = "Aborting discover ..."
 # discover reads the CMK configuration file, patches kubernetes nodes with
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.
-def discover(conf_dir):
+def discover(conf_dir, no_taint=False):
 
     version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
@@ -49,9 +49,11 @@ def discover(conf_dir):
     # Add appropriate CMK label to the node.
     logging.debug("Adding appropriate CMK label to the node.")
     add_node_label()
+
     # Add appropriate CMK taint to the node.
-    logging.debug("Adding appropriate CMK taint to the node.")
-    add_node_taint()
+    if not no_taint:
+        logging.debug("Adding appropriate CMK taint to the node.")
+        add_node_taint()
 
 
 # add_node_oir patches the node with the appropriate CMK OIR.

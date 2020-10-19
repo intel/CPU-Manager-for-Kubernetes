@@ -28,12 +28,12 @@ Usage:
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
-                   [--excl-non-isolcpus=<list>]
+                   [--excl-non-isolcpus=<list>] [--no-taint]
   cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
-  cmk discover [--conf-dir=<dir>]
+  cmk discover [--conf-dir=<dir>] [--no-taint]
   cmk describe [--conf-dir=<dir>]
   cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
   cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
@@ -88,4 +88,5 @@ Options:
                                exclusive pool, not governed by isolcpus. Both
                                hyperthreads of the core will be added to the pool
                                [default: -1]
+  --no-taint                   Don't taint Kubernetes nodes.
 """  # noqa: E501
