@@ -32,7 +32,6 @@ def cluster_init(host_list, all_hosts, cmd_list, cmk_img, cmk_img_pol,
                  namespace, excl_non_isolcpus, cafile, insecure,
                  no_taint=False):
 
-    logging.info("Used ServiceAccount: {}".format(serviceaccount))
     cmk_node_list = get_cmk_node_list(host_list, all_hosts)
     logging.debug("CMK node list: {}".format(cmk_node_list))
 
@@ -403,7 +402,7 @@ def update_pod_with_init_container(pod, cmd, cmk_img, cmk_img_pol, args):
 def update_pod_with_webhook_container(pod, cmk_img, configmap_name,
                                       secret_name, cafile, insecure):
     container = k8s.get_container_template("webhook")
-    args = ("/opt/bin/cmk webhook --conf-file /etc/webhook/server.yaml"
+    args = ("/cmk/cmk.py webhook --conf-file /etc/webhook/server.yaml"
             " --cafile {} --insecure {}".format(cafile, insecure))
     container["args"] = [args]
     container["image"] = cmk_img

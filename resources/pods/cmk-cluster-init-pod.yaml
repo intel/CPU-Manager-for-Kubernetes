@@ -30,4 +30,11 @@ spec:
     - "-c"
     image: cmk:v1.4.1
     name: cmk-cluster-init-pod
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   restartPolicy: Never

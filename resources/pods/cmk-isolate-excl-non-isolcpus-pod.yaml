@@ -40,3 +40,10 @@ spec:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
       limits:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all

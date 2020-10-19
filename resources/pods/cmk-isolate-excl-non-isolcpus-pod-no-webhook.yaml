@@ -51,6 +51,13 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   volumes:
   - hostPath:
       # Change this to modify the CMK installation dir in the host file system.

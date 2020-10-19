@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.6.8
+FROM python:3.6.8-slim
+
+RUN apt-get update && \
+  apt-get -y install gcc=7.4 --no-install-recommends && \
+  rm /var/lib/apt/lists/*
 
 COPY requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+RUN pip3 install -r /requirements.txt
 
 COPY . /cmk
 WORKDIR /cmk

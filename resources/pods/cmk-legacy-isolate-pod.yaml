@@ -52,6 +52,13 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
     command:
@@ -70,6 +77,13 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
     command:
@@ -88,6 +102,13 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   restartPolicy: Never
   volumes:
   - hostPath:

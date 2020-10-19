@@ -53,6 +53,9 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
                 shared_mode, install_dir, namespace):
     # Build the current CMK confurations from the config directory
     pod_name = os.environ["HOSTNAME"]
+    if not isinstance(pod_name, str):
+        logging.error("Pod name is not a string, exiting...")
+        sys.exit(1)
     node_name = k8s.get_node_from_pod(None, pod_name)
     config_cm = "cmk-config-{}".format(node_name)
 
