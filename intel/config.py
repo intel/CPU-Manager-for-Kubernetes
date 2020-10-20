@@ -7,9 +7,6 @@ import yaml
 import time
 import random
 
-# Set the number of times the get_config() function will attempt
-# to retrieve the CMK configmap before giving up
-EXCEEDED = 30
 
 exclusivity = {
     "exclusive": True,
@@ -37,6 +34,9 @@ class Config:
         # an empty string then the configmap is considered
         # 'locked'
 
+        # The sleep is added in case multiple pods are created at
+        # the same time so they don't try and claim the configmap at
+        # the same time
         time.sleep(random.random())
         while True:
             try:

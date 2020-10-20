@@ -1,6 +1,7 @@
 from intel import isolate, config
 from unittest.mock import patch, MagicMock
 import pytest
+import os
 
 
 EXCL_ONE = [
@@ -129,7 +130,7 @@ class MockChild():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 @patch('intel.k8s.delete_config_map',
@@ -149,7 +150,7 @@ def test_isolate_exclusive1():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_exclusive2():
@@ -166,7 +167,7 @@ def test_isolate_exclusive2():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_exclusive3():
@@ -183,7 +184,7 @@ def test_isolate_exclusive3():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_shared1():
@@ -200,7 +201,7 @@ def test_isolate_shared1():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_shared2():
@@ -217,7 +218,7 @@ def test_isolate_shared2():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_infra1():
@@ -234,7 +235,7 @@ def test_isolate_infra1():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_infra2():
@@ -251,7 +252,7 @@ def test_isolate_infra2():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_exclusive_non_isolcpus2():
@@ -268,7 +269,7 @@ def test_isolate_exclusive_non_isolcpus2():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_pool_not_exist():
@@ -286,7 +287,7 @@ def test_pool_not_exist():
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.getenv', MagicMock(return_value=0))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_n_cpus_lt_one():
@@ -305,7 +306,7 @@ def test_n_cpus_lt_one():
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
 @patch('os.getenv', MagicMock(return_value=5))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_not_enough_cpus():
@@ -323,7 +324,7 @@ def test_not_enough_cpus():
 @patch('subprocess.Popen', MagicMock(return_value=MockChild()))
 @patch('intel.proc.getpid', MagicMock(return_value=1234))
 @patch('signal.signal', MagicMock(return_value=None))
-@patch('os.environ', MagicMock(return_value="fake-pod"))
+@patch.dict(os.environ, {"HOSTNAME": "fake-pod"})
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
 def test_isolate_shared_failure1():

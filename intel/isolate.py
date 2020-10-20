@@ -20,6 +20,7 @@ import random
 import psutil
 import signal
 import subprocess
+import sys
 
 
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
