@@ -40,6 +40,13 @@ spec:
         cmk.intel.com/exclusive-cores: '1'
       limits:
         cmk.intel.com/exclusive-cores: '1'
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - name: cmk-isolate-shared
     image: cmk:v1.4.1
     command:
@@ -47,6 +54,13 @@ spec:
     - "-c"
     args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=shared echo -- Hello World Shared!!!"
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - name: cmk-isolate-infra
     image: cmk:v1.4.1
     command:
@@ -54,3 +68,10 @@ spec:
     - "-c"
     args:
     - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra echo -- Hello World Infra!!!"
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all

@@ -17,7 +17,7 @@ from setuptools import setup
 setup(name='cmk',
       version='0.2.0',
       description='Support minimal comms use cases on Kubernetes',
-      url='http://github.com/intelsdi-x/CPU-Manager-for-Kubernetes',
+      url='https://github.com/intelsdi-x/CPU-Manager-for-Kubernetes',
       author='Intel SDI-E',
       author_email='',
       license='',

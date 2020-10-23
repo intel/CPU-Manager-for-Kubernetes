@@ -21,8 +21,11 @@ from kubernetes import config as k8sconfig, client as k8sclient
 from . import config, proc, third_party, custom_resource, k8s, util
 
 
-def reconcile(conf_dir, seconds, publish):
-    conf = config.Config(conf_dir)
+def reconcile(seconds, publish):
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    c = config.Config(configmap_name, pod_name)
     report = None
 
     if seconds is None:
@@ -33,10 +36,11 @@ def reconcile(conf_dir, seconds, publish):
     should_exit = (seconds <= 0)
 
     while True:
-        with conf.lock():
-            report = generate_report(conf)
-            print(report.json())
-            reclaim_cpu_lists(conf, report)
+        c.lock()
+        report = generate_report(c)
+        print(report.json())
+        reclaim_cpu_lists(c, report)
+        c.unlock()
 
         if publish and report is not None:
             logging.debug("Publishing reconcile report to "
@@ -80,25 +84,26 @@ def reconcile(conf_dir, seconds, publish):
 
 def reclaim_cpu_lists(conf, report):
     for r in report["reclaimedCpuLists"]:
-        pool = conf.pool(r.pool())
-        cl = pool.cpu_list(None, r.cpus())
-        logging.debug("Removing pid {} from cpu list \"{}\" in pool {}".format(
+        pool = conf.get_pool(r.pool())
+        cl = pool.get_core_list(r.cpus())
+        logging.info("Removing pid {} from cpu list \"{}\" in pool {}".format(
             r.pid(), r.cpus(), r.pool()))
-        cl.remove_task(r.pid())
+        cl.remove_task(str(r.pid()))
 
 
 def generate_report(conf):
     report = ReconcileReport()
 
-    for pool_name, pool in conf.pools().items():
-        for cl in pool.cpu_lists().values():
-            for task in cl.tasks():
+    for pool in conf.get_pools():
+        p = conf.get_pool(pool)
+        for cl in p.get_core_lists():
+            for task in cl.tasks:
                 p = proc.Process(task)
                 if not p.exists():
                     report.add_reclaimed_cpu_list(
                         p.pid,
-                        pool.name(),
-                        cl.cpus())
+                        pool,
+                        cl.core_id)
     return report
 
 

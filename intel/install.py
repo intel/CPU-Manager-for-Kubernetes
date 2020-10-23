@@ -24,8 +24,6 @@ def install(install_dir):
     # to produce an x86-64 ELF executable named `cmk` in the
     # supplied installation directory.
     subprocess.check_call(
-        "pyinstaller --onefile --distpath={} {}".format(
-            install_dir,
-            cmk_path),
-        shell=True)
+        ["pyinstaller", "--onefile", "--distpath={}"
+         .format(install_dir), cmk_path])
     logging.info("Installed cmk to {}".format(install_dir))

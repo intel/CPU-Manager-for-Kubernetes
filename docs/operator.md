@@ -71,6 +71,30 @@ service account, tolerations required for a pod to be scheduled on the CMK enabl
 and appropriately annotates pod. Containers specifications are updated with volume mounts
 (referencing volumes added to the pod) and environmental variable `CMK_PROC_FS`.
 
+The mutating admission controller is set up by default using mutual TLS, where the webhook 
+service looks to authenticate the Kubernetes API server as well. This requires that the Kubernetes 
+API server be set up to pass webhooks a specified certificate and key. By default the webhook 
+looks to authenticate the certificate it gets passed with the CA file that the Kubernetes API 
+server passes in to each pod when they are created. You can pass in the CA file location you 
+want to use when running the webhook by using the `--cafile` argument. You can also set the 
+argument `--insecure` to false and the webhook service will revert back to regular TLS. To 
+set up the Kubernetes API server to pass webhook services certificates and keys, do the 
+following:
+
+	When starting the Kubernetes API server, set the `--admission-control-config-file` 
+	to the location of your admission control configuration file, for example 
+	/var/lib/kubernetes/cmk_config.yaml.
+	
+	In the admission control configuration file, specify where the WebhookAdmissionConfiguration
+	controller should read the credentials, which are stored in a kubeConfig file. This kubeConfig 
+	file contains the certificate and key data, base64 encoded, that the webhook service will 
+	use. This certificate should be the one used by your Kubernetes cluster or admin, as it 
+	needs to be validated against the Kubernetes CA.
+	
+The official Kubernetes documentation for setting up the Kubernetes API server to send webhook 
+services certificates can be found here:
+https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers
+
 ## Setting up the cluster.
 https://kubernetes.io/docs/admin/authorization/rbac/#rolebinding-and-clusterrolebinding
 This section describes the setup required to use the `CMK` software.
@@ -585,6 +609,82 @@ env variables have been added to the container spec:
 ]
 
 ```
+
+
+
+# Dynamic Pool Reconfiguration
+Dynamic reconfiguration allows you to reconfigure the pool setup of your CMK nodes in your cluster without having to tear down CMK and clean up any of the configuration directories associated with CMK. The reconfigure command will look at every pod in every namespace on all of the CMK nodes in your cluster but will only reassign those pods that have been assigned cores using CMK. This knocks a considerable amount of time off of the operation and makes it a lot easier. It also means that you don't have to stop any processes that are currently running in order to reconfigure, as this method will automatically reassign any processes to the new cores in the new configuration. 
+For example, consider the following CMK pool configuration:
+```
+   etc
+    └── cmk
+        ├── lock
+        └── pools
+            ├── shared
+            │   ├── 7,15
+            │   │   └── tasks
+            │   │       └── 2000, 2001
+            │   └── exclusive
+            ├── exclusive
+            │   ├── 3,11
+            │   │   └── tasks
+            │   │       └── 
+            │   ├── 4,12
+            │   │   └── tasks
+            │   │       └── 3001
+            │   ├── 5,13
+            │   │   └── tasks
+            │   ├── 6,14
+            │   │   └── tasks
+            │   └── exclusive
+            └── infra
+                ├── 0-2,8-10
+                │   └── tasks
+                │       └── 
+                └── exclusive
+                
+    etc
+    └── cmk
+        ├── lock
+        └── pools
+            ├── shared
+            │   ├── 6,14,7,15
+            │   │   └── tasks
+            │   │       └── 2000, 2001
+            │   └── exclusive
+            ├── exclusive
+            │   ├── 3,11
+            │   │   └── tasks
+            │   │       └── 
+            │   ├── 4,12
+            │   │   └── tasks
+            │   │       └── 3001
+            └── infra
+                ├── 0-2,8-10
+                │   └── tasks
+                │       └── 
+                └── exclusive
+```
+The processes 2000 and 2001 in the shared pool will have their cpu affinity changed from the original ["7,15"] to the updated ["6,14,7,15"] when the reconfiguratino has completed.
+In the case of the exclusive pool, you can see that the process 3001 remained in the Core List 4,12 instead of being reassigned the Core List 3,11. This is so there is no unnecessary interruption to the process running on those cores because they will be high-priority processes that require low latency and zero interrupts. If the Core List that a process is running in is not available in the updated configuration (for example if only one exclusive pool was requested in the new setup, meaning only Core List 3,11 would be assigned), then of course the exclusive process will have to be reassigned to the new Core List.
+
+### How Do You Reconfigure with CMK?
+To use this reconfigure method you simply run a pod and us the `reconfigure_setup` option in cmk.py. The reconfigure option requires the following parameters:
+	`num-exclusive-cores, num-shared-cores, excl-non-isolcpus, conf-dir, exclusive-mode, shared-mode, cmk-img, cmk-img-pol, install-dir, saname, namespace`
+
+An example PodSpec is provided in the resources/pods folder of the repository. An example command would look like the following:
+```
+	"/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra /opt/bin/cmk -- reconfigure_setup --num-exclusive-cores=2 --num-shared-cores=2 --namespace=cmk-namespace"
+```
+The parameters that are not listed in this example take their default value, which can be seen by running the `cmk --help` command.
+     
+### What happens if there aren't enough cores to house all of the processes in the current configuration?
+This scenario will happen when, for example, your CMK configuration has three cores assigned to the exclusive pool, all of which have a process running on them, and you try to reconfigure CMK to have only two cores assigned to the exclusive pool. The reconfigure command will recognise that one of the processes will not be able to get reassigned to an exclusive core and fail out of the operation before any changes have been made to the configuration files.
+
+The reconfigure operation will autmaically detect which nodes in your cluster are CMK nodes and it will reconfigure all of them without you having to specify. It does this detection by looking for the following label in the annotations of the node:
+	`"cmk.intel.com/cmk-node" == "true"`
+This label is added by the discover operation, which occurs as part cluster_init, so you don't have to add the label yourself.
+
 
 
 ## Troubleshooting and recovery

@@ -21,6 +21,127 @@ from kubernetes.client import V1Namespace, V1DeleteOptions
 VERSION_NAME = "v1.9.0"
 
 
+# Only set up the Volume Mounts necessary for the container
+CONTAINER_VOLUME_MOUNTS = {
+    "init": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    },
+    "install": {
+        "volumeMounts": [
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+            }
+        ],
+        "securityContext": {
+            "privileged": True
+        }
+    },
+    "discover": {
+        "volumeMounts": [
+        ],
+        "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    },
+    "reconcile": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    },
+    "nodereport": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    },
+    "webhook": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            },
+            {
+                "mountPath": "/opt/bin",
+                "name": "cmk-install-dir",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    },
+    "reconfigure": {
+        "volumeMounts": [
+            {
+                "mountPath": "/host/proc",
+                "name": "host-proc",
+                "readOnly": True
+            }
+        ],
+        "securityContext": {
+            "readOnlyRootFilesystem": True,
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "runAsGroup": 3000,
+            "fsGroup": 2000
+        }
+    }
+}
+
+
 def get_pod_template(saname="cmk-serviceaccount"):
     pod_template = {
         "apiVersion": "v1",
@@ -42,12 +163,6 @@ def get_pod_template(saname="cmk-serviceaccount"):
                         "path": "/proc"
                     },
                     "name": "host-proc"
-                },
-                {
-                    "hostPath": {
-                        "path": "/etc/cmk"
-                    },
-                    "name": "cmk-conf-dir"
                 },
                 {
                     "hostPath": {
@@ -179,7 +294,7 @@ def admissionregistartion_api_client_from_config(config):
         return k8sclient.AdmissionregistrationV1beta1Api(api_client=client)
 
 
-def get_container_template():
+def get_container_template(cmd):
     container_template = {
         "args": [
             "ARGS"
@@ -201,24 +316,8 @@ def get_container_template():
         ],
         "image": "IMAGENAME",
         "name": "NAME",
-        "securityContext": {
-            "privileged": True
-        },
-        "volumeMounts": [
-            {
-                "mountPath": "/host/proc",
-                "name": "host-proc",
-                "readOnly": True
-            },
-            {
-                "mountPath": "/etc/cmk",
-                "name": "cmk-conf-dir"
-            },
-            {
-                "mountPath": "/opt/bin",
-                "name": "cmk-install-dir"
-            }
-        ],
+        "securityContext": CONTAINER_VOLUME_MOUNTS[cmd]["securityContext"],
+        "volumeMounts": CONTAINER_VOLUME_MOUNTS[cmd]["volumeMounts"],
         "imagePullPolicy": "Never"
     }
     return container_template
@@ -232,6 +331,14 @@ def get_node_list(config, label_selector=None):
     else:
         nodes = k8s_api.list_node().to_dict()
     return nodes["items"]
+
+
+# get_node_from_pod returns the node that a given pod is running on
+def get_node_from_pod(config, pod_name):
+    pods = get_pod_list(config)
+    for p in pods["items"]:
+        if p["metadata"]["name"] == pod_name:
+            return p["spec"]["node_name"]
 
 
 # get_pod_list() returns the pod list in the current Kubernetes cluster.
@@ -266,6 +373,11 @@ def create_service(config, spec, ns_name):
 def create_config_map(config, spec, ns_name):
     k8s_api = client_from_config(config)
     return k8s_api.create_namespaced_config_map(ns_name, spec)
+
+
+def patch_config_map(config, cm_name, spec, ns_name):
+    k8s_api = client_from_config(config)
+    return k8s_api.patch_namespaced_config_map(cm_name, ns_name, spec)
 
 
 def create_secret(config, spec, ns_name):
@@ -334,6 +446,15 @@ def get_kube_version(config):
     k8s_api = version_api_client_from_config(config)
     version_info = k8s_api.get_code()
     return version_info.git_version
+
+
+# Get named configmap
+def get_config_map(config, name, ns_name):
+    k8s_api = client_from_config(config)
+    configmaps = k8s_api.list_namespaced_config_map(ns_name)
+    for cm in configmaps.items:
+        if cm.metadata.name == name:
+            return cm
 
 
 # Delete namespace by name.

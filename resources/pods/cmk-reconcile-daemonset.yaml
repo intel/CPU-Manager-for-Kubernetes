@@ -60,6 +60,13 @@ spec:
           readOnly: true
         - mountPath: "/etc/cmk"
           name: cmk-conf-dir
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - all
       volumes:
       - hostPath:
           path: "/proc"

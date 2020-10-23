@@ -85,16 +85,16 @@ def generate_cert(service, namespace, private_key):
                                 .add_extension(subj_alternative_names, False)
                                 .add_extension(constraints, False)
                                 .not_valid_before(now)
-                                .not_valid_after(now + timedelta(days=36500))
+                                .not_valid_after(now + timedelta(days=62))
                                 .public_key(private_key.public_key())
                                 .serial_number(x509.random_serial_number()))
 
-    cert = cert_builder.sign(private_key, hashes.SHA256(), default_backend())
+    cert = cert_builder.sign(private_key, hashes.SHA512(), default_backend())
     return cert
 
 
 def generate_secrets(service, namespace):
-    private_key = generate_key(2048)
+    private_key = generate_key(4096)
     cert = generate_cert(service, namespace, private_key)
 
     cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM)
