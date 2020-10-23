@@ -28,7 +28,7 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     name: cmk-cluster-init-pod
     securityContext:
       allowPrivilegeEscalation: false
