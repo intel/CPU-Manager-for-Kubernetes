@@ -77,7 +77,7 @@ API server be set up to pass webhooks a specified certificate and key. By defaul
 looks to authenticate the certificate it gets passed with the CA file that the Kubernetes API 
 server passes in to each pod when they are created. You can pass in the CA file location you 
 want to use when running the webhook by using the `--cafile` argument. You can also set the 
-argument `--insecure` to false and the webhook service will revert back to regular TLS. To 
+argument `--insecure` to True and the webhook service will revert back to regular TLS. To 
 set up the Kubernetes API server to pass webhook services certificates and keys, do the 
 following:
 
