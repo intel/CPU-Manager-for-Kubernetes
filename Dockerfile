@@ -3,7 +3,7 @@ FROM clearlinux/python:3.8.6
 RUN swupd bundle-add c-basic
 
 COPY requirements.txt /requirements.txt
-RUN pip3 install -r /requirements.txt
+RUN pip3 install --no-cache-dir -r /requirements.txt
 
 COPY . /cmk
 WORKDIR /cmk
