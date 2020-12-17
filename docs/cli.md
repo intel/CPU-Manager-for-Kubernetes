@@ -55,7 +55,7 @@ Options:
   --cmk-cmd-list=<list>        Comma seperated list of CMK sub-commands to run
                                on each host
                                [default: init,reconcile,install,discover,nodereport].
-  --cmk-img=<img>              CMK Docker image [default: cmk:v1.4.1].
+  --cmk-img=<img>              CMK Docker image [default: cmk:v1.5.1].
   --cmk-img-pol=<pol>          Image pull policy for the CMK Docker image
                                [default: IfNotPresent].
   --conf-dir=<dir>             CMK configuration directory [default: /etc/cmk].

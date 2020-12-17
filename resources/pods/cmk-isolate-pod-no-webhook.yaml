@@ -29,7 +29,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     command:
     - "/bin/bash"
     - "-c"
@@ -51,8 +51,15 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - name: cmk-isolate-shared
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     command:
     - "/bin/bash"
     - "-c"
@@ -69,8 +76,15 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   - name: cmk-isolate-infra
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     command:
     - "/bin/bash"
     - "-c"
@@ -87,6 +101,13 @@ spec:
       name: cmk-install-dir
     - mountPath: "/etc/cmk"
       name: cmk-conf-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   volumes:
   - hostPath:
       # Change this to modify the CMK installation dir in the host file system.

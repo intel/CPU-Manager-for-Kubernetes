@@ -75,7 +75,6 @@ def test_parse_version_success():
     assert util.parse_version("v10.0.0") > util.parse_version("v2.0.0")
     assert util.parse_version("v1.10.0") > util.parse_version("v1.9.0")
     assert util.parse_version("v1.10.11") > util.parse_version("v1.9.2")
-    assert util.parse_version("v1.18.11") == util.parse_version("v1.18.11")
     assert util.parse_version("v1.9.11-dirty") > util.parse_version("v1.5.2")
     assert util.parse_version("v1.1-dirty") > util.parse_version("v1")
     assert util.parse_version("v1.10.0-rc.1") > util.parse_version("v1.9")

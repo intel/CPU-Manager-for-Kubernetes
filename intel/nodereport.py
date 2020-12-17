@@ -23,7 +23,7 @@ from . import config, custom_resource, discover, \
     k8s, proc, third_party, topology, util, sst_bf as sst
 
 
-def nodereport(conf_dir, seconds, publish):
+def nodereport(seconds, publish):
     if seconds is None:
         seconds = 0
     else:
@@ -31,7 +31,7 @@ def nodereport(conf_dir, seconds, publish):
     should_exit = (seconds <= 0)
 
     while True:
-        report = generate_report(conf_dir)
+        report = generate_report()
 
         print(report.json())
 
@@ -76,10 +76,10 @@ def nodereport(conf_dir, seconds, publish):
         time.sleep(seconds)
 
 
-def generate_report(conf_dir):
+def generate_report():
     report = NodeReport()
-    check_describe(report, conf_dir)
-    check_cmk_config(report, conf_dir)
+    check_describe(report)
+    check_cmk_config(report)
     sst_bf = False
     try:
         sst_bf = bool(discover.get_node_label(sst.NFD_LABEL))
@@ -91,33 +91,41 @@ def generate_report(conf_dir):
     return report
 
 
-def check_describe(report, conf_dir):
+def check_describe(report):
     try:
-        report.add_description(config.Config(conf_dir).as_dict())
+        pod_name = os.environ["HOSTNAME"]
+        node_name = k8s.get_node_from_pod(None, pod_name)
+        configmap_name = "cmk-config-{}".format(node_name)
+        c = config.get_config(configmap_name)
+        report.add_description(c.as_dict())
     except Exception:
         pass
 
 
-def check_cmk_config(report, conf_dir):
+def check_cmk_config(report):
     check_conf = report.add_check("configDirectory")
 
     # Verify we can read the config directory
     try:
-        c = config.Config(conf_dir)
+        pod_name = os.environ["HOSTNAME"]
+        node_name = k8s.get_node_from_pod(None, pod_name)
+        configmap_name = "cmk-config-{}".format(node_name)
+        c = config.get_config(configmap_name)
     except Exception:
-        check_conf.add_error("Unable to read the CMK configuration directory")
+        check_conf.add_error("Unable to read CMK configmap")
         return  # Nothing more we can check for now
 
     # Ensure pool cpu lists are disjoint
-    with c.lock():
-        cpu_lists = [
+    cpu_lists = []
+    for p in c.get_pools():
+        pool = c.get_pool(p)
+        clists = [cl.core_id for cl in pool.get_core_lists()]
+        cpu_lists += [
             {
                 "pool": p,
-                "list": cl,
-                "cpus": proc.unfold_cpu_list(cl)
+                "list": clists,
+                "cpus": proc.unfold_cpu_list(",".join(clists))
             }
-            for p in c.pools()
-            for cl in c.pool(p).cpu_lists()
         ]
 
     # Subset of cartesian product without self-maplets:

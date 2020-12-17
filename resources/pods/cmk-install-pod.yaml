@@ -27,11 +27,18 @@ spec:
     command:
     - "/bin/bash"
     - "-c"
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     name: cmk-install-pod
     volumeMounts:
     - mountPath: "/opt/bin"
       name: cmk-install-dir
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all
   restartPolicy: Never
   volumes:
   - hostPath:

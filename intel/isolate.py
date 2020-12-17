@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config, proc
+from . import config, proc, k8s
 from intel import util
 import logging
 import os
@@ -20,6 +20,8 @@ import random
 import psutil
 import signal
 import subprocess
+import sys
+
 
 ENV_CPUS_ASSIGNED = "CMK_CPUS_ASSIGNED"
 ENV_CPUS_ASSIGNED_MASK = "CMK_CPUS_ASSIGNED_MASK"
@@ -28,14 +30,23 @@ ENV_CPUS_INFRA = "CMK_CPUS_INFRA"
 ENV_NUM_CORES = "CMK_NUM_CORES"
 
 
-def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
-    c = config.Config(conf_dir)
-    with c.lock():
-        pools = c.pools()
-        if pool_name not in pools:
+def isolate(pool_name, no_affinity, command, args, socket_id=None):
+    pod_name = os.environ["HOSTNAME"]
+    if not isinstance(pod_name, str):
+        logging.error("Pod name is not a string, exiting...")
+        sys.exit(1)
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+
+    c = config.Config(configmap_name, pod_name)
+    try:
+        c.lock()
+        pools = c.c_data.pools
+        if pool_name not in c.get_pools():
             raise KeyError("Requested pool {} does not exist"
                            .format(pool_name))
-        pool = pools[pool_name]
+
+        pool = c.get_pool(pool_name)
 
         socket_aware_pools = ["exclusive", "shared", "exclusive-non-isolcpus"]
         if socket_id == "-1" or pool_name not in socket_aware_pools:
@@ -44,16 +55,15 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
             selected_socket = socket_id
 
         clists = None
-        if pool.exclusive():
-            # Read env variable and if unset return 1
+        if pool.is_exclusive():
             n_cpus = int(os.getenv(ENV_NUM_CORES, 1))
             if n_cpus < 1:
                 raise ValueError("Requested numbers of cores "
                                  "must be positive integer")
 
-            available_clists = [cl for
-                                cl in pool.cpu_lists(selected_socket).values()
-                                if len(cl.tasks()) == 0]
+            available_clists = [cl.core_id for cl in
+                                pool.get_core_lists(selected_socket)
+                                if len(cl.tasks) == 0]
 
             if len(available_clists) < n_cpus:
                 raise SystemError("Not enough free cpu lists in pool {}"
@@ -67,11 +77,9 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
             # If that ceases to hold in the future, we could explore population
             # or load-based spreading. Keeping it simple for now.
             try:
-                if pool_name in socket_aware_pools:
-                    clists = [random.choice(
-                             list(pool.cpu_lists(selected_socket).values()))]
-                else:
-                    clists = [random.choice(list(pool.cpu_lists().values()))]
+                core_lists = [cl.core_id for cl in
+                              pool.get_core_lists(selected_socket)]
+                clists = [random.choice(core_lists)]
             except IndexError:
                 raise SystemError("No cpu lists in pool {}".format(pool_name))
 
@@ -79,32 +87,30 @@ def isolate(conf_dir, pool_name, no_affinity, command, args, socket_id=None):
             raise SystemError("No free cpu lists in pool {}".format(pool_name))
 
         for cl in clists:
-            cl.add_task(proc.getpid())
+            pool.update_clist(cl, str(proc.getpid()))
+
+    finally:
+        c.unlock()
 
     # NOTE: we spawn the child process after exiting the config lock context.
     try:
         # Advertise assigned CPU IDs in the environment.
-        clists.sort(key=lambda cl: int(cl.cpus().split(",")[0]))
-        cpu_ids = ','.join([cl.cpus() for cl in clists])
+        cpu_ids = ",".join(clists)
         os.environ[ENV_CPUS_ASSIGNED] = cpu_ids
         cpus_arr = [int(n) for n in cpu_ids.split(',')]
         cpus_bit_mask = util.convert_array2bitmask(cpus_arr)
         os.environ[ENV_CPUS_ASSIGNED_MASK] = cpus_bit_mask
 
         # Advertise shared pool CPU IDs
-        shared_pool = pools.get("shared")
+        shared_pool = pools["shared"]
         if shared_pool is not None:
-            shared_clists = [cl.cpus()
-                             for cl
-                             in shared_pool.cpu_lists().values()]
+            shared_clists = [cl.core_id for cl in shared_pool.get_core_lists()]
             os.environ[ENV_CPUS_SHARED] = ','.join(shared_clists)
 
         # Advertise infra pool CPU IDs
-        infra_pool = pools.get("infra")
+        infra_pool = pools["infra"]
         if infra_pool is not None:
-            infra_clists = [cl.cpus()
-                            for cl
-                            in infra_pool.cpu_lists().values()]
+            infra_clists = [cl.core_id for cl in infra_pool.get_core_lists()]
             os.environ[ENV_CPUS_INFRA] = ','.join(infra_clists)
 
         # We use psutil here (instead of the cmk provided
@@ -124,9 +130,7 @@ command because the --no-affinity flag was supplied""")
             logging.debug("Setting CPU affinity to %s", cpu_list)
             p.cpu_affinity(cpu_list)
 
-        child = subprocess.Popen("{} {}".format(command,
-                                 " ".join(args)),
-                                 shell=True)
+        child = subprocess.Popen([command] + args, shell=False)
 
         # Register a signal handler for TERM so that we can attempt to leave
         # things in a consistent state. As a good POSIX citizen, we propagate
@@ -140,6 +144,15 @@ command because the --no-affinity flag was supplied""")
         child.wait()
 
     finally:
-        with c.lock():
-            for cl in clists:
-                cl.remove_task(proc.getpid())
+        pod_name = os.environ["HOSTNAME"]
+        node_name = k8s.get_node_from_pod(None, pod_name)
+        configmap_name = "cmk-config-{}".format(node_name)
+
+        c = config.Config(configmap_name, pod_name)
+        c.lock()
+        pool = c.get_pool(pool_name)
+        pid = str(proc.getpid())
+        for clist in clists:
+            pool.remove_task(clist, pid)
+
+        c.unlock()

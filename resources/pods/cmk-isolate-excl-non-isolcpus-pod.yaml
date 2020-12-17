@@ -29,7 +29,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive-non-isolcpus
-    image: cmk:v1.4.1
+    image: cmk:v1.5.1
     command:
     - "/bin/bash"
     - "-c"
@@ -40,3 +40,10 @@ spec:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
       limits:
         cmk.intel.com/exclusive-non-isolcpus-cores: '1'
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop:
+          - all

@@ -52,7 +52,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: cmk:v1.4.1
+        image: cmk:v1.5.1
         name: cmk-nodereport
         volumeMounts:
         - mountPath: "/host/proc"
@@ -60,6 +60,13 @@ spec:
           readOnly: true
         - mountPath: "/etc/cmk"
           name: cmk-conf-dir
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+              - all
       volumes:
       - hostPath:
           path: "/proc"

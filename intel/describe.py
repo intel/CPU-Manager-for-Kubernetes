@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import config
+from . import config, k8s
 import json
+import os
 
 
-def describe(conf_dir):
-    c = config.Config(conf_dir)
-    with c.lock():
-        print(json.dumps(c.as_dict(), sort_keys=True, indent=2))
+def describe():
+    pod_name = os.environ["HOSTNAME"]
+    node_name = k8s.get_node_from_pod(None, pod_name)
+    configmap_name = "cmk-config-{}".format(node_name)
+    c = config.Config(configmap_name, pod_name)
+    c.lock()
+    print(json.dumps(c.c_data.as_dict(), sort_keys=True, indent=2))
+    c.unlock()
