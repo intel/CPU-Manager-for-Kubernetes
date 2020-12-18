@@ -154,6 +154,8 @@ def mutate(admission_review, mutations_file):
 
         # apply mutation to containers
         for i in range(len(pod['spec']['containers'])):
+            # Need to reload mutations as they were geting changed
+            mutations = load_mutations(mutations_file)
             container = pod['spec']['containers'][i]
 
             pod['spec']['containers'][i] = apply_mutation(container, mutations)
@@ -161,6 +163,7 @@ def mutate(admission_review, mutations_file):
         # apply mutation to initContainers which may not exist
         try:
             for i in range(len(pod['spec']['initContainers'])):
+                mutations = load_mutations(mutations_file)
                 container = pod['spec']['initContainers'][i]
 
                 pod['spec']['initContainers'][i] = \
