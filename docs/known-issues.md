@@ -42,11 +42,6 @@ process is started and the kernel happens to recycle the old PID, then
 `cmk reconcile` will not be able to detect the leaked CPU list.
 This scenario should be very rare in practice.
 
-## `cmk init` flag values for `--num-shared-cores` and `--num-exclusive-cores` must be positive integers
-
-This places constratints on the construction of the user container
-command value. Zero is also unsupported.
-
 ## The flag value for `--interval` (used in `cmk reconcile` and `cmk node-report`) must be an integer.
 
 Fractional seconds are unsupported.
