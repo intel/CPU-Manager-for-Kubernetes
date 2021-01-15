@@ -5,21 +5,21 @@
 CMK accomplishes core isolation by controlling what logical CPUs each
 container may use for execution by wrapping target application commands
 with the CMK command-line program. The `cmk` wrapper program maintains
-state in a directory hierarchy on disk that describes **pools** from
+state in a [Kubernetes configmap](https://kubernetes.io/docs/concepts/configuration/configmap/) that describes **pools** from
 which user containers can acquire available **CPU lists**. These pools
 can be exclusive (only one container per CPU list) or non-exclusive
-(multiple containers can share a CPU list.) Each CPU list directory
+(multiple containers can share a CPU list.) Each CPU list entry
 contains a `tasks` file that tracks process IDs of the container
 subcommand(s) that acquired the CPU list. When the child process exits,
 the `cmk` wrapper program clears its PID from the tasks file. If the
 wrapper program is killed before it can perform this cleanup step, a
 separate periodic reconciliation program detects this condition and cleans
-the tasks file accordingly. A file system lock guards against conflicting
+the tasks file accordingly. A lock mechanism guards against conflicting
 concurrent modifications.
 
 The rest of this document discusses the high-level design of CMK.
 
-For more information about the structure of state on disk, see
+For more information about the structure of state in the configmap, see
 [The cmk configuration directory][doc-config].
 
 For more information about how to use the `cmk` wrapper program, see
@@ -36,9 +36,6 @@ cluster already configured for CMK, see the
 
 1. The workload is a medium- to long-lived process with inter-arrival
    times on the order of ones to tens of seconds or greater.
-
-1. After a workload has started executing, there is no need to
-   dynamically update its CPU assignments.
 
 1. Machines running workloads explicitly isolated by `cmk` must be guarded
    against other workloads that _do not_ consult the `cmk` tool chain.
@@ -72,7 +69,7 @@ cluster already configured for CMK, see the
    container.
 
 1. Interoperate well with the `isolcpus` kernel parameter. When
-   initializing the CMK configuration directory, prefer to align
+   initializing the CMK configuration configmap, prefer to align
    exclusive CPU lists with fully-isolated physical cores.
 
 1. Provide sufficient observability tooling to quickly assess the
@@ -163,7 +160,6 @@ For more information and configuration details please refer, to the
 | :------------------------- | :--------------------------------------------- |
 | Potential race between scheduler and pool state. | If a pod that consumes an exclusive opaque integer resource crashes in a way that prevents the `isolate` launcher from releasing the assigned cores, then although the OIR becomes available, the next invocation of `isolate` may not be able to safely make an allocation. This could occur for a number of reasons, most likely among them are: child process fails to terminate within the allowed grace period after receiving the TERM signal (Kubelet follows up with KILL) or receiving KILL from the kernel OOM (out-of-memory) killer. In this case, `isolate` must crash with a nonzero exit status. This will appear to the operator as a failed pod launch, and the scheduler will try to reschedule the pod. This condition will persist on that node until `reconcile` runs, at which point it will observe that the container's PID is invalid and free the cores for reuse by updating the `tasks` file. |
 | Potential conflict with kernel PID reuse. | This should be extremely rare in practice, but it relates to the above scenario. If a PID of a `cmk` subcommand leaks as described above and is recycled by the kernel before `reconcile` runs, then when `reconcile` does run, it will see that the PID refers to a running process and will not remove that PID from the `tasks` file. There is currently no mitigation in place to protect against this scenario. |
-| CMK `init` flag values for `--num-shared-cores` and `--num-exclusive-cores` must be positive integers. | Zero is unsupported by the tool chain. |
 | The flag values for `--interval` (used in `cmk reconcile` and `cmk node-report`) must be integers. | Fractional seconds are not supported by the tool chain. |
 
 [cmk-node-report]: cli.md#cmk-node-report
