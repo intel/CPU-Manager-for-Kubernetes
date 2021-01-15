@@ -25,25 +25,38 @@ Usage:
   cmk (-h | --help)
   cmk --version
   cmk cluster-init (--host-list=<list>|--all-hosts) [--cmk-cmd-list=<list>]
-                   [--cmk-img=<img>] [--cmk-img-pol=<pol>] [--conf-dir=<dir>]
+                   [--cmk-img=<img>] [--cmk-img-pol=<pol>]
                    [--install-dir=<dir>] [--num-exclusive-cores=<num>]
                    [--num-shared-cores=<num>] [--pull-secret=<name>]
                    [--saname=<name>] [--shared-mode=<mode>]
                    [--exclusive-mode=<mode>] [--namespace=<name>]
-                   [--excl-non-isolcpus=<list>]
-  cmk init [--conf-dir=<dir>] [--num-exclusive-cores=<num>]
+                   [--excl-non-isolcpus=<list>] [--cafile=<file>]
+                   [--insecure=<bool>] [--no-taint]
+  cmk init [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
            [--excl-non-isolcpus=<list>]
-  cmk discover [--conf-dir=<dir>]
-  cmk describe [--conf-dir=<dir>]
-  cmk reconcile [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
-  cmk isolate [--conf-dir=<dir>] [--socket-id=<num>] --pool=<pool> <command>
-              [-- <args> ...][--no-affinity]
+  cmk discover [--no-taint]
+  cmk describe
+  cmk reconcile [--publish] [--interval=<seconds>]
+  cmk isolate [--socket-id=<num>] --pool=<pool> <command>
+              [-- <args>...][--no-affinity]
   cmk install [--install-dir=<dir>]
-  cmk node-report [--conf-dir=<dir>] [--publish] [--interval=<seconds>]
+  cmk node-report [--publish] [--interval=<seconds>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
-  cmk webhook [--conf-file=<file>]
+  cmk webhook [--conf-file=<file>] [--cafile=<file>] [--insecure=<bool>]
+  cmk reconfigure [--node-name=<name>] [--num-exclusive-cores=<num>]
+                  [--num-shared-cores=<num>] [--excl-non-isolcpus=<list>]
+                  [--exclusive-mode=<mode>]
+                  [--shared-mode=<mode>] [--install-dir=<dir>]
+                  [--namespace=<name>]
+  cmk reconfigure_setup [--num-exclusive-cores=<num>] [--num-shared-cores=<num>]
+                        [--excl-non-isolcpus=<list>]
+                        [--exclusive-mode=<mode>] [--shared-mode=<mode>]
+                        [--cmk-img=<img>] [--cmk-img-pol=<pol>]
+                        [--install-dir=<dir>] [--saname=<name>]
+                        [--namespace=<name>]
+  cmk reaffinitize [--node-name=<name>] [--namespace=<name>]
 
 Options:
   -h --help                    Show this screen.
@@ -58,7 +71,6 @@ Options:
   --cmk-img=<img>              CMK Docker image [default: cmk:v1.5.1].
   --cmk-img-pol=<pol>          Image pull policy for the CMK Docker image
                                [default: IfNotPresent].
-  --conf-dir=<dir>             CMK configuration directory [default: /etc/cmk].
   --install-dir=<dir>          CMK install directory [default: /opt/bin].
   --interval=<seconds>         Number of seconds to wait between rerunning.
                                If set to 0, will only run once. [default: 0]
@@ -86,8 +98,18 @@ Options:
   --namespace=<name>           Set the namespace to deploy pods to during the
                                cluster-init deployment process.
                                [default: default].
-  --excl-non-isolcpus=<list>   List of cores to be added to the extra exclusive
-                               pool, not governed by isolcpus [default: -1]
+  --excl-non-isolcpus=<list>   List of physical cores to be added to the extra
+                               exclusive pool, not governed by isolcpus. Both
+                               hyperthreads of the core will be added to the pool
+                               [default: -1]
+  --node-name=<name>           The name of the node that is being reaffinitized
+  --cafile=<file>              The location of the cafile used by the webhook to
+                               authenticate the Kubernetes API server.
+                               [default: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt]
+  --insecure=<bool>            Determines whether the webhook service will be set up to
+                               authenticate using mutual TLS or not.
+                               [default: False]
+  --no-taint                   Don't taint Kubernetes nodes.
 ```
 
 ## Global configuration
@@ -106,7 +128,7 @@ Options:
 
 ### `cmk init`
 
-Initializes the cmk configuration directory customized for NFV workloads,
+Initializes the cmk configuration configmap customized for NFV workloads,
 including three pools: _infra_, _shared_ and _exclusive_, with an 
 additional fourth - _exclusive-non-isolcpus_ - if cores are provided. The
 _exclusive_ pool is EXCLUSIVE while the _shared_ and _infra_ pools
@@ -114,11 +136,6 @@ are SHARED. The _exclusive-non-isolcpus_ pool is also EXCLUSIVE, but the
 cores within the pool are not governed by isolcpus.
 
 Processor topology is discovered using [`lscpu`][lscpu].
-
-This command succeeds if the config directory is already written. If
-that is the case, logs are output saying so. If the existing
-configuration does not match the requested pool allocations, then the
-command logs at error level and exits with a nonzero status.
 
 For more information about the config format on disk, refer to
 [the `cmk` configuration directory][doc-config].
@@ -210,8 +227,6 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the CMK configuration directory. This
-  directory must either not exist or be an empty directory.
 - `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
   in the exclusive pool.
 - `--num-shared-cores=<num>` Number of (physical) processor cores to include
@@ -219,17 +234,23 @@ _None_
 - `--excl-non-isolcpus=<list>` List of (physical) processor cores to include in
   the exclusive-non-isolcpus pool, which is isolated from other user pods in the
   cluster but does not use cores governed by isolcpus.
+- `--socket-id=<num>` ID of socket where allocated core should come from. If
+  it's set to -1 then child command will be assigned to any socket.
+- `--shared-mode=<mode>` Shared pool core allocation mode. Possible modes: 
+  packed and spread.
+- `--exclusive-mode=<mode>` Exclusive pool core allocation mode. Possible
+  modes: packed and spread.
 
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
+$ docker run -it \
+  cmk init --num-exclusive-cores=4 --num-shared-cores=1
 ```
 
 ```shell
-$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk init --conf-dir=/etc/cmk ----num-exclusive-cores=4 --num-shared-cores=1 \
+$ docker run -it \
+  cmk init --num-exclusive-cores=4 --num-shared-cores=1 \
            --excl-non-isolcpus=10-15
 ```
 
@@ -240,7 +261,8 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
 Advertises the appropriate number of `CMK` [Opaque Integer Resource (OIR)][oir-docs]
 slots, node label and node taint to the Kubernetes node. The number of
 OIR slots advertised is equal to the number of cpu lists under the
-__exclusive__ pool, as determined by examining the `CMK` configuration directory.
+__exclusive__ pool, or under the __exclusive-non-isolcpus__, as determined by 
+examining the `CMK` configuration configmap.
 For more information about the config format on disk, refer to
 the [`cmk` configuration directory][doc-config].
 
@@ -263,13 +285,13 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the CMK configuration directory.
+- `--no-taint` Don't taint Kubernetes nodes.
 
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/cmk:/etc/cmk \
-  cmk discover --conf-dir=/etc/cmk
+$ docker run -it \
+  cmk discover
 ```
 
 -------------------------------------------------------------------------------
@@ -289,7 +311,7 @@ _None_
 **Example:**
 
 ```
-$ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
+$ docker run -it
 {
   "path": "/etc/cmk",
   "pools": {
@@ -360,7 +382,7 @@ $ docker run -it --volume=/etc/cmk:/etc/cmk cmk describe --conf-dir=/etc/cmk
 
 ### `cmk reconcile`
 
-Reconcile removes invalid process IDs from the cmk configuration directory by
+Reconcile removes invalid process IDs from the cmk configuration configmap by
 checking them against [procfs]. This is to recover from the case where
 [`cmk isolate`][cmk-isolate] exits before it has a chance to remove its own
 PID from the `tasks` file. This could happen for a number of reasons, including
@@ -444,7 +466,6 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the CMK configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server
 - `--interval=<seconds>` Number of seconds to wait between rerunning. If set
   to 0, will only run once.
@@ -453,10 +474,9 @@ _None_
 
 ```shell
 $ docker run -it \
-  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
   -e "CMK_PROC_FS=/host/proc" \
-  cmk reconcile --interval=60 --conf-dir=/etc/cmk
+  cmk reconcile --interval=60
 ```
 
 -------------------------------------------------------------------------------
@@ -508,7 +528,8 @@ to be set._
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the CMK configuration directory.
+- `--socket-id=<num>` ID of socket where allocated core should come from. If
+                     it's set to -1 then child command will be assigned to any socket.
 - `--pool=<pool>`    Pool name: either _infra_, _shared_, _exclusive_ or 
                      _exlcusive-non-isolcpus_.
 - `--no-affinity`    Do not set cpu affinity before forking the child
@@ -522,7 +543,6 @@ to be set._
 ```shell
 $ docker run -it \
   --volume=/opt/bin/cmk:/host/opt/bin/cmk \
-  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
   -e "CMK_PROC_FS=/host/proc" \
   -e "CMK_NUM_CORES=1" \
@@ -579,7 +599,6 @@ _None_
 
 **Flags:**
 
-- `--conf-dir=<dir>` Path to the CMK configuration directory.
 - `--publish` Whether to publish reports to the Kubernetes API server.
 - `--interval=<seconds>` Number of seconds to wait between rerunning. If set
   to 0, will only run once.
@@ -590,10 +609,9 @@ _Generate a node report:_
 
 ```shell
 $ docker run -it \
-  --volume=/etc/cmk:/etc/cmk \
   --volume=/proc:/host/proc:ro \
   -e "CMK_PROC_FS=/host/proc" \
-  cmk node-report --conf-dir=/etc/cmk --interval=60
+  cmk node-report --interval=60
 ```
 
 _Get node reports from the API server using Kubectl:_
@@ -1029,8 +1047,6 @@ _None_
 - `--cmk-img=<img>` CMK Docker image [default: cmk].
 - `--cmk-img-pol=<pol>`   Image pull policy for the CMK Docker image
   [default: IfNotPresent].
-- `--conf-dir=<dir>` Path to the CMK configuration directory. This
-  directory must either not exist or be an empty directory.
 - `--num-exclusive-cores=<num>` Number of (physical) processor cores to include
   in the exclusive pool.
 - `--num-shared-cores=<num>` Number of (physical) processor cores to include
@@ -1040,17 +1056,30 @@ _None_
 - `--excl-non-isolcpus`   List of (physical) processor cores to include in
   the exclusive-non-isolcpus pool, which is isolated from other user pods in the
   cluster but does not use cores governed by isolcpus.
+- `--install-dir=<dir>` CMK install directory
+- `--saname=<name>` ServiceAccount name to pass
+- `--shared-mode=<mode>` Shared pool core allocation mode. Possible modes: 
+packed and spread
+- `--exclusive-mode=<mode>` Exclusive pool core allocation mode. Possible modes: 
+packed and spread
+- `--namespace=<name>` Set the namespace to deploy pods to during the 
+cluster-init deployment process.
+- `--cafile=<file>` The location of the cafile used by the webhook to a
+uthenticate the Kubernetes API server.
+- `--insecure=<bool>` Determines whether the webhook service will be set up to 
+authenticate using mutual TLS or not.
+- `--no-taint` Don't taint Kubernetes nodes.
 
 **Example:**
 
 ```shell
-$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk cluster-init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1
+$ docker run -it \
+  cmk cluster-init --num-exclusive-cores=4 --num-shared-cores=1
 ```
 
 ```shell
-$ docker run -it --volume=/etc/cmk:/etc/cmk:rw \
-  cmk cluster-init --conf-dir=/etc/cmk --num-exclusive-cores=4 --num-shared-cores=1 \
+$ docker run -it \
+  cmk cluster-init --num-exclusive-cores=4 --num-shared-cores=1 \
                    --excl-non-isolcpus=10-15
 ```
 
@@ -1150,9 +1179,6 @@ mutations:
       - name: cmk-host-proc
         hostPath:
           path: "/proc"
-      - name: cmk-config-dir
-        hostPath:
-          path: "/etc/cmk"
       - name: cmk-install-dir
         hostPath:
           path: "/opt/bin"
@@ -1164,8 +1190,6 @@ mutations:
     - name: cmk-host-proc
       mountPath: /host/proc
       readOnly: true
-    - name: cmk-config-dir
-      mountPath: /etc/cmk
     - name: cmk-install-dir
       mountPath: /opt/bin
 ```
@@ -1196,7 +1220,6 @@ _None_
 
 ```sh
 $ docker run -it \
---volume=/etc/cmk:/etc/cmk:rw \
 --volume=/opt/bin:/opt/bin:rw \
 --volume=/etc/webhook:/etc/webhook:rw \
 --volume=/etc/ssl:/etc/ssl:rw \
