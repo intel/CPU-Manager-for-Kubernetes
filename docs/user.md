@@ -27,7 +27,7 @@ information on how to set up the cluster with `cmk` enabled, see the
 
 The only CMK CLI subcommand users (pod authors) need to know about is
 [cmk isolate][cmk-isolate]. The `isolate` subcommand consults shared state
-on the host file system to acquire and bookkeep an assigned subset of CPUs
+on the host configmap to acquire and bookkeep an assigned subset of CPUs
 a command should run on.
 
 By default `cmk isolate` allocates a single CPU core. In order to request
@@ -47,8 +47,6 @@ and wrap your complex command:
 
 The figure illustrates a few important points:
 
-- The [CMK configuration directory][doc-config] must be mounted into the
-  container at a path that matches the value of `--config-dir`.
 - The host [procfs][procfs] must be mounted into the container at a path that matches
   the value of the `CMK_PROC_FS` environment variable. Since bind-mounting
   over the top of the procfs at `/proc` from inside the pid namespace would
@@ -78,7 +76,7 @@ metadata:
 spec:
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
+    - "/opt/bin/cmk isolate --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
