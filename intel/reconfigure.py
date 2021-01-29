@@ -59,7 +59,7 @@ def reconfigure(node_name, num_exclusive_cores, num_shared_cores,
     node_name = k8s.get_node_from_pod(None, pod_name)
     config_cm = "cmk-config-{}".format(node_name)
 
-    conf = config.Config(config_cm, pod_name)
+    conf = config.Config(config_cm, pod_name, namespace)
     num_exclusive_cores = int(num_exclusive_cores)
     num_shared_cores = int(num_shared_cores)
 

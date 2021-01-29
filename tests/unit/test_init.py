@@ -93,6 +93,8 @@ def eight_core_lscpu():
 @patch('intel.topology.parse', MagicMock(return_value=return_quad_core()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success1(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
@@ -123,12 +125,14 @@ def test_init_success1(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(2, 1, "vertical", "vertical", "-1")
+        init.init(2, 1, "vertical", "vertical", "-1", "fake-namespace")
 
 
 @patch('intel.topology.lscpu', MagicMock(return_value=quad_core_lscpu()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success1_isolcpus(monkeypatch):
     # Set the procfs environment variable. This test kernel command line
     # sets isolcpus to lcpu IDs from cores 1, 2 and 3.
@@ -160,12 +164,14 @@ def test_init_success1_isolcpus(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(2, 1, "vertical", "vertical", "-1")
+        init.init(2, 1, "vertical", "vertical", "-1", "fake-namespace")
 
 
 @patch('intel.topology.parse', MagicMock(return_value=return_quad_core()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
@@ -195,12 +201,14 @@ def test_init_success2(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(1, 2, "vertical", "vertical", "-1")
+        init.init(1, 2, "vertical", "vertical", "-1", "fake-namespace")
 
 
 @patch('intel.topology.lscpu', MagicMock(return_value=quad_core_lscpu()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success_isolcpus2(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("isolcpus"))
@@ -230,12 +238,14 @@ def test_init_success_isolcpus2(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(1, 2, "vertical", "vertical", "-1")
+        init.init(1, 2, "vertical", "vertical", "-1", "fake-namespace")
 
 
 @patch('intel.topology.parse', MagicMock(return_value=return_quad_core()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success3(monkeypatch):
     # Set the procfs environment variable.
     monkeypatch.setenv(proc.ENV_PROC_FS, helpers.procfs_dir("ok"))
@@ -265,12 +275,14 @@ def test_init_success3(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(1, 1, "vertical", "vertical", "-1")
+        init.init(1, 1, "vertical", "vertical", "-1", "fake-namespace")
 
 
 @patch('intel.topology.lscpu', MagicMock(return_value=eight_core_lscpu()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success_excl_non_isolcpus1(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
@@ -305,12 +317,14 @@ def test_init_success_excl_non_isolcpus1(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(1, 1, "vertical", "vertical", "0")
+        init.init(1, 1, "vertical", "vertical", "0", "fake-namespace")
 
 
 @patch('intel.topology.lscpu', MagicMock(return_value=eight_core_lscpu()))
 @patch('intel.k8s.get_node_from_pod',
        MagicMock(return_value="fake-node"))
+@patch('intel.k8s.get_config_map',
+       MagicMock(return_value=None))
 def test_init_success_excl_non_isolcpus2(monkeypatch):
     monkeypatch.setenv(proc.ENV_PROC_FS,
                        helpers.procfs_dir("exclusive_non_isolcpus"))
@@ -348,7 +362,7 @@ def test_init_success_excl_non_isolcpus2(monkeypatch):
     mock = MagicMock(name="mock")
     mock.side_effect = configmap_mock
     with patch('intel.k8s.create_config_map', new=mock):
-        init.init(1, 1, "vertical", "vertical", "0,3-5")
+        init.init(1, 1, "vertical", "vertical", "0,3-5", "fake-namespace")
 
 
 def test_init_failure1(monkeypatch):
@@ -371,7 +385,7 @@ def test_init_failure1(monkeypatch):
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         with pytest.raises(RuntimeError):
             init.init(2, 1, "vertical",
-                      "vertical", "-1")
+                      "vertical", "-1", "fake-namespace")
 
 
 def test_init_failure2(monkeypatch):
@@ -394,7 +408,7 @@ def test_init_failure2(monkeypatch):
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         with pytest.raises(RuntimeError) as err:
             init.init(2, 1, "vertical",
-                      "vertical", "-1")
+                      "vertical", "-1", "fake-namespace")
         assert err is not None
         expected_msg = "No more free cores left to assign for shared"
         assert err.value.args[0] == expected_msg
@@ -424,7 +438,7 @@ def test_init_failure3(monkeypatch):
     with patch('intel.topology.parse', MagicMock(return_value=sockets)):
         with pytest.raises(RuntimeError) as err:
             init.init(2, 1, "vertical",
-                      "vertical", "-1")
+                      "vertical", "-1", "fake-namespace")
         assert err is not None
         expected_msg = "No more free cores left to assign for infra"
         assert err.value.args[0] == expected_msg
@@ -437,7 +451,8 @@ def test_init_failure_excl_non_isolcpus1(monkeypatch):
 
     with pytest.raises(RuntimeError) as err:
         init.init(1, 1,
-                  "vertical", "vertical", "1,2")
+                  "vertical", "vertical", "1,2",
+                  "fake-namespace")
     assert err is not None
     expected_msg = "Core(s) have already been assigned to pool(s): [1, 2]"\
                    ", cannot add them to exclusive-non-isolcpus pool"
@@ -451,7 +466,8 @@ def test_init_failure_excl_non_isolcpus2(monkeypatch):
 
     with pytest.raises(RuntimeError) as err:
         init.init(1, 1,
-                  "vertical", "vertical", "0,1")
+                  "vertical", "vertical", "0,1",
+                  "fake-namespace")
     assert err is not None
     expected_msg = "Core(s) have already been assigned to pool(s): [1]"\
                    ", cannot add them to exclusive-non-isolcpus pool"
@@ -465,7 +481,8 @@ def test_init_failure_excl_non_isolcpus3(monkeypatch):
 
     with pytest.raises(RuntimeError) as err:
         init.init(1, 1,
-                  "vertical", "vertical", "-2")
+                  "vertical", "vertical", "-2",
+                  "fake-namespace")
     assert err is not None
     expected_msg = "Invalid core ID: -2"
     assert err.value.args[0] == expected_msg
@@ -478,7 +495,8 @@ def test_init_failure_excl_non_isolcpus4(monkeypatch):
 
     with pytest.raises(RuntimeError) as err:
         init.init(1, 1,
-                  "vertical", "vertical", "20,21")
+                  "vertical", "vertical", "20,21",
+                  "fake-namespace")
     assert err is not None
     expected_msg = "Following physical cores not on system: [20, 21];"\
                    " you may be including logical CPUs of each core"
@@ -491,7 +509,8 @@ def test_init_failure_excl_non_isolcpus5(monkeypatch):
 
     with pytest.raises(RuntimeError) as err:
         init.init(1, 1,
-                  "vertical", "vertical", "3")
+                  "vertical", "vertical", "3",
+                  "fake-namespace")
     assert err is not None
     expected_msg = "Isolated cores [3] cannot be placed in"\
                    " exclusive-non-isolcpus pool"

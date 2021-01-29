@@ -148,9 +148,9 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
         for cmd in cmd_list:
             args = ""
             if cmd == "reconcile":
-                args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- reconcile --interval=5 --publish"  # noqa: E501
+                args = ("/cmk/cmk.py isolate --pool=infra --namespace={} /cmk/cmk.py -- reconcile --interval=5 --publish --namespace={}").format(namespace, namespace)  # noqa: E501
             elif cmd == "nodereport":
-                args = "/cmk/cmk.py isolate --pool=infra /cmk/cmk.py -- node-report --interval=5 --publish"  # noqa: E501
+                args = ("/cmk/cmk.py isolate --pool=infra --namespace={} /cmk/cmk.py -- node-report --interval=5 --publish --namespace={}").format(namespace, namespace)  # noqa: E501
 
             update_pod_with_container(pod, cmd, cmk_img, cmk_img_pol, args)
     elif cmd_init_list:
@@ -160,9 +160,10 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
             if cmd == "init":
                 args = ("/cmk/cmk.py init --num-exclusive-cores={} "
                         "--num-shared-cores={} --shared-mode={} "
-                        "--exclusive-mode={} --excl-non-isolcpus={}")\
+                        "--exclusive-mode={} --excl-non-isolcpus={} "
+                        "--namespace={}")\
                     .format(num_exclusive_cores, num_shared_cores, shared_mode,
-                            exclusive_mode, excl_non_isolcpus)
+                            exclusive_mode, excl_non_isolcpus, namespace)
                 # If init is the only cmd in cmd_init_list, it should be run
                 # as regular container as spec.containers is a required field.
                 # Otherwise, it should be run as init-container.
@@ -174,7 +175,8 @@ def run_cmd_pods(cmd_list, cmd_init_list, cmk_img, cmk_img_pol,
                                                    cmk_img_pol, args)
             else:
                 if cmd == "discover":
-                    args = "/cmk/cmk.py discover"
+                    args = ("/cmk/cmk.py discover --namespace={}")\
+                        .format(namespace)
                     if no_taint:
                         args = " ".join([args, "--no-taint"])
                 elif cmd == "install":

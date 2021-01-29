@@ -30,7 +30,7 @@ ENV_CPUS_INFRA = "CMK_CPUS_INFRA"
 ENV_NUM_CORES = "CMK_NUM_CORES"
 
 
-def isolate(pool_name, no_affinity, command, args, socket_id=None):
+def isolate(pool_name, no_affinity, command, args, namespace, socket_id=None):
     pod_name = os.environ["HOSTNAME"]
     if not isinstance(pod_name, str):
         logging.error("Pod name is not a string, exiting...")
@@ -38,7 +38,7 @@ def isolate(pool_name, no_affinity, command, args, socket_id=None):
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
 
-    c = config.Config(configmap_name, pod_name)
+    c = config.Config(configmap_name, pod_name, namespace)
     try:
         c.lock()
         pools = c.c_data.pools

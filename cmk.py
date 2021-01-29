@@ -30,14 +30,14 @@ Usage:
   cmk init [--num-exclusive-cores=<num>]
            [--num-shared-cores=<num>] [--socket-id=<num>]
            [--shared-mode=<mode>] [--exclusive-mode=<mode>]
-           [--excl-non-isolcpus=<list>]
-  cmk discover [--no-taint]
+           [--excl-non-isolcpus=<list>] [--namespace=<name>]
+  cmk discover [--namespace=<name>] [--no-taint]
   cmk describe
-  cmk reconcile [--publish] [--interval=<seconds>]
+  cmk reconcile [--publish] [--interval=<seconds>] [--namespace=<name>]
   cmk isolate [--socket-id=<num>] --pool=<pool> <command>
-              [-- <args>...][--no-affinity]
+              [-- <args>...][--no-affinity] [--namespace=<name>]
   cmk install [--install-dir=<dir>]
-  cmk node-report [--publish] [--interval=<seconds>]
+  cmk node-report [--publish] [--interval=<seconds>] [--namespace=<name>]
   cmk uninstall [--install-dir=<dir>] [--conf-dir=<dir>] [--namespace=<name>]
   cmk webhook [--conf-file=<file>] [--cafile=<file>] [--insecure=<bool>]
   cmk reconfigure [--node-name=<name>] [--num-exclusive-cores=<num>]
@@ -139,10 +139,10 @@ def main():
                   int(args["--num-shared-cores"]),
                   args["--exclusive-mode"],
                   args["--shared-mode"],
-                  args["--excl-non-isolcpus"])
+                  args["--excl-non-isolcpus"], args["--namespace"])
         return
     if args["discover"]:
-        discover.discover(args["--no-taint"])
+        discover.discover(args["--namespace"], args["--no-taint"])
         return
     if args["describe"]:
         describe.describe()
@@ -152,11 +152,13 @@ def main():
                         args["--no-affinity"],
                         args["<command>"],
                         args["<args>"],
+                        args["--namespace"],
                         args["--socket-id"])
         return
     if args["reconcile"]:
         reconcile.reconcile(int(args["--interval"]),
-                            args["--publish"])
+                            args["--publish"],
+                            args["--namespace"])
         return
     if args["install"]:
         install.install(args["--install-dir"])
@@ -168,7 +170,8 @@ def main():
         return
     if args["node-report"]:
         nodereport.nodereport(int(args["--interval"]),
-                              args["--publish"])
+                              args["--publish"],
+                              args["--namespace"])
         return
     if args["webhook"]:
         webhook.webhook(args["--conf-file"], args["--cafile"],

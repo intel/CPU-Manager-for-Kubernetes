@@ -20,7 +20,7 @@ import os
 
 def init(num_exclusive_cores, num_shared_cores,
          exclusive_allocation_mode, shared_allocation_mode,
-         excl_non_isolcpus):
+         excl_non_isolcpus, namespace):
     check_hugepages()
 
     logging.info("Requested exclusive cores = {}.".format(num_exclusive_cores))
@@ -38,7 +38,7 @@ def init(num_exclusive_cores, num_shared_cores,
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    config.new(platform, excl_non_isolcpus, configmap_name)
+    config.new(platform, excl_non_isolcpus, configmap_name, namespace)
 
 
 def configure(num_exclusive_cores, num_shared_cores,

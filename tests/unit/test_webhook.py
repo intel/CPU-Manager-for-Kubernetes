@@ -2,6 +2,8 @@ from unittest.mock import patch, MagicMock
 import pytest
 import os
 from yamlreader import YamlReaderError
+import json
+import base64
 
 from intel import webhook, util
 
@@ -30,6 +32,20 @@ def get_cmk_container2():
             },
             "limits": {
                 webhook.CMK_ER_NAME[1]: "2"
+            },
+        }
+    }
+    return fake_cmk_container
+
+
+def get_cmk_container3():
+    fake_cmk_container = {
+        "resources": {
+            "requests": {
+                webhook.CMK_ER_NAME[0]: "1"
+            },
+            "limits": {
+                webhook.CMK_ER_NAME[0]: "1"
             },
         }
     }
@@ -236,3 +252,28 @@ def test_webhook_mutate_container_merge_fail(caplog):
                MagicMock(side_effect=[None, YamlReaderError])):
         with pytest.raises(webhook.MutationError):
             webhook.mutate(ar, conf_file)
+
+
+def test_webhook_mutate_success_core_number_mismatch():
+    conf_file = os.path.join(util.cmk_root(), "tests", "data",
+                             "webhook", MUTATIONS_YAML)
+
+    ar = get_admission_review()
+    ar['request']['object']['spec'] = {
+        "containers": [get_cmk_container3(), get_cmk_container()]
+    }
+
+    request_uid = ar['request']['uid']
+    webhook.mutate(ar, conf_file)
+
+    assert "response" in ar
+    assert "request" not in ar
+    assert ar['response']['uid'] == request_uid
+    assert ar['response']['allowed']
+    assert "patch" in ar['response']
+
+    patch = json.loads(base64.b64decode(ar['response']['patch']))
+    containers = patch[1]['value']['containers']
+    assert len(containers) == 2
+    assert containers[0]['env'][1]['value'] == "1"
+    assert containers[1]['env'][1]['value'] == "2"
