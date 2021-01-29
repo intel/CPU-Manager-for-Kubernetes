@@ -143,7 +143,8 @@ def test_isolate_exclusive1():
     with patch('psutil.Process', MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("exclusive", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [0, 11]
 
 
@@ -160,7 +161,8 @@ def test_isolate_exclusive2():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("exclusive", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [1, 12]
 
 
@@ -177,7 +179,8 @@ def test_isolate_exclusive3():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("exclusive", False, "fake-cmd",
-                            ["fake-args"], socket_id="1")
+                            ["fake-args"], "fake-namespace",
+                            socket_id="1")
             assert p.cpu_affinity() == [3, 14]
 
 
@@ -194,7 +197,8 @@ def test_isolate_shared1():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("shared", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [4, 15, 5, 16]
 
 
@@ -211,7 +215,8 @@ def test_isolate_shared2():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("shared", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [4, 15, 5, 16]
 
 
@@ -228,7 +233,8 @@ def test_isolate_infra1():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("infra", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
 
 
@@ -245,7 +251,8 @@ def test_isolate_infra2():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("infra", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
             assert p.cpu_affinity() == [6, 17, 7, 18, 8, 19]
 
 
@@ -262,7 +269,8 @@ def test_isolate_exclusive_non_isolcpus2():
                MagicMock(return_value=p)):
         with patch('intel.config.Config', MagicMock(return_value=c)):
             isolate.isolate("exclusive-non-isolcpus", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespaec",
+                            socket_id=None)
             assert p.cpu_affinity() == [10, 21]
 
 
@@ -277,7 +285,8 @@ def test_pool_not_exist():
     with patch('intel.config.Config', MagicMock(return_value=c)):
         with pytest.raises(KeyError) as err:
             isolate.isolate("fake-pool", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
 
         assert err is not None
         assert err.value.args[0] == "Requested pool fake-pool does not exist"
@@ -295,7 +304,8 @@ def test_n_cpus_lt_one():
     with patch('intel.config.Config', MagicMock(return_value=c)):
         with pytest.raises(ValueError) as err:
             isolate.isolate("exclusive", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
 
         assert err is not None
         assert err.value.args[0] == "Requested numbers of cores "\
@@ -314,7 +324,8 @@ def test_not_enough_cpus():
     with patch('intel.config.Config', MagicMock(return_value=c)):
         with pytest.raises(SystemError) as err:
             isolate.isolate("exclusive", False, "fake-cmd",
-                            ["fake-args"], socket_id=None)
+                            ["fake-args"], "fake-namespace",
+                            socket_id=None)
 
         assert err is not None
         assert err.value.args[0] == "Not enough free cpu lists "\
@@ -332,7 +343,8 @@ def test_isolate_shared_failure1():
     with patch('intel.config.Config', MagicMock(return_value=c)):
         with pytest.raises(SystemError) as err:
             isolate.isolate("shared", False, "fake-cmd",
-                            ["fake-args"], socket_id="1")
+                            ["fake-args"], "fake-namespace",
+                            socket_id="1")
 
         assert err is not None
         assert err.value.args[0] == "No cpu lists in pool shared"

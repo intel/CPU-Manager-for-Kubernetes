@@ -21,11 +21,11 @@ from kubernetes import config as k8sconfig, client as k8sclient
 from . import config, proc, third_party, custom_resource, k8s, util
 
 
-def reconcile(seconds, publish):
+def reconcile(seconds, publish, namespace):
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    c = config.Config(configmap_name, pod_name)
+    c = config.Config(configmap_name, pod_name, namespace)
     report = None
 
     if seconds is None:

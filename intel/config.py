@@ -18,11 +18,12 @@ exclusivity = {
 
 class Config:
 
-    def __init__(self, cm_name, owner):
+    def __init__(self, cm_name, owner, cm_namespace):
         self.c = None
         self.c_data = None
         self.cm_name = cm_name
         self.owner = owner
+        self.cm_namespace = cm_namespace
 
     def lock(self):
         # The lock function is used to avoid two isolate
@@ -40,7 +41,7 @@ class Config:
         time.sleep(random.random())
         while True:
             try:
-                c = k8s.get_config_map(None, self.cm_name, "default")
+                c = k8s.get_config_map(None, self.cm_name, self.cm_namespace)
                 owner = c.metadata.annotations["Owner"]
                 if owner != "":
                     time.sleep(1)
@@ -48,7 +49,8 @@ class Config:
                 else:
                     c.metadata.annotations["Owner"] = self.owner
                     try:
-                        k8s.patch_config_map(None, self.cm_name, c, "default")
+                        k8s.patch_config_map(None, self.cm_name,
+                                             c, self.cm_namespace)
                     except K8sApiException as err:
                         logging.error("Error while retreiving configmap {}"
                                       .format(self.cm_name))
@@ -73,7 +75,8 @@ class Config:
         }
         clusterinit.update_configmap(configmap, self.cm_name, data)
         try:
-            k8s.patch_config_map(None, self.cm_name, configmap, "default")
+            k8s.patch_config_map(None, self.cm_name,
+                                 configmap, self.cm_namespace)
         except K8sApiException as err:
             logging.error("Error while retreiving configmap {}"
                           .format(self.cm_name))
@@ -232,7 +235,7 @@ class CoreList:
         return result
 
 
-def new(platform, excl_non_isolcpus, name):
+def new(platform, excl_non_isolcpus, name, namespace):
     # Creates the new CMK configuration for the node. It create a
     # configmap object and POSTs it to the K8s API Server
 
@@ -243,20 +246,32 @@ def new(platform, excl_non_isolcpus, name):
         config = update_configmap_exclusive("exclusive-non-isolcpus",
                                             platform, config)
     config = update_configmap_shared("infra", platform, config)
-
-    configmap = k8sclient.V1ConfigMap()
     data = {
         "config": yaml.dump(config)
     }
-    clusterinit.update_configmap(configmap, name, data)
 
-    try:
-        k8s.create_config_map(None, configmap, "default")
-    except K8sApiException as err:
-        logging.error("Exception when creating config map {}"
-                      .format(name))
-        logging.error(err.reason)
-        sys.exit(1)
+    configmap = k8s.get_config_map(None, name, namespace)
+
+    if configmap is None:
+        configmap = k8sclient.V1ConfigMap()
+        clusterinit.update_configmap(configmap, name, data)
+
+        try:
+            k8s.create_config_map(None, configmap, namespace)
+        except K8sApiException as err:
+            logging.error("Exception when creating config map {}"
+                          .format(name))
+            logging.error(err.reason)
+            sys.exit(1)
+    else:
+        clusterinit.update_configmap(configmap, name, data)
+        try:
+            k8s.patch_config_map(None, name, configmap, namespace)
+        except K8sApiException as err:
+            logging.error("Error while patching configmap {}"
+                          .format(name))
+            logging.error(err.reason)
+            sys.exit(1)
 
 
 def update_configmap_exclusive(pool_name, platform, config):

@@ -23,7 +23,7 @@ from . import config, custom_resource, discover, \
     k8s, proc, third_party, topology, util, sst_bf as sst
 
 
-def nodereport(seconds, publish):
+def nodereport(seconds, publish, namespace):
     if seconds is None:
         seconds = 0
     else:
@@ -31,7 +31,7 @@ def nodereport(seconds, publish):
     should_exit = (seconds <= 0)
 
     while True:
-        report = generate_report()
+        report = generate_report(namespace)
 
         print(report.json())
 
@@ -76,10 +76,10 @@ def nodereport(seconds, publish):
         time.sleep(seconds)
 
 
-def generate_report():
+def generate_report(namespace):
     report = NodeReport()
-    check_describe(report)
-    check_cmk_config(report)
+    check_describe(report, namespace)
+    check_cmk_config(report, namespace)
     sst_bf = False
     try:
         sst_bf = bool(discover.get_node_label(sst.NFD_LABEL))
@@ -91,18 +91,18 @@ def generate_report():
     return report
 
 
-def check_describe(report):
+def check_describe(report, namespace):
     try:
         pod_name = os.environ["HOSTNAME"]
         node_name = k8s.get_node_from_pod(None, pod_name)
         configmap_name = "cmk-config-{}".format(node_name)
-        c = config.get_config(configmap_name)
+        c = config.get_config(configmap_name, namespace)
         report.add_description(c.as_dict())
     except Exception:
         pass
 
 
-def check_cmk_config(report):
+def check_cmk_config(report, namespace):
     check_conf = report.add_check("configDirectory")
 
     # Verify we can read the config directory
@@ -110,7 +110,7 @@ def check_cmk_config(report):
         pod_name = os.environ["HOSTNAME"]
         node_name = k8s.get_node_from_pod(None, pod_name)
         configmap_name = "cmk-config-{}".format(node_name)
-        c = config.get_config(configmap_name)
+        c = config.get_config(configmap_name, namespace)
     except Exception:
         check_conf.add_error("Unable to read CMK configmap")
         return  # Nothing more we can check for now

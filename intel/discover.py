@@ -27,7 +27,7 @@ ABORTING_DISCOVER = "Aborting discover ..."
 # discover reads the CMK configuration file, patches kubernetes nodes with
 # appropriate number of CMK Opaque Integer Resource (OIR) slots and applies
 # the appropriate CMK node labels and taints.
-def discover(no_taint=False):
+def discover(namespace, no_taint=False):
 
     version = util.parse_version(k8s.get_kube_version(None))
     if version == util.parse_version("v1.8.0"):
@@ -38,11 +38,11 @@ def discover(no_taint=False):
     if version >= util.parse_version("v1.8.1"):
         # Patch the node with the appropriate CMK ER.
         logging.debug("Patching the node with the appropriate CMK ER.")
-        add_node_er()
+        add_node_er(namespace)
     else:
         # Patch the node with the appropriate CMK OIR.
         logging.debug("Patching the node with the appropriate CMK OIR.")
-        add_node_oir()
+        add_node_oir(namespace)
 
     # Add appropriate CMK label to the node.
     logging.debug("Adding appropriate CMK label to the node.")
@@ -55,11 +55,11 @@ def discover(no_taint=False):
 
 
 # add_node_oir patches the node with the appropriate CMK OIR.
-def add_node_oir():
+def add_node_oir(namespace):
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    c = config.Config(configmap_name, pod_name)
+    c = config.Config(configmap_name, pod_name, namespace)
     c.lock()
 
     num_excl_non_isolcpus = None
@@ -106,11 +106,11 @@ def add_node_oir():
 
 
 # add_node_er patches the node with the appropriate CMK extended resources.
-def add_node_er():
+def add_node_er(namespace):
     pod_name = os.environ["HOSTNAME"]
     node_name = k8s.get_node_from_pod(None, pod_name)
     configmap_name = "cmk-config-{}".format(node_name)
-    c = config.Config(configmap_name, pod_name)
+    c = config.Config(configmap_name, pod_name, namespace)
     c.lock()
 
     num_excl_non_isolcpus = None

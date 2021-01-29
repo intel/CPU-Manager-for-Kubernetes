@@ -75,7 +75,7 @@ def test_discover_no_exclusive():
     c = MockConfig(get_bad_config())
     with patch('intel.config.Config', MagicMock(return_value=c)):
         with pytest.raises(KeyError) as err:
-            discover.add_node_oir()
+            discover.add_node_oir("fake-namespace")
         expected_msg = "Exclusive pool does not exist"
         assert err.value.args[0] == expected_msg
 
@@ -110,7 +110,7 @@ def test_discover_oir_update_failure(caplog):
         with patch('intel.discover.patch_k8s_node_status',
                    MagicMock(side_effect=fake_api_exception)):
             with pytest.raises(SystemExit):
-                discover.add_node_oir()
+                discover.add_node_oir("fake-namespace")
             exp_err = "Exception when patching node with OIR"
             exp_log_err = get_expected_log_error(exp_err)
             caplog_tuple = caplog.record_tuples
@@ -176,7 +176,7 @@ def test_add_node_er_failure(caplog):
         with patch('intel.discover.patch_k8s_node_status',
                    MagicMock(side_effect=fake_api_exception)):
             with pytest.raises(SystemExit):
-                discover.add_node_er()
+                discover.add_node_er("fake-namespace")
             exp_err = "Exception when patching node with OIR"
             exp_log_err = get_expected_log_error(exp_err)
             caplog_tuple = caplog.record_tuples
@@ -191,7 +191,7 @@ def test_discover_version_check(caplog):
             patch('intel.discover.add_node_label') as mock_label, \
             patch('intel.discover.add_node_taint') as mock_taint:
 
-        discover.discover()
+        discover.discover("fake-namespace")
 
         assert mock_er.called
         assert not mock_oir.called
@@ -206,7 +206,7 @@ def test_discover_version_check2(caplog):
             patch('intel.discover.add_node_label') as mock_label, \
             patch('intel.discover.add_node_taint') as mock_taint:
 
-        discover.discover()
+        discover.discover("fake-namespace")
 
         assert not mock_er.called
         assert mock_oir.called
@@ -222,7 +222,7 @@ def test_discover_version_check3(caplog):
             patch('intel.discover.add_node_taint') as mock_taint:
 
         with pytest.raises(SystemExit):
-            discover.discover()
+            discover.discover("fake-namespace")
 
         # no resources should be created on unsupported cluster
         assert not mock_er.called
