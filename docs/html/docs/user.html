@@ -87,7 +87,7 @@ information on how to set up the cluster with <code>cmk</code> enabled, see the
 <a id="user-content-pod-configuration" class="anchor" href="#pod-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pod configuration</h2>
 <p>The only CMK CLI subcommand users (pod authors) need to know about is
 <a href="cli.html#cmk-isolate">cmk isolate</a>. The <code>isolate</code> subcommand consults shared state
-on the host file system to acquire and bookkeep an assigned subset of CPUs
+on the host configmap to acquire and bookkeep an assigned subset of CPUs
 a command should run on.</p>
 <p>By default <code>cmk isolate</code> allocates a single CPU core. In order to request
 multiple CPU cores, the environmental variable <code>CMK_NUM_CORES</code> can be set.
@@ -103,8 +103,6 @@ and wrap your complex command:
 <p><a href="images/user-container.svg" target="_blank" rel="noopener noreferrer"><img src="images/user-container.svg" alt="User container diagram" style="max-width:100%;"></a></p>
 <p>The figure illustrates a few important points:</p>
 <ul>
-<li>The <a href="config.html">CMK configuration directory</a> must be mounted into the
-container at a path that matches the value of <code>--config-dir</code>.</li>
 <li>The host <a href="http://man7.org/linux/man-pages/man5/proc.5.html" rel="nofollow">procfs</a> must be mounted into the container at a path that matches
 the value of the <code>CMK_PROC_FS</code> environment variable. Since bind-mounting
 over the top of the procfs at <code>/proc</code> from inside the pid namespace would
@@ -132,12 +130,12 @@ metadata:
 spec:
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
+    - "/opt/bin/cmk isolate --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
     env:
-    image: cmk:v1.5.1
+    image: cmk:v1.5.2
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     resources:

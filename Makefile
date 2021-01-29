@@ -16,7 +16,7 @@
 
 all: docker
 
-version=v1.5.1
+version=v1.5.2
 
 # TODO: This target should be changed, when e2e tests will be ready and test
 # entrypoint will be defined.

@@ -134,17 +134,17 @@ specified in the Extended Resource request. This allows <code>cmk isolate</code>
 CPU cores to given process.
 On top of that webhook applies additional changes to the pod which are defined in
 the configuration file. By default, configuration deployed during <code>cmk cluster-init</code> adds
-CMK installation and configuration directories and host /proc filesystem volumes, CMK
-service account, tolerations required for a pod to be scheduled on the CMK enabled node
-and appropriately annotates pod. Containers specifications are updated with volume mounts
-(referencing volumes added to the pod) and environmental variable <code>CMK_PROC_FS</code>.</p>
+CMK installation and host /proc filesystem volumes, CMK service account, tolerations required
+for a pod to be scheduled on the CMK enabled node and appropriately annotates pod. Containers
+specifications are updated with volume mounts (referencing volumes added to the pod) and
+environmental variable <code>CMK_PROC_FS</code>.</p>
 <p>The mutating admission controller is set up by default using mutual TLS, where the webhook
 service looks to authenticate the Kubernetes API server as well. This requires that the Kubernetes
 API server be set up to pass webhooks a specified certificate and key. By default the webhook
 looks to authenticate the certificate it gets passed with the CA file that the Kubernetes API
 server passes in to each pod when they are created. You can pass in the CA file location you
 want to use when running the webhook by using the <code>--cafile</code> argument. You can also set the
-argument <code>--insecure</code> to false and the webhook service will revert back to regular TLS. To
+argument <code>--insecure</code> to True and the webhook service will revert back to regular TLS. To
 set up the Kubernetes API server to pass webhook services certificates and keys, do the
 following:</p>
 <pre><code>When starting the Kubernetes API server, set the `--admission-control-config-file` 
@@ -251,9 +251,8 @@ pool will isolate pods from other pods in the cluster, but will not use cores th
 <li>The instructions provided in this section should only be used if and only if running <code>cmk cluster-init</code> fails
 for some reason.</li>
 <li>The subcommands described below should be run in the same order.</li>
-<li>The documentation in this section assumes that the <code>CMK</code> configuration directory is <code>/etc/cmk</code> and the <code>cmk</code>
-binary is installed on the host under <code>/opt/bin</code>.</li>
-<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.5.1</code>. It is expected that the
+<li>The documentation in this section assumes that the <code>cmk</code> binary is installed on the host under <code>/opt/bin</code>.</li>
+<li>In all the pod templates used in this section, the name of container image used is <code>cmk:v1.5.2</code>. It is expected that the
 <code>cmk</code> container image is built and cached locally in the host. The <code>image</code> field will require modification if the
 container image is hosted remotely (e.g., in <a href="https://hub.docker.com/" rel="nofollow">https://hub.docker.com/</a>).</li>
 </ul>
@@ -262,17 +261,11 @@ container image is hosted remotely (e.g., in <a href="https://hub.docker.com/" r
 </h4>
 <p>The <code>CMK</code> nodes in the kubernetes cluster should be initialized in order to be used with the CMK software using
 <a href="cli.html#cmk-init"><code>cmk-init</code></a>. To initialize the <code>CMK</code> nodes, the <a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a> can be used.</p>
-<p><code>cmk init</code> takes the <code>--conf-dir</code>, <code>--num-exclusive-cores</code> and the <code>--num-shared-cores</code> flags. In the
-<a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a>, the values to these flags can be modified. The value for <code>--conf-dir</code> can be
-set by changing the <code>path</code> value of the <code>hostPath</code> for the <code>cmk-conf-dir</code>. The value for <code>--num-exclusive-cores</code> and
+<p><code>cmk init</code> takes the <code>--num-exclusive-cores</code> and the <code>--num-shared-cores</code> flags. In the
+<a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a>, the values to these flags can be modified. The value for <code>--num-exclusive-cores</code> and
 <code>--num-shared-cores</code> can be set by changing the values for the <code>NUM_EXCLUSIVE_CORES</code> and <code>NUM_SHARED_CORES</code> environment variables,
 respectively.</p>
 <p>Values that might require modification in the <a href="../resources/pods/cmk-init-pod.yaml">cmk-init-pod template</a> are shown as snippets below:</p>
-<div class="highlight highlight-source-yaml"><pre>  <span class="pl-ent">volumes</span>:
-  - <span class="pl-ent">hostPath</span>:
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK config dir in the host file system.</span>
-      <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
 <div class="highlight highlight-source-yaml"><pre>    <span class="pl-ent">env</span>:
     - <span class="pl-ent">name</span>: <span class="pl-s">NUM_EXCLUSIVE_CORES</span>
       <span class="pl-c"><span class="pl-c">#</span> Change this to modify the value passed to `--num-exclusive-cores` flag.</span>
@@ -285,18 +278,9 @@ respectively.</p>
 <p>All the <code>CMK</code> nodes in the Kubernetes cluster should be patched with <code>CMK</code> <a href="http://kubernetes.io/docs/user-guide/compute-resources#opaque-integer-resources-alpha-feature" rel="nofollow">OIR</a> slots using
 <a href="cli.html#cmk-discover"><code>cmk discover</code></a>. The OIR slots are advertised as the exclusive pools need to be allocated exclusively.
 The number of slots advertised should be equal to the number of cpu lists under the <strong>exclusive</strong> pool, as determined
-by examining the <code>CMK</code> configuration directory. <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a> can be used to
+by examining the <code>CMK</code> configuration configmap. <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a> can be used to
 advertise the <code>CMK</code> OIR slots.</p>
-<p><code>cmk discover</code> takes the <code>--conf-dir</code> flag. In the <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a>, the value for
-<code>--conf-dir</code> can be configured by changing the <code>path</code> value of the <code>hostPath</code> for <code>cmk-conf-dir</code>. After running
-this Pod in a node, the node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-cmk' OIR.</p>
-<p>Values that might require modification in the <a href="../resources/pods/cmk-discover-pod.yaml">cmk-discover-pod template</a> are shown as snippets
-below:</p>
-<div class="highlight highlight-source-yaml"><pre>  <span class="pl-ent">volumes</span>:
-  - <span class="pl-ent">hostPath</span>:
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK config dir in the host file system.</span>
-      <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
+<p>After running this Pod in a node, the node will be patched with `pod.alpha.kubernetes.io/opaque-int-resource-cmk' OIR.</p>
 <h4>
 <a id="user-content-run-cmk-reconcile" class="anchor" href="#run-cmk-reconcile" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run <code>cmk reconcile</code>
 </h4>
@@ -305,8 +289,7 @@ below:</p>
 <a href="../resources/pods/cmk-reconcile-daemonset.yaml">cmk-reconcile-daemonset template</a>.</p>
 <p>In the <a href="../resources/pods/cmk-reconcile-daemonset.yaml">cmk-reconcile-daemonset template</a>, the time between each invocation of <code>cmk reconcile</code>
 can be adjusted by changing the value of the CMK_RECONCILE_SLEEP_TIME environment variable. The value specifies time
-in seconds. <code>cmk reconcile</code> takes the <code>--conf-dir</code> flag. This value can be configured by changing the <code>path</code>
-value of the <code>hostPath</code> for the <code>cmk-conf-dir</code> in the <a href="../resources/pods/cmk-reconcile-daemonset.yaml">cmk-reconcile-daemonset</a> template.</p>
+in seconds.</p>
 <p>Values that might require modification in the <a href="../resources/pods/cmk-reconcile-daemonset.yaml">cmk-reconcile-daemonset template</a> are shown as
 snippets below:</p>
 <div class="highlight highlight-source-yaml"><pre>    <span class="pl-ent">env</span>:
@@ -314,11 +297,6 @@ snippets below:</p>
         <span class="pl-c"><span class="pl-c">#</span> Change this to modify the sleep interval between consecutive</span>
         <span class="pl-c"><span class="pl-c">#</span> cmk reconcile runs. The value is specified in seconds.</span>
         <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">'</span>60<span class="pl-pds">'</span></span></pre></div>
-<div class="highlight highlight-source-yaml"><pre>  <span class="pl-ent">volumes</span>:
-  - <span class="pl-ent">hostPath</span>:
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK config dir in the host file system.</span>
-      <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
 <h4>
 <a id="user-content-run-cmk-install" class="anchor" href="#run-cmk-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run <code>cmk install</code>
 </h4>
@@ -337,7 +315,7 @@ below:</p>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span></pre></div>
 <h4>
 <a id="user-content-run-cmk-webhook-kubernetes-v190-only" class="anchor" href="#run-cmk-webhook-kubernetes-v190-only" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run <code>cmk webhook</code> (Kubernetes v1.9.0+ only)</h4>
-<p><code>cmk webhook</code> is used to run mutating admission webhook server. Whenever there's a requestto create a new pod,
+<p><code>cmk webhook</code> is used to run mutating admission webhook server. Whenever there's a request to create a new pod,
 the webhook can capture that request, check whether any of the containers requests or limits number of the CMK
 Extended Resources and update pod and its container specification appropriately. This allows to simplify deployment
 of workloads taking advantage of CMK, by reducing the number of requirements to the minimum.</p>
@@ -415,19 +393,15 @@ the <strong>exclusive</strong>, <strong>shared</strong> and the <strong>infra</s
 <a href="cli.html#cmk-isolate">documentation</a>.</p>
 <p><code>cmk isolate</code> can use <code>--socket-id</code> flag to target on which socket application should be spawned. This flag is optional,
 suitable only for <strong>exclusive</strong> pool and if it's not used <code>cmk isolate</code> will use first not reserved core.</p>
-<p><code>cmk isolate</code> also takes the <code>--conf-dir</code> and <code>--install-dir</code> flags. In the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a>,
-the values for <code>--conf-dir</code> and <code>--install-dir</code> can be modified by changing the <code>path</code> values of the <code>hostPath</code>.</p>
+<p><code>cmk isolate</code> also takes the <code>--install-dir</code> flag. In the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a>,
+the value for <code>--install-dir</code> can be modified by changing the <code>path</code> value of the <code>hostPath</code>.</p>
 <p>Values that might require modification in the <a href="../resources/pods/cmk-isolate-pod.yaml">cmk-isolate-pod template</a> are shown as snippets
 below:</p>
 <div class="highlight highlight-source-yaml"><pre>  <span class="pl-ent">volumes</span>:
   - <span class="pl-ent">hostPath</span>:
       <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK installation dir in the host file system.</span>
       <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/opt/bin<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span>
-  - <span class="pl-ent">hostPath</span>:
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK config dir in the host file system.</span>
-      <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
+    <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span></pre></div>
 <p>Notes:</p>
 <ul>
 <li>The Hello World cmk-isolate-pod consumes the <code>pod.alpha.kubernetes.io/opaque-int-resource-cmk</code> Opaque Integer
@@ -512,8 +486,7 @@ one OIR. This restricts the number of pods that can land on a Kubernetes node to
 <li>Login to the node and check if <code>CMK</code> configuration directory and binary exisits. Assuming default options were
 used for <code>cmk cluster-init</code>, you would do the following:</li>
 </ul>
-<div class="highlight highlight-source-shell"><pre>ls /etc/cmk/
-ls /opt/bin/</pre></div>
+<div class="highlight highlight-source-shell"><pre>ls /opt/bin/</pre></div>
 <ul>
 <li>Replace the <code>nodeName</code> in the Pod manifest below to the chosen node name and save it to a file.</li>
 </ul>
@@ -528,14 +501,14 @@ ls /opt/bin/</pre></div>
   <span class="pl-ent">nodeName</span>: <span class="pl-s">NODENAME</span>
   <span class="pl-ent">containers</span>:
   - <span class="pl-ent">args</span>:
-    - <span class="pl-s"><span class="pl-pds">"</span>/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra sleep -- 10000<span class="pl-pds">"</span></span>
+    - <span class="pl-s"><span class="pl-pds">"</span>/opt/bin/cmk isolate --pool=infra sleep -- 10000<span class="pl-pds">"</span></span>
     <span class="pl-ent">command</span>:
     - <span class="pl-s"><span class="pl-pds">"</span>/bin/bash<span class="pl-pds">"</span></span>
     - <span class="pl-s"><span class="pl-pds">"</span>-c<span class="pl-pds">"</span></span>
     <span class="pl-ent">env</span>:
     - <span class="pl-ent">name</span>: <span class="pl-s">CMK_PROC_FS</span>
       <span class="pl-ent">value</span>: <span class="pl-s"><span class="pl-pds">"</span>/host/proc<span class="pl-pds">"</span></span>
-    <span class="pl-ent">image</span>: <span class="pl-s">cmk:v1.5.1</span>
+    <span class="pl-ent">image</span>: <span class="pl-s">cmk:v1.5.2</span>
     <span class="pl-ent">imagePullPolicy</span>: <span class="pl-s"><span class="pl-pds">"</span>Never<span class="pl-pds">"</span></span>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-isolate-infra</span>
     <span class="pl-ent">volumeMounts</span>:
@@ -544,8 +517,6 @@ ls /opt/bin/</pre></div>
       <span class="pl-ent">readOnly</span>: <span class="pl-c1">true</span>
     - <span class="pl-ent">mountPath</span>: <span class="pl-s"><span class="pl-pds">"</span>/opt/bin<span class="pl-pds">"</span></span>
       <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span>
-    - <span class="pl-ent">mountPath</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-      <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span>
   <span class="pl-ent">restartPolicy</span>: <span class="pl-s">Never</span>
   <span class="pl-ent">volumes</span>:
   - <span class="pl-ent">hostPath</span>:
@@ -554,11 +525,7 @@ ls /opt/bin/</pre></div>
     <span class="pl-ent">name</span>: <span class="pl-s">cmk-install-dir</span>
   - <span class="pl-ent">hostPath</span>:
       <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/proc<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">host-proc</span>
-  - <span class="pl-ent">hostPath</span>:
-      <span class="pl-c"><span class="pl-c">#</span> Change this to modify the CMK config dir in the host file system.</span>
-      <span class="pl-ent">path</span>: <span class="pl-s"><span class="pl-pds">"</span>/etc/cmk<span class="pl-pds">"</span></span>
-    <span class="pl-ent">name</span>: <span class="pl-s">cmk-conf-dir</span></pre></div>
+    <span class="pl-ent">name</span>: <span class="pl-s">host-proc</span></pre></div>
 <ul>
 <li>Run <code>kubectl create -f &lt;file-name&gt;</code>, where <code>&lt;file-name&gt;</code> is name of the Pod manifest file with <code>nodeName</code> field
 substituted as mentioned in the previous step.</li>
@@ -585,12 +552,12 @@ spec:
   nodeName: NODENAME
   containers:
   - args:
-    - "/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=exclusive sleep -- 10000"
+    - "/opt/bin/cmk isolate --pool=exclusive sleep -- 10000"
     command:
     - "/bin/bash"
     - "-c"
     env:
-    image: cmk:v1.5.1
+    image: cmk:v1.5.2
     imagePullPolicy: "Never"
     name: cmk-isolate-infra
     resources:
@@ -629,13 +596,6 @@ injected:</li>
   },
   {
     "hostPath": {
-      "path": "/etc/cmk",
-      "type": ""
-    },
-    "name": "cmk-config-dir"
-  },
-  {
-    "hostPath": {
       "path": "/opt/bin",
       "type": ""
     },
@@ -661,71 +621,60 @@ env variables have been added to the container spec:</li>
 </code></pre>
 <h1>
 <a id="user-content-dynamic-pool-reconfiguration" class="anchor" href="#dynamic-pool-reconfiguration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic Pool Reconfiguration</h1>
-<p>Dynamic reconfiguration allows you to reconfigure the pool setup of your CMK nodes in your cluster without having to tear down CMK and clean up any of the configuration directories associated with CMK. The reconfigure command will look at every pod in every namespace on all of the CMK nodes in your cluster but will only reassign those pods that have been assigned cores using CMK. This knocks a considerable amount of time off of the operation and makes it a lot easier. It also means that you don't have to stop any processes that are currently running in order to reconfigure, as this method will automatically reassign any processes to the new cores in the new configuration.
+<p>Dynamic reconfiguration allows you to reconfigure the pool setup of your CMK nodes in your cluster without having to tear down CMK and clean up any of the configuration directories or configmap associated with CMK. The reconfigure command will look at every pod in every namespace on all of the CMK nodes in your cluster but will only reassign those pods that have been assigned cores using CMK. This knocks a considerable amount of time off of the operation and makes it a lot easier. It also means that you don't have to stop any processes that are currently running in order to reconfigure, as this method will automatically reassign any processes to the new cores in the new configuration.
 For example, consider the following CMK pool configuration:</p>
-<pre><code>   etc
-    └── cmk
-        ├── lock
-        └── pools
-            ├── shared
-            │   ├── 7,15
-            │   │   └── tasks
-            │   │       └── 2000, 2001
-            │   └── exclusive
-            ├── exclusive
-            │   ├── 3,11
-            │   │   └── tasks
-            │   │       └── 
-            │   ├── 4,12
-            │   │   └── tasks
-            │   │       └── 3001
-            │   ├── 5,13
-            │   │   └── tasks
-            │   ├── 6,14
-            │   │   └── tasks
-            │   └── exclusive
-            └── infra
-                ├── 0-2,8-10
-                │   └── tasks
-                │       └── 
-                └── exclusive
-                
-    etc
-    └── cmk
-        ├── lock
-        └── pools
-            ├── shared
-            │   ├── 6,14,7,15
-            │   │   └── tasks
-            │   │       └── 2000, 2001
-            │   └── exclusive
-            ├── exclusive
-            │   ├── 3,11
-            │   │   └── tasks
-            │   │       └── 
-            │   ├── 4,12
-            │   │   └── tasks
-            │   │       └── 3001
-            └── infra
-                ├── 0-2,8-10
-                │   └── tasks
-                │       └── 
-                └── exclusive
+<pre><code>   data:
+     config: |
+       exclusive:
+         0:
+           3,11: []
+           4,12:
+	   - '3001'
+           5,13: []
+           6,14: []
+         1: {}
+       infra:
+         0:
+           0-2,8-10: []
+         1: {}
+       shared:
+         0:
+           7,15:
+	   - '2000, 2001'
+         1: {}
+	 
+    data:
+     config: |
+       exclusive:
+         0:
+           3,11: []
+           4,12:
+	   - '3001'
+         1: {}
+       infra:
+         0:
+           0-2,8-10: []
+         1: {}
+       shared:
+         0:
+           6,14,7,15:
+	   - '2000, 2001'
+         1: {}
 </code></pre>
-<p>The processes 2000 and 2001 in the shared pool will have their cpu affinity changed from the original ["7,15"] to the updated ["6,14,7,15"] when the reconfiguratino has completed.
+<p>The processes 2000 and 2001 in the shared pool will have their cpu affinity changed from the original ["7,15"] to the updated ["6,14,7,15"] when the reconfiguration has completed.
 In the case of the exclusive pool, you can see that the process 3001 remained in the Core List 4,12 instead of being reassigned the Core List 3,11. This is so there is no unnecessary interruption to the process running on those cores because they will be high-priority processes that require low latency and zero interrupts. If the Core List that a process is running in is not available in the updated configuration (for example if only one exclusive pool was requested in the new setup, meaning only Core List 3,11 would be assigned), then of course the exclusive process will have to be reassigned to the new Core List.</p>
 <h3>
 <a id="user-content-how-do-you-reconfigure-with-cmk" class="anchor" href="#how-do-you-reconfigure-with-cmk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How Do You Reconfigure with CMK?</h3>
 <p>To use this reconfigure method you simply run a pod and us the <code>reconfigure_setup</code> option in cmk.py. The reconfigure option requires the following parameters:
-<code>num-exclusive-cores, num-shared-cores, excl-non-isolcpus, conf-dir, exclusive-mode, shared-mode, cmk-img, cmk-img-pol, install-dir, saname, namespace</code></p>
+<code>num-exclusive-cores, num-shared-cores, excl-non-isolcpus, exclusive-mode, shared-mode, cmk-img, cmk-img-pol, install-dir, saname, namespace</code></p>
 <p>An example PodSpec is provided in the resources/pods folder of the repository. An example command would look like the following:</p>
-<pre><code>	"/opt/bin/cmk isolate --conf-dir=/etc/cmk --pool=infra /opt/bin/cmk -- reconfigure_setup --num-exclusive-cores=2 --num-shared-cores=2 --namespace=cmk-namespace"
+<pre><code>	"/opt/bin/cmk isolate --pool=infra /opt/bin/cmk -- reconfigure_setup --num-exclusive-cores=2 --num-shared-cores=2 --namespace=cmk-namespace"
 </code></pre>
 <p>The parameters that are not listed in this example take their default value, which can be seen by running the <code>cmk --help</code> command.</p>
 <h3>
 <a id="user-content-what-happens-if-there-arent-enough-cores-to-house-all-of-the-processes-in-the-current-configuration" class="anchor" href="#what-happens-if-there-arent-enough-cores-to-house-all-of-the-processes-in-the-current-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What happens if there aren't enough cores to house all of the processes in the current configuration?</h3>
 <p>This scenario will happen when, for example, your CMK configuration has three cores assigned to the exclusive pool, all of which have a process running on them, and you try to reconfigure CMK to have only two cores assigned to the exclusive pool. The reconfigure command will recognise that one of the processes will not be able to get reassigned to an exclusive core and fail out of the operation before any changes have been made to the configuration files.</p>
-<p>The reconfigure operation will autmaically detect which nodes in your cluster are CMK nodes and it will reconfigure all of them without you having to specify. It does this detection by looking for the following label in the annotations of the node:
+<p>The reconfigure operation will automatically detect which nodes in your cluster are CMK nodes and it will reconfigure all of them without you having to specify. It does this detection by looking for the following label in the annotations of the node:
 <code>"cmk.intel.com/cmk-node" == "true"</code>
 This label is added by the discover operation, which occurs as part cluster_init, so you don't have to add the label yourself.</p>
 <h2>

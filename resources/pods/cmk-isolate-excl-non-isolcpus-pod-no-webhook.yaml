@@ -29,7 +29,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: cmk-isolate-exclusive-non-isolcpus
-    image: cmk:v1.5.1
+    image: cmk:v1.5.2
     command:
     - "/bin/bash"
     - "-c"
