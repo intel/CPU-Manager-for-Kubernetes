@@ -78,60 +78,53 @@
                 
 <h1>
 <a id="user-content-the-cmk-configuration-directory" class="anchor" href="#the-cmk-configuration-directory" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The <code>cmk</code> configuration directory</h1>
-<p>CMK checkpoints state in a directory structure on disk. The checkpoint
+<p>CMK checkpoints state in a <a href="https://kubernetes.io/docs/concepts/configuration/configmap/" rel="nofollow">Kubernetes ConfigMap</a>. The checkpoint
 describes all configured "pools" and their options, the "CPU lists" for
 those pools, and the "tasks" currently assigned to each CPU list. The
 directory format is described below.</p>
 <h2>
-<a id="user-content-cmk-filesystem-configuration-format" class="anchor" href="#cmk-filesystem-configuration-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CMK filesystem configuration format</h2>
+<a id="user-content-cmk-configmap-configuration-format" class="anchor" href="#cmk-configmap-configuration-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CMK configmap configuration format</h2>
 <p><em>Example:</em></p>
-<pre><code>etc
-└── cmk
-    ├── lock
-    └── pools
-        ├── shared
-        │   ├── 3,11
-        │   │   └── tasks
-        │   └── exclusive
-        ├── exclusive
-        │   ├── 4,12
-        │   │   └── tasks
-        │   ├── 5,13
-        │   │   └── tasks
-        │   ├── 6,14
-        │   │   └── tasks
-        │   ├── 7,15
-        │   │   └── tasks
-        │   └── exclusive
-        └── infra
-            ├── 0-2,8-10
-            │   └── tasks
-            └── exclusive
+<pre><code>data:
+  config: |
+    exclusive:
+      0:
+        4,12: []
+        5,13: []
+        6,14: []
+        7,15: []
+      1: {}
+    infra:
+      0:
+        0-2,8-10:
+        - '48624'
+      1: {}
+    shared:
+      0:
+        3,11: []
+      1: {}
 </code></pre>
 <p><em>Example with extra exclusive-non-isolcpus pool configured:</em></p>
-<pre><code>etc
-└── cmk
-    ├── lock
-    └── pools
-        ├── shared
-        │   ├── 3,11
-        │   │   └── tasks
-        │   └── exclusive
-        ├── exclusive
-        │   ├── 4,12
-        │   │   └── tasks
-        │   ├── 5,13
-        │   │   └── tasks
-        ├── infra
-        |   ├── 0-2,8-10
-        |   │   └── tasks
-        |   └── exclusive
-        └── exclusive-non-isolcpus
-            ├── 6,14
-            │   └── tasks
-            ├── 7,15
-            │   └── tasks
-            └── exclusive
+<pre><code>data:
+  config: |
+    exclusive:
+      0:
+        4,12: []
+        5,13: []
+      1: {}
+    infra:
+      0:
+        0-2,8-10:
+        - '48624'
+      1: {}
+    shared:
+      0:
+        3,11: []
+      1: {}
+    exclusive-non-isolcpus:
+      0: 
+        6,14: []
+        7,15: []
 </code></pre>
 <p><em>Where:</em></p>
 <table>
@@ -143,24 +136,16 @@ directory format is described below.</p>
 </thead>
 <tbody>
 <tr>
-<td align="left"><code>/etc/cmk/lock</code></td>
-<td align="left">A lock file to protect against conflicting concurrent modification.</td>
+<td align="left"><code>data -&gt; config -&gt; &lt;pool&gt;</code></td>
+<td align="left">The name of the pool acting as a key, one per pool.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;</code></td>
-<td align="left">Directories, one per pool.</td>
+<td align="left"><code>data -&gt; config -&gt; &lt;pool&gt; -&gt; &lt;cpulist&gt;</code></td>
+<td align="left">The name of the CPU list in the pool conforming to the Linux cpuset <a href="cpu-list">CPU list format</a>.</td>
 </tr>
 <tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/exclusive</code></td>
-<td align="left">Determines whether each CPU list in the pool can be shared (value 0) or not (value 1). Shared CPU lists can accomodate multiple tasks simultaneously, while exclusive CPU lists may only be allocated to one task at a time.</td>
-</tr>
-<tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;</code></td>
-<td align="left">Directories whose names conform to the Linux cpuset <a href="cpu-list">CPU list format</a>.</td>
-</tr>
-<tr>
-<td align="left"><code>/etc/cmk/pools/&lt;pool&gt;/&lt;cpulist&gt;/tasks</code></td>
-<td align="left">A file containing a comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated.</td>
+<td align="left"><code>data -&gt; config -&gt; &lt;pool&gt; -&gt; &lt;cpulist&gt; -&gt; &lt;tasks&gt;</code></td>
+<td align="left">A comma-separated list of the root Linux process IDs of containers to which the CPUset has been allocated.</td>
 </tr>
 </tbody>
 </table>
@@ -176,14 +161,14 @@ information.</p>
 or by using the <a href="cli.html#cmk-init"><code>cmk init</code></a> helper program.</li>
 <li>When tasks are launched via <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a>, an available
 CPU list for the requested pool is chosen. That CPU list's <code>tasks</code>
-file is updated to include the <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a> process ID.</li>
+list is updated to include the <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a> process ID.</li>
 <li>After a task launched via <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a> dies, the
-associated CPU list's <code>tasks</code> file is updated to remove the
+associated CPU list's <code>tasks</code> list is updated to remove the
 <a href="cli.html#cmk-isolate"><code>cmk isolate</code></a> process ID.</li>
 <li>
 <a href="cli.html#cmk-reconcile"><code>cmk reconcile</code></a> asks the operating system about all
 process IDs in all pools. Process IDs that are no longer valid are removed
-from the <code>tasks</code> file. <a href="cli.html#cmk-reconcile"><code>cmk reconcile</code></a> should be configured to execute
+from the <code>tasks</code> list. <a href="cli.html#cmk-reconcile"><code>cmk reconcile</code></a> should be configured to execute
 periodically on each host).</li>
 </ul>
 

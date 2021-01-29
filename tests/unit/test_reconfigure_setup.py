@@ -99,7 +99,7 @@ def test_execute_reconfigure_failure1(caplog):
         with pytest.raises(SystemExit) as err:
             reconfigure_setup.execute_reconfigure(2, 2, "-1",
                                                   "packed", "packed",
-                                                  "cmk:v1.5.1", "IfNotPresent",
+                                                  "cmk:v1.5.2", "IfNotPresent",
                                                   "/opt/bin", node_list,
                                                   "fake-saname",
                                                   "fake-namespace")
@@ -121,7 +121,7 @@ def test_execute_reconfigure_failure2(caplog):
         with pytest.raises(SystemExit) as err:
             reconfigure_setup.execute_reconfigure(2, 2, "-1",
                                                   "packed", "packed",
-                                                  "cmk:v1.5.1", "IfNotPresent",
+                                                  "cmk:v1.5.2", "IfNotPresent",
                                                   "/opt/bin", node_list,
                                                   "fake-saname",
                                                   "fake-namespace")

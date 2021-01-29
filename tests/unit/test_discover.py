@@ -143,7 +143,7 @@ def test_discover_add_taint_failure1(caplog):
         assert caplog_tuple[0][2] == exp_log_err
 
 
-@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.1"))
+@patch('intel.k8s.get_kube_version', MagicMock(return_value="v1.5.2"))
 def test_discover_add_taint_failure2(caplog):
     fake_node_resp = {
             "metadata": {
