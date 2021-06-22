@@ -148,7 +148,7 @@ command because the --no-affinity flag was supplied""")
         node_name = k8s.get_node_from_pod(None, pod_name)
         configmap_name = "cmk-config-{}".format(node_name)
 
-        c = config.Config(configmap_name, pod_name)
+        c = config.Config(configmap_name, pod_name, namespace)
         c.lock()
         pool = c.get_pool(pool_name)
         pid = str(proc.getpid())
